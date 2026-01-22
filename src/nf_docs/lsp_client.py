@@ -93,6 +93,7 @@ class LSPClient:
         self._progress_lock = threading.Lock()
         self._active_progress: dict[str, dict[str, Any]] = {}  # token -> progress info
         self._indexing_complete = threading.Event()
+        self._initial_indexing_done = False  # Track if initial workspace indexing is complete
 
         # Find or download language server
         if server_jar:
@@ -317,8 +318,14 @@ class LSPClient:
                         except (ValueError, IndexError):
                             pass
 
-                    # Only show indexing progress for the indexing token
-                    if token and token.startswith("indexing-") and current is not None:
+                    # Only show indexing progress during initial workspace indexing
+                    # (not during subsequent mini-indexes from open/close)
+                    if (
+                        token
+                        and token.startswith("indexing-")
+                        and current is not None
+                        and not self._initial_indexing_done
+                    ):
                         self._progress(
                             ProgressUpdate(
                                 phase=ExtractionPhase.LSP_INDEXING,
@@ -336,7 +343,8 @@ class LSPClient:
                     logger.debug(f"Progress end [{token}]")
 
                     # Check if this was the indexing progress (token is "indexing-<hash>")
-                    if token and token.startswith("indexing-"):
+                    # Only set complete for initial indexing, not mini-indexes
+                    if token and token.startswith("indexing-") and not self._initial_indexing_done:
                         self._indexing_complete.set()
 
         elif method == "textDocument/publishDiagnostics":
@@ -555,6 +563,7 @@ class LSPClient:
             # Check if indexing progress completed
             if self._indexing_complete.is_set():
                 logger.debug("Workspace indexing complete (via progress notification)")
+                self._initial_indexing_done = True  # Mark initial indexing as done
                 # Give a moment for final processing
                 time.sleep(0.5)
                 return
@@ -569,6 +578,7 @@ class LSPClient:
                         stable_polls += 1
                         if stable_polls >= 3:
                             logger.debug(f"Workspace indexed: {symbol_count} symbols (stable)")
+                            self._initial_indexing_done = True  # Mark initial indexing as done
                             self._progress(
                                 ProgressUpdate(
                                     phase=ExtractionPhase.LSP_INDEXING,

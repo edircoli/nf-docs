@@ -60,6 +60,7 @@ class PipelineExtractor:
         language_server_jar: str | Path | None = None,
         nextflow_path: str = "nextflow",
         use_cache: bool = True,
+        force_refresh: bool = False,
         progress_callback: ProgressCallbackType | None = None,
     ):
         """
@@ -70,12 +71,14 @@ class PipelineExtractor:
             language_server_jar: Path to the language server JAR (optional)
             nextflow_path: Path to the Nextflow executable
             use_cache: Whether to use caching for extraction results
+            force_refresh: Force re-extraction even if cache exists (still updates cache)
             progress_callback: Optional callback for progress updates
         """
         self.workspace_path = Path(workspace_path).resolve()
         self.language_server_jar = language_server_jar
         self.nextflow_path = nextflow_path
         self.cache = PipelineCache() if use_cache else None
+        self.force_refresh = force_refresh
         self._progress = progress_callback or null_progress
 
     def extract(self) -> Pipeline:
@@ -94,8 +97,8 @@ class PipelineExtractor:
             )
         )
 
-        # Check cache first
-        if self.cache:
+        # Check cache first (unless force_refresh is set)
+        if self.cache and not self.force_refresh:
             self._progress(
                 ProgressUpdate(
                     phase=ExtractionPhase.CHECKING_CACHE,

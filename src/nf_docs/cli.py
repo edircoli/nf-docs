@@ -190,12 +190,7 @@ def main() -> None:
 @click.option(
     "--no-cache",
     is_flag=True,
-    help="Disable cache, always re-extract from pipeline files",
-)
-@click.option(
-    "--clear-cache",
-    is_flag=True,
-    help="Clear cache for this pipeline before running",
+    help="Force re-extraction from pipeline files, ignoring cached results",
 )
 @click.option(
     "--verbose",
@@ -211,7 +206,6 @@ def generate(
     language_server: Path | None,
     nextflow_path: str,
     no_cache: bool,
-    clear_cache: bool,
     verbose: bool,
 ) -> None:
     """
@@ -232,15 +226,6 @@ def generate(
     """
     setup_logging(verbose)
 
-    # Handle cache clearing
-    if clear_cache:
-        from nf_docs.cache import PipelineCache
-
-        cache = PipelineCache()
-        cleared = cache.clear(pipeline_path)
-        if cleared:
-            console.print(f"[yellow]Cleared {cleared} cache file(s)[/yellow]")
-
     try:
         with ExtractionProgressDisplay(console) as progress_display:
             # Extract documentation
@@ -248,7 +233,8 @@ def generate(
                 workspace_path=pipeline_path,
                 language_server_jar=language_server,
                 nextflow_path=nextflow_path,
-                use_cache=not no_cache,
+                use_cache=True,
+                force_refresh=no_cache,
                 progress_callback=progress_display.callback,
             )
 
