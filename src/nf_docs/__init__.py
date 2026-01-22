@@ -6,7 +6,12 @@ type information, and structure from Nextflow pipelines, producing
 documentation similar to Sphinx for Python or Javadoc.
 """
 
-__version__ = "0.1.0"
+try:
+    from importlib.metadata import version
+
+    __version__ = version("nf-docs")
+except Exception:
+    __version__ = "unknown"
 
 from nf_docs.models import (
     ConfigParam,

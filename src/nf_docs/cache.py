@@ -38,6 +38,9 @@ def get_xdg_cache_home() -> Path:
     return Path.home() / ".cache"
 
 
+import nf_docs
+
+
 class PipelineCache:
     """
     Cache for extracted Pipeline models.
@@ -111,7 +114,8 @@ class PipelineCache:
         """Get the cache file path for a workspace."""
         workspace_hash = self._get_workspace_hash(workspace)
         content_hash = self._get_content_hash(workspace)
-        return self.cache_dir / f"{workspace_hash}_{content_hash}.json"
+        # Include version in filename to invalidate old caches when nf-docs is updated
+        return self.cache_dir / f"{nf_docs.__version__}_{workspace_hash}_{content_hash}.json"
 
     def get(self, workspace: Path) -> Pipeline | None:
         """
@@ -167,7 +171,8 @@ class PipelineCache:
         if not self.cache_dir.exists():
             return
 
-        for cache_file in self.cache_dir.glob(f"{workspace_hash}_*.json"):
+        # Clean up caches from any version for this workspace
+        for cache_file in self.cache_dir.glob(f"*{workspace_hash}_*.json"):
             if exclude and cache_file == exclude:
                 continue
             try:
@@ -192,9 +197,9 @@ class PipelineCache:
         count = 0
 
         if workspace:
-            # Clear only this workspace's cache
+            # Clear only this workspace's cache (match any version)
             workspace_hash = self._get_workspace_hash(workspace)
-            for cache_file in self.cache_dir.glob(f"{workspace_hash}_*.json"):
+            for cache_file in self.cache_dir.glob(f"*_{workspace_hash}_*.json"):
                 try:
                     cache_file.unlink()
                     count += 1
@@ -288,10 +293,12 @@ class PipelineCache:
                     docstring=wf_data.get("docstring", ""),
                     file=wf_data.get("file", ""),
                     line=wf_data.get("line", 0),
+                    end_line=wf_data.get("end_line", 0),
                     inputs=wf_inputs,
                     outputs=wf_outputs,
                     calls=wf_data.get("calls", []),
                     is_entry=wf_data.get("is_entry", False),
+                    source_url=wf_data.get("source_url", ""),
                 )
             )
 
@@ -322,9 +329,11 @@ class PipelineCache:
                     docstring=proc_data.get("docstring", ""),
                     file=proc_data.get("file", ""),
                     line=proc_data.get("line", 0),
+                    end_line=proc_data.get("end_line", 0),
                     inputs=proc_inputs,
                     outputs=proc_outputs,
                     directives=proc_data.get("directives", {}),
+                    source_url=proc_data.get("source_url", ""),
                 )
             )
 
@@ -346,9 +355,11 @@ class PipelineCache:
                     docstring=func_data.get("docstring", ""),
                     file=func_data.get("file", ""),
                     line=func_data.get("line", 0),
+                    end_line=func_data.get("end_line", 0),
                     params=func_params,
                     return_type=func_data.get("return_type", ""),
                     return_description=func_data.get("return_description", ""),
+                    source_url=func_data.get("source_url", ""),
                 )
             )
 
