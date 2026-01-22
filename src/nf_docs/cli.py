@@ -285,9 +285,17 @@ def generate(
         # Output results after progress display is gone
         if output_path:
             if output_format in ("markdown", "html"):
-                console.print(f"[green]Created {len(created_files)} files in {output_path}[/green]")
+                file_word = "file" if len(created_files) == 1 else "files"
+                console.print(
+                    f"[green]Created {len(created_files)} {file_word} in {output_path}[/green]"
+                )
                 for f in created_files:
-                    console.print(f"  - {f.relative_to(output_path)}")
+                    # Show path relative to current directory
+                    try:
+                        rel_path = f.relative_to(Path.cwd())
+                        console.print(f"  - ./{rel_path}")
+                    except ValueError:
+                        console.print(f"  - {f}")
             else:
                 console.print(f"[green]Written to {output_file}[/green]")
         else:
@@ -295,9 +303,16 @@ def generate(
                 # Write to stdout
                 click.echo(renderer.render(pipeline))
             else:
-                console.print(f"[green]Created {len(created_files)} files in {default_dir}[/green]")
+                console.print(
+                    f"\n[green]Created {len(created_files)} files in {default_dir}[/green]"
+                )
                 for f in created_files:
-                    console.print(f"  - {f.relative_to(default_dir)}")
+                    # Show path relative to current directory
+                    try:
+                        rel_path = f.relative_to(Path.cwd())
+                        console.print(f"  - ./{rel_path}")
+                    except ValueError:
+                        console.print(f"  - {f}")
 
     except LSPError as e:
         console.print(f"[red]Language Server error: {e}[/red]")

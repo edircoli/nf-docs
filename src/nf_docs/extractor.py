@@ -91,7 +91,12 @@ class PipelineExtractor:
         Returns:
             Complete Pipeline model with all extracted information
         """
-        logger.info(f"Extracting documentation from: {self.workspace_path}")
+        # Display path relative to home dir for cleaner output
+        try:
+            display_path = f"~/{self.workspace_path.relative_to(Path.home())}"
+        except ValueError:
+            display_path = str(self.workspace_path)
+        logger.info(f"Extracting documentation from: {display_path}")
 
         self._progress(
             ProgressUpdate(
@@ -130,7 +135,7 @@ class PipelineExtractor:
                     detail=str(schema_file.name),
                 )
             )
-            logger.info(f"Found schema file: {schema_file}")
+            logger.debug(f"Found schema file: {schema_file}")
             try:
                 schema_metadata, schema_inputs = parse_schema(schema_file)
                 pipeline.metadata = schema_metadata

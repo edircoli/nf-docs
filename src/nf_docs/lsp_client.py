@@ -115,7 +115,7 @@ class LSPClient:
 
         for path in search_paths:
             if path.exists():
-                logger.info(f"Found language server at: {path}")
+                logger.debug(f"Found language server at: {path}")
                 return path
 
         if not self.auto_download:
@@ -206,7 +206,7 @@ class LSPClient:
                 f"it's on your PATH. Error: {e}"
             ) from e
 
-        logger.info(f"Starting language server: {self.server_jar}")
+        logger.debug(f"Starting language server: {self.server_jar}")
 
         self._process = subprocess.Popen(
             [self.java_path, "-jar", str(self.server_jar)],
@@ -491,7 +491,7 @@ class LSPClient:
         # or by polling workspace/symbol.
         self._trigger_and_wait_for_indexing()
 
-        logger.info("Language server initialized")
+        logger.debug("Language server initialized")
 
     def _trigger_and_wait_for_indexing(
         self, timeout: float = 300.0, poll_interval: float = 1.0
@@ -638,7 +638,7 @@ class LSPClient:
                 pass
 
         self._process = None
-        logger.info("Language server stopped")
+        logger.debug("Language server stopped")
 
     def __enter__(self) -> "LSPClient":
         """Context manager entry."""

@@ -136,7 +136,8 @@ class PipelineCache:
         try:
             data = json.loads(cache_path.read_text(encoding="utf-8"))
             pipeline = self._deserialize_pipeline(data)
-            logger.info(f"Cache hit: loaded from {cache_path.name}")
+            logger.debug(f"Cache hit: loaded from {cache_path.name}")
+            logger.info("Using cached extraction results")
             return pipeline
         except Exception as e:
             logger.debug(f"Cache miss: failed to load cache: {e}")
