@@ -160,9 +160,9 @@ def main() -> None:
     "--format",
     "-f",
     "output_format",
-    type=click.Choice(["json", "yaml", "markdown", "html"], case_sensitive=False),
+    type=click.Choice(["json", "yaml", "markdown", "md", "html"], case_sensitive=False),
     default="markdown",
-    help="Output format (default: markdown)",
+    help="Output format: json, yaml, markdown (or md), html (default: markdown)",
 )
 @click.option(
     "--output",
@@ -225,6 +225,10 @@ def generate(
         nf-docs generate ./my-pipeline --format html -o site/ --title "My Pipeline"
     """
     setup_logging(verbose)
+
+    # Normalize format aliases
+    if output_format == "md":
+        output_format = "markdown"
 
     try:
         with ExtractionProgressDisplay(console) as progress_display:

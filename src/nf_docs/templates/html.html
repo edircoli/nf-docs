@@ -87,21 +87,97 @@
         background-color: rgb(241 245 249); /* slate-100 */
         font-weight: 600;
       }
+      /* Search results highlighting */
+      .search-highlight {
+        background-color: rgb(254 249 195); /* yellow-100 */
+        padding: 0.125rem 0.25rem;
+        border-radius: 0.25rem;
+      }
+      /* Scroll offset for fixed top nav */
+      [id] {
+        scroll-margin-top: 4.5rem; /* 3.5rem nav + 1rem padding */
+      }
     </style>
   </head>
   <body class="font-sans leading-relaxed text-slate-800 bg-slate-50">
-    <div class="flex min-h-screen">
-      <!-- Left Sidebar - Main Navigation -->
-      <aside
-        id="left-nav"
-        class="w-56 bg-white border-r border-slate-200 p-6 fixed h-screen overflow-y-auto hidden md:block"
-      >
-        <h1 class="text-xl font-bold text-primary mb-2">
+    <!-- Top Navigation Bar -->
+    <header class="fixed top-0 left-0 right-0 h-14 bg-white border-b border-slate-200 z-50 flex items-center px-4 md:px-6">
+      <!-- Left: Pipeline name and version -->
+      <a href="#overview" id="top-nav-home" class="flex items-center hover:opacity-80 transition-opacity">
+        <h1 class="text-lg font-bold text-primary">
           {{ pipeline.metadata.name or 'Pipeline' }}
         </h1>
         {% if pipeline.metadata.version %}
-        <div class="text-sm text-slate-500 mb-6">v{{ pipeline.metadata.version }}</div>
+        <span class="ml-2 text-sm text-slate-500">v{{ pipeline.metadata.version }}</span>
         {% endif %}
+      </a>
+
+      <!-- Right: Search and GitHub link -->
+      <div class="ml-auto flex items-center gap-4">
+        <!-- Search -->
+        <div class="relative">
+          <input
+            type="text"
+            id="search-input"
+            placeholder="Search..."
+            class="w-48 md:w-64 px-3 py-1.5 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+          />
+          <button
+            id="search-clear"
+            class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 hidden"
+            title="Clear search"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Repository link -->
+        {% if pipeline.metadata.repository %}
+        <a
+          href="{{ pipeline.metadata.repository }}"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="flex items-center gap-1.5 text-sm text-slate-600 hover:text-primary transition-colors"
+          title="View repository"
+        >
+          {% if 'github.com' in pipeline.metadata.repository %}
+          <!-- GitHub icon -->
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"></path>
+          </svg>
+          <span class="hidden sm:inline">GitHub</span>
+          {% elif 'gitlab.com' in pipeline.metadata.repository or 'gitlab' in pipeline.metadata.repository.lower() %}
+          <!-- GitLab icon -->
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M22.65 14.39L12 22.13 1.35 14.39a.84.84 0 01-.3-.94l1.22-3.78 2.44-7.51A.42.42 0 014.82 2a.43.43 0 01.58 0 .42.42 0 01.11.18l2.44 7.49h8.1l2.44-7.51A.42.42 0 0118.6 2a.43.43 0 01.58 0 .42.42 0 01.11.18l2.44 7.51L23 13.45a.84.84 0 01-.35.94z"></path>
+          </svg>
+          <span class="hidden sm:inline">GitLab</span>
+          {% elif 'bitbucket.org' in pipeline.metadata.repository %}
+          <!-- Bitbucket icon -->
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M.778 1.213a.768.768 0 00-.768.892l3.263 19.81c.084.5.515.868 1.022.873H19.95a.772.772 0 00.77-.646l3.27-20.03a.768.768 0 00-.768-.892zM14.52 15.53H9.522L8.17 8.466h7.561z"></path>
+          </svg>
+          <span class="hidden sm:inline">Bitbucket</span>
+          {% else %}
+          <!-- Generic code icon -->
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+          </svg>
+          <span class="hidden sm:inline">Source</span>
+          {% endif %}
+        </a>
+        {% endif %}
+      </div>
+    </header>
+
+    <div class="flex min-h-screen pt-14">
+      <!-- Left Sidebar - Main Navigation -->
+      <aside
+        id="left-nav"
+        class="w-56 bg-white border-r border-slate-200 p-6 fixed top-14 h-[calc(100vh-3.5rem)] overflow-y-auto hidden md:block"
+      >
 
         <nav>
           <ul class="space-y-1">
@@ -174,6 +250,23 @@
 
       <!-- Main content -->
       <main class="md:ml-56 lg:mr-64 flex-1 p-4 md:p-8 lg:p-12">
+        <!-- Search Results Section (hidden by default) -->
+        <section id="search-results" class="section hidden">
+          <h1 class="text-3xl font-bold mb-4 text-slate-800">Search Results</h1>
+          <p class="mb-4 text-slate-600">
+            Showing results for "<span id="search-query-display" class="font-semibold"></span>"
+          </p>
+
+          <div id="search-results-content">
+            <!-- Results will be populated by JavaScript -->
+          </div>
+
+          <div id="search-no-results" class="hidden py-8 text-center text-slate-500">
+            <p class="text-lg">No results found</p>
+            <p class="text-sm mt-2">Try a different search term</p>
+          </div>
+        </section>
+
         <!-- Overview Section -->
         <section id="overview" class="section">
           <h1 class="text-3xl font-bold mb-4 text-slate-800">{{ title }}</h1>
@@ -274,7 +367,7 @@
             {{ group }}
             <a
               href="#inputs-{{ group|lower|replace(' ', '-') }}"
-              class="ml-2 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity no-underline hover:text-primary"
+              class="ml-2 text-slate-300 opacity-30 group-hover:opacity-100 transition-opacity no-underline hover:text-primary"
               >¶</a
             >
           </h2>
@@ -288,7 +381,7 @@
               --{{ inp.name }}
               <a
                 href="#param-{{ inp.name }}"
-                class="ml-2 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity no-underline hover:text-primary"
+                class="ml-2 text-slate-300 opacity-30 group-hover:opacity-100 transition-opacity no-underline hover:text-primary"
                 >¶</a
               >
             </div>
@@ -352,7 +445,7 @@
               {{ param.name }}
               <a
                 href="#config-{{ param.name }}"
-                class="ml-2 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity no-underline hover:text-primary"
+                class="ml-2 text-slate-300 opacity-30 group-hover:opacity-100 transition-opacity no-underline hover:text-primary"
                 >¶</a
               >
             </div>
@@ -382,7 +475,7 @@
           <h1 class="text-3xl font-bold mb-4 text-slate-800">Workflows</h1>
           <p class="mb-4 text-slate-600">This page documents all workflows in the pipeline.</p>
 
-          {% for wf in pipeline.workflows %}
+          {% for wf in pipeline.workflows|sort(attribute='name') %}
           <div
             id="workflow-{{ wf.name or 'entry' }}"
             class="bg-white border border-slate-200 rounded-lg p-4 mb-4 group"
@@ -396,10 +489,20 @@
                 Entry Point
               </span>
               {% endif %}
+              {% if wf.source_url %}
+              <a
+                href="{{ wf.source_url }}"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="ml-2 text-slate-400 hover:text-primary no-underline"
+                title="View source code"
+                >[source]</a
+              >
+              {% endif %}
               <a
                 href="#workflow-{{ wf.name or 'entry' }}"
-                class="ml-2 text-slate-400 hover:text-primary no-underline"
-                >[source]</a
+                class="ml-2 text-slate-300 opacity-30 group-hover:opacity-100 transition-opacity no-underline hover:text-primary"
+                >¶</a
               >
             </div>
             {% if wf.file %}
@@ -485,7 +588,7 @@
           <h1 class="text-3xl font-bold mb-4 text-slate-800">Processes</h1>
           <p class="mb-4 text-slate-600">This page documents all processes in the pipeline.</p>
 
-          {% for proc in pipeline.processes %}
+          {% for proc in pipeline.processes|sort(attribute='name') %}
           <div
             id="process-{{ proc.name }}"
             class="bg-white border border-slate-200 rounded-lg p-4 mb-4 group"
@@ -494,10 +597,20 @@
             <div class="bg-slate-100 border-l-4 border-primary px-4 py-2 mb-4 font-mono text-sm">
               <span class="text-slate-500 italic">process</span>
               <span class="font-bold text-primary-dark">{{ proc.name }}</span>(<span class="text-slate-600">{% for inp in proc.inputs %}{{ inp.name }}{% if not loop.last %}, {% endif %}{% endfor %}</span>)
+              {% if proc.source_url %}
+              <a
+                href="{{ proc.source_url }}"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="ml-2 text-slate-400 hover:text-primary no-underline"
+                title="View source code"
+                >[source]</a
+              >
+              {% endif %}
               <a
                 href="#process-{{ proc.name }}"
-                class="ml-2 text-slate-400 hover:text-primary no-underline"
-                >[source]</a
+                class="ml-2 text-slate-300 opacity-30 group-hover:opacity-100 transition-opacity no-underline hover:text-primary"
+                >¶</a
               >
             </div>
             {% if proc.file %}
@@ -628,7 +741,7 @@
             This page documents helper functions defined in the pipeline.
           </p>
 
-          {% for func in pipeline.functions %}
+          {% for func in pipeline.functions|sort(attribute='name') %}
           <div
             id="function-{{ func.name }}"
             class="bg-white border border-slate-200 rounded-lg p-4 mb-4 group"
@@ -637,10 +750,20 @@
             <div class="bg-slate-100 border-l-4 border-primary px-4 py-2 mb-4 font-mono text-sm">
               <span class="text-slate-500 italic">def</span>
               <span class="font-bold text-primary-dark">{{ func.name }}</span>(<span class="text-slate-600">{% for p in func.params %}{{ p.name }}{% if not loop.last %}, {% endif %}{% endfor %}</span>)
+              {% if func.source_url %}
+              <a
+                href="{{ func.source_url }}"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="ml-2 text-slate-400 hover:text-primary no-underline"
+                title="View source code"
+                >[source]</a
+              >
+              {% endif %}
               <a
                 href="#function-{{ func.name }}"
-                class="ml-2 text-slate-400 hover:text-primary no-underline"
-                >[source]</a
+                class="ml-2 text-slate-300 opacity-30 group-hover:opacity-100 transition-opacity no-underline hover:text-primary"
+                >¶</a
               >
             </div>
             {% if func.file %}
@@ -697,7 +820,7 @@
       <!-- Right Sidebar - Page Table of Contents -->
       <aside
         id="right-nav"
-        class="w-64 bg-white border-l border-slate-200 p-4 fixed right-0 h-screen overflow-y-auto hidden lg:block"
+        class="w-64 bg-white border-l border-slate-200 p-4 fixed right-0 top-14 h-[calc(100vh-3.5rem)] overflow-y-auto hidden lg:block"
       >
         <div class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">
           On This Page
@@ -825,10 +948,22 @@
         currentSection = sectionId;
       }
 
+      // Clear search state (input and URL)
+      function clearSearch() {
+        searchInput.value = '';
+        searchClear.classList.add('hidden');
+        const url = new URL(window.location);
+        url.searchParams.delete('search');
+        return url.pathname;
+      }
+
       // Main navigation
       document.querySelectorAll('.nav-link').forEach(link => {
         link.addEventListener('click', e => {
           e.preventDefault();
+
+          // Clear search
+          const basePath = clearSearch();
 
           // Update active nav link styling
           document.querySelectorAll('.nav-link').forEach(l => {
@@ -845,19 +980,56 @@
 
           // Update right-hand TOC
           updateTOC(sectionId);
+          currentSection = sectionId;
 
-          // Update URL hash for deep linking
-          history.pushState(null, null, '#' + sectionId);
+          // Update URL hash for deep linking (without search params)
+          history.pushState(null, null, basePath + '#' + sectionId);
 
           // Scroll to top
           window.scrollTo({ top: 0, behavior: 'smooth' });
         });
       });
 
+      // Top nav home link (pipeline name)
+      document.getElementById('top-nav-home').addEventListener('click', e => {
+        e.preventDefault();
+
+        // Clear search
+        const basePath = clearSearch();
+
+        // Update active nav link styling
+        document.querySelectorAll('.nav-link').forEach(l => {
+          l.classList.remove('bg-primary', 'text-white');
+          l.classList.add('text-slate-800');
+          if (l.dataset.section === 'overview') {
+            l.classList.add('bg-primary', 'text-white');
+            l.classList.remove('text-slate-800');
+          }
+        });
+
+        // Show overview section
+        document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
+        document.getElementById('overview').classList.remove('hidden');
+
+        // Update right-hand TOC
+        updateTOC('overview');
+        currentSection = 'overview';
+
+        // Update URL
+        history.pushState(null, null, basePath + '#overview');
+
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
       // TOC link navigation
       document.querySelectorAll('.toc-link').forEach(link => {
         link.addEventListener('click', e => {
           e.preventDefault();
+
+          // Clear search
+          const basePath = clearSearch();
+
           const href = link.getAttribute('href');
           // Escape special CSS selector characters in the ID
           const escapedHref = href.replace(/\./g, '\\.');
@@ -869,6 +1041,7 @@
               document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
               document.getElementById(sectionId).classList.remove('hidden');
               updateTOC(sectionId);
+              currentSection = sectionId;
 
               // Update left nav highlighting
               document.querySelectorAll('.nav-link').forEach(l => {
@@ -882,8 +1055,8 @@
             }
             setTimeout(() => target.scrollIntoView({ behavior: 'smooth' }), 50);
 
-            // Update URL hash
-            history.pushState(null, null, href);
+            // Update URL hash (without search params)
+            history.pushState(null, null, basePath + href);
           }
         });
       });
@@ -937,6 +1110,311 @@
 
       // Initialize TOC for overview (default section)
       updateTOC('overview');
+
+      // ==================== Search Functionality ====================
+
+      // Build search index from page content
+      const searchIndex = {
+        workflows: [
+          {% for wf in pipeline.workflows|sort(attribute='name') %}
+          {
+            name: "{{ wf.name or '(entry)' }}",
+            docstring: {{ wf.docstring|tojson }},
+            file: "{{ wf.file }}",
+            id: "workflow-{{ wf.name or 'entry' }}",
+            section: "workflows"
+          }{% if not loop.last %},{% endif %}
+          {% endfor %}
+        ],
+        processes: [
+          {% for proc in pipeline.processes|sort(attribute='name') %}
+          {
+            name: "{{ proc.name }}",
+            docstring: {{ proc.docstring|tojson }},
+            file: "{{ proc.file }}",
+            id: "process-{{ proc.name }}",
+            section: "processes"
+          }{% if not loop.last %},{% endif %}
+          {% endfor %}
+        ],
+        functions: [
+          {% for func in pipeline.functions|sort(attribute='name') %}
+          {
+            name: "{{ func.name }}",
+            docstring: {{ func.docstring|tojson }},
+            file: "{{ func.file }}",
+            id: "function-{{ func.name }}",
+            section: "functions"
+          }{% if not loop.last %},{% endif %}
+          {% endfor %}
+        ],
+        inputs: [
+          {% for inp in pipeline.inputs %}
+          {
+            name: "{{ inp.name }}",
+            description: {{ inp.description|tojson }},
+            group: "{{ inp.group }}",
+            id: "param-{{ inp.name }}",
+            section: "inputs"
+          }{% if not loop.last %},{% endif %}
+          {% endfor %}
+        ],
+        config: [
+          {% for param in pipeline.config_params %}
+          {
+            name: "{{ param.name }}",
+            description: {{ param.description|tojson }},
+            id: "config-{{ param.name }}",
+            section: "config"
+          }{% if not loop.last %},{% endif %}
+          {% endfor %}
+        ]
+      };
+
+      const searchInput = document.getElementById('search-input');
+      const searchClear = document.getElementById('search-clear');
+      const searchResultsSection = document.getElementById('search-results');
+      const searchResultsContent = document.getElementById('search-results-content');
+      const searchNoResults = document.getElementById('search-no-results');
+      const searchQueryDisplay = document.getElementById('search-query-display');
+
+      // Debounce function
+      function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+          const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+          };
+          clearTimeout(timeout);
+          timeout = setTimeout(later, wait);
+        };
+      }
+
+      // Highlight matching text
+      function highlightText(text, query) {
+        if (!text || !query) return text || '';
+        const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+        return text.replace(regex, '<span class="search-highlight">$1</span>');
+      }
+
+      // Search function
+      function performSearch(query) {
+        if (!query || query.length < 2) {
+          // Clear search and show previous section
+          searchResultsSection.classList.add('hidden');
+          if (currentSection !== 'search-results') {
+            document.getElementById(currentSection).classList.remove('hidden');
+          } else {
+            document.getElementById('overview').classList.remove('hidden');
+            currentSection = 'overview';
+            updateTOC('overview');
+          }
+          searchClear.classList.add('hidden');
+          // Update URL to remove search param
+          const url = new URL(window.location);
+          url.searchParams.delete('search');
+          history.replaceState(null, null, url.pathname + url.hash);
+          return;
+        }
+
+        searchClear.classList.remove('hidden');
+        const lowerQuery = query.toLowerCase();
+        const results = {
+          workflows: [],
+          processes: [],
+          functions: [],
+          inputs: [],
+          config: []
+        };
+
+        // Search each category
+        for (const [category, items] of Object.entries(searchIndex)) {
+          for (const item of items) {
+            const nameMatch = item.name.toLowerCase().includes(lowerQuery);
+            const docMatch = (item.docstring || item.description || '').toLowerCase().includes(lowerQuery);
+            const fileMatch = (item.file || '').toLowerCase().includes(lowerQuery);
+
+            if (nameMatch || docMatch || fileMatch) {
+              results[category].push({
+                ...item,
+                nameMatch,
+                docMatch,
+                fileMatch
+              });
+            }
+          }
+        }
+
+        // Update URL with search param
+        const url = new URL(window.location);
+        url.searchParams.set('search', query);
+        history.replaceState(null, null, url.pathname + '?' + url.searchParams.toString());
+
+        // Render results
+        renderSearchResults(results, query);
+      }
+
+      // Render search results
+      function renderSearchResults(results, query) {
+        const totalResults = Object.values(results).reduce((sum, arr) => sum + arr.length, 0);
+
+        searchQueryDisplay.textContent = query;
+
+        // Hide all other sections and show search results
+        document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
+        searchResultsSection.classList.remove('hidden');
+
+        // Clear left nav highlighting
+        document.querySelectorAll('.nav-link').forEach(l => {
+          l.classList.remove('bg-primary', 'text-white');
+          l.classList.add('text-slate-800');
+        });
+
+        // Hide right TOC
+        document.querySelectorAll('.toc-section').forEach(toc => toc.classList.add('hidden'));
+
+        if (totalResults === 0) {
+          searchResultsContent.innerHTML = '';
+          searchNoResults.classList.remove('hidden');
+          return;
+        }
+
+        searchNoResults.classList.add('hidden');
+
+        const categoryLabels = {
+          workflows: 'Workflows',
+          processes: 'Processes',
+          functions: 'Functions',
+          inputs: 'Parameters',
+          config: 'Configuration'
+        };
+
+        const categoryIcons = {
+          workflows: 'workflow',
+          processes: 'process',
+          functions: 'def',
+          inputs: '--',
+          config: ''
+        };
+
+        let html = '';
+
+        for (const [category, items] of Object.entries(results)) {
+          if (items.length === 0) continue;
+
+          html += `
+            <div class="mb-8">
+              <h2 class="text-xl font-semibold mb-4 pb-2 border-b border-slate-200">
+                ${categoryLabels[category]}
+                <span class="text-sm font-normal text-slate-500 ml-2">(${items.length})</span>
+              </h2>
+              <div class="space-y-3">
+          `;
+
+          for (const item of items) {
+            const escapedId = item.id.replace(/\./g, '\\.');
+            const icon = categoryIcons[category];
+            const description = item.docstring || item.description || '';
+            const truncatedDesc = description.length > 200 ? description.substring(0, 200) + '...' : description;
+
+            html += `
+              <div class="bg-white border border-slate-200 rounded-lg p-4 hover:border-primary transition-colors">
+                <a href="#${item.id}" class="search-result-link block" data-section="${item.section}" data-id="${item.id}">
+                  <div class="font-mono text-sm mb-1">
+                    ${icon ? `<span class="text-slate-500 italic">${icon}</span> ` : ''}
+                    <span class="font-bold text-primary-dark">${highlightText(item.name, query)}</span>
+                  </div>
+                  ${truncatedDesc ? `<p class="text-sm text-slate-600">${highlightText(truncatedDesc, query)}</p>` : ''}
+                  ${item.file ? `<p class="text-xs text-slate-400 mt-1">${highlightText(item.file, query)}</p>` : ''}
+                </a>
+              </div>
+            `;
+          }
+
+          html += `
+              </div>
+            </div>
+          `;
+        }
+
+        searchResultsContent.innerHTML = html;
+
+        // Add click handlers to search result links
+        document.querySelectorAll('.search-result-link').forEach(link => {
+          link.addEventListener('click', e => {
+            e.preventDefault();
+            const section = link.dataset.section;
+            const id = link.dataset.id;
+            const escapedId = id.replace(/\./g, '\\.');
+
+            // Clear search (input and URL)
+            const basePath = clearSearch();
+
+            // Show the target section
+            document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
+            document.getElementById(section).classList.remove('hidden');
+            currentSection = section;
+            updateTOC(section);
+
+            // Update left nav
+            document.querySelectorAll('.nav-link').forEach(l => {
+              l.classList.remove('bg-primary', 'text-white');
+              l.classList.add('text-slate-800');
+              if (l.dataset.section === section) {
+                l.classList.add('bg-primary', 'text-white');
+                l.classList.remove('text-slate-800');
+              }
+            });
+
+            // Scroll to the item
+            const target = document.querySelector('#' + escapedId);
+            if (target) {
+              setTimeout(() => target.scrollIntoView({ behavior: 'smooth' }), 50);
+            }
+
+            // Update URL (without search params)
+            history.pushState(null, null, basePath + '#' + id);
+          });
+        });
+      }
+
+      // Debounced search
+      const debouncedSearch = debounce(performSearch, 300);
+
+      // Search input event
+      searchInput.addEventListener('input', e => {
+        debouncedSearch(e.target.value.trim());
+      });
+
+      // Clear search button
+      searchClear.addEventListener('click', () => {
+        searchInput.value = '';
+        performSearch('');
+        searchInput.focus();
+      });
+
+      // Handle search query in URL on page load
+      const urlParams = new URLSearchParams(window.location.search);
+      const searchQuery = urlParams.get('search');
+      if (searchQuery) {
+        searchInput.value = searchQuery;
+        performSearch(searchQuery);
+      }
+
+      // Keyboard shortcut: focus search with /
+      document.addEventListener('keydown', e => {
+        if (e.key === '/' && document.activeElement !== searchInput) {
+          e.preventDefault();
+          searchInput.focus();
+        }
+        // Escape to clear search
+        if (e.key === 'Escape' && document.activeElement === searchInput) {
+          searchInput.value = '';
+          performSearch('');
+          searchInput.blur();
+        }
+      });
     </script>
   </body>
 </html>

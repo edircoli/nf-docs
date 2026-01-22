@@ -17,6 +17,7 @@ from typing import Any
 
 from nf_docs.cache import PipelineCache
 from nf_docs.config_parser import parse_config
+from nf_docs.git_utils import GitInfo, build_source_url, get_git_info
 from nf_docs.lsp_client import LSPClient, SymbolKind, parse_hover_content
 from nf_docs.models import (
     Function,
@@ -165,8 +166,13 @@ class PipelineExtractor:
         if readme_description and not pipeline.metadata.description:
             pipeline.metadata.description = readme_description
 
-        # Extract from Language Server
-        self._extract_from_lsp(pipeline)
+        # Get git info for repository URL and source links
+        git_info = get_git_info(self.workspace_path)
+        if git_info and git_info.base_url and not pipeline.metadata.repository:
+            pipeline.metadata.repository = git_info.base_url
+
+        # Extract from Language Server (pass git_info for source URLs)
+        self._extract_from_lsp(pipeline, git_info)
 
         # Infer pipeline name from directory if not set
         if not pipeline.metadata.name:
@@ -276,7 +282,7 @@ class PipelineExtractor:
 
         return " ".join(description_lines)
 
-    def _extract_from_lsp(self, pipeline: Pipeline) -> None:
+    def _extract_from_lsp(self, pipeline: Pipeline, git_info: GitInfo | None = None) -> None:
         """Extract processes, workflows, and functions using the Language Server."""
         # Find all Nextflow files
         self._progress(
@@ -292,6 +298,11 @@ class PipelineExtractor:
 
         logger.info(f"Found {len(nf_files)} Nextflow files")
         # Don't show file count yet - LSP needs to start and index first
+
+        if git_info and git_info.base_url:
+            logger.debug(f"Git repository detected: {git_info.base_url}")
+        else:
+            logger.debug("No git repository detected or unable to build source URLs")
 
         with LSPClient(
             self.workspace_path,
@@ -316,11 +327,17 @@ class PipelineExtractor:
                     )
                 )
                 try:
-                    self._extract_file_symbols(client, nf_file, pipeline)
+                    self._extract_file_symbols(client, nf_file, pipeline, git_info)
                 except Exception as e:
                     logger.warning(f"Failed to extract from {nf_file}: {e}")
 
-    def _extract_file_symbols(self, client: LSPClient, file_path: Path, pipeline: Pipeline) -> None:
+    def _extract_file_symbols(
+        self,
+        client: LSPClient,
+        file_path: Path,
+        pipeline: Pipeline,
+        git_info: GitInfo | None = None,
+    ) -> None:
         """Extract symbols from a single file using LSP."""
         relative_path = file_path.relative_to(self.workspace_path)
         logger.debug(f"Processing: {relative_path}")
@@ -334,7 +351,7 @@ class PipelineExtractor:
             logger.debug(f"  Found {len(symbols)} symbols")
 
             for symbol in symbols:
-                self._process_symbol(client, file_path, symbol, pipeline)
+                self._process_symbol(client, file_path, symbol, pipeline, git_info)
 
         finally:
             client.close_document(file_path)
@@ -378,6 +395,7 @@ class PipelineExtractor:
         file_path: Path,
         symbol: dict[str, Any],
         pipeline: Pipeline,
+        git_info: GitInfo | None = None,
     ) -> None:
         """Process a document symbol and add to pipeline."""
         raw_name = symbol.get("name", "")
@@ -390,10 +408,18 @@ class PipelineExtractor:
 
         # Get the line and character for hover
         start = selection_range.get("start", {})
+        end = range_info.get("end", {})
         line = start.get("line", 0)
         character = start.get("character", 0)
+        end_line = end.get("line", line)
 
         relative_path = str(file_path.relative_to(self.workspace_path))
+
+        # Build source URL if git info available
+        source_url = ""
+        if git_info:
+            # LSP lines are 0-based, source URLs use 1-based
+            source_url = build_source_url(git_info, relative_path, line + 1, end_line + 1) or ""
 
         # Get hover information - contains signature and documentation
         hover = client.get_hover(file_path, line, character)
@@ -402,14 +428,14 @@ class PipelineExtractor:
         # Determine what kind of symbol this is based on parsed type or LSP kind
         if symbol_type == "process" or kind == SymbolKind.METHOD:
             process = self._create_process_from_signature(
-                name, signature, docstring, relative_path, line + 1
+                name, signature, docstring, relative_path, line + 1, end_line + 1, source_url
             )
             if process and not any(p.name == process.name for p in pipeline.processes):
                 pipeline.processes.append(process)
 
         elif symbol_type == "workflow" or kind == SymbolKind.CLASS:
             workflow = self._create_workflow_from_signature(
-                name, signature, docstring, relative_path, line + 1
+                name, signature, docstring, relative_path, line + 1, end_line + 1, source_url
             )
             if workflow and not any(w.name == workflow.name for w in pipeline.workflows):
                 # Entry workflow has empty name (parsed from "<entry>")
@@ -419,14 +445,21 @@ class PipelineExtractor:
 
         elif symbol_type == "function" or kind == SymbolKind.FUNCTION:
             function = self._create_function_from_signature(
-                name, signature, docstring, param_docs, relative_path, line + 1
+                name,
+                signature,
+                docstring,
+                param_docs,
+                relative_path,
+                line + 1,
+                end_line + 1,
+                source_url,
             )
             if function and not any(f.name == function.name for f in pipeline.functions):
                 pipeline.functions.append(function)
 
         # Process child symbols
         for child in symbol.get("children", []):
-            self._process_symbol(client, file_path, child, pipeline)
+            self._process_symbol(client, file_path, child, pipeline, git_info)
 
     def _create_process_from_signature(
         self,
@@ -435,6 +468,8 @@ class PipelineExtractor:
         docstring: str,
         file_path: str,
         line: int,
+        end_line: int = 0,
+        source_url: str = "",
     ) -> Process | None:
         """Create a Process by parsing the LSP signature."""
         process = Process(
@@ -442,6 +477,8 @@ class PipelineExtractor:
             docstring=docstring,  # Actual Groovydoc documentation
             file=file_path,
             line=line,
+            end_line=end_line,
+            source_url=source_url,
         )
 
         # Use the nf_parser to extract inputs/outputs from the signature
@@ -471,6 +508,8 @@ class PipelineExtractor:
         docstring: str,
         file_path: str,
         line: int,
+        end_line: int = 0,
+        source_url: str = "",
     ) -> Workflow | None:
         """Create a Workflow by parsing the LSP signature."""
         workflow = Workflow(
@@ -478,6 +517,8 @@ class PipelineExtractor:
             docstring=docstring,  # Actual Groovydoc documentation
             file=file_path,
             line=line,
+            end_line=end_line,
+            source_url=source_url,
         )
 
         # Use the nf_parser to extract takes/emits from the signature
@@ -508,6 +549,8 @@ class PipelineExtractor:
         param_docs: dict[str, str],
         file_path: str,
         line: int,
+        end_line: int = 0,
+        source_url: str = "",
     ) -> Function | None:
         """Create a Function by parsing the LSP signature."""
         function = Function(
@@ -515,6 +558,8 @@ class PipelineExtractor:
             docstring=docstring,
             file=file_path,
             line=line,
+            end_line=end_line,
+            source_url=source_url,
             return_description=param_docs.get("_return", ""),
         )
 

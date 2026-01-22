@@ -56,14 +56,16 @@ class Process:
     docstring: str = ""
     file: str = ""
     line: int = 0
+    end_line: int = 0  # End line of the process definition
     inputs: list[ProcessInput] = field(default_factory=list)
     outputs: list[ProcessOutput] = field(default_factory=list)
     directives: dict[str, Any] = field(default_factory=dict)
     script: str = ""  # Script content (optional)
+    source_url: str = ""  # URL to view source in remote repository
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
-        return {
+        result = {
             "name": self.name,
             "docstring": self.docstring,
             "file": self.file,
@@ -72,6 +74,9 @@ class Process:
             "outputs": [o.to_dict() for o in self.outputs],
             "directives": self.directives,
         }
+        if self.source_url:
+            result["source_url"] = self.source_url
+        return result
 
 
 @dataclass
@@ -116,14 +121,16 @@ class Workflow:
     docstring: str = ""
     file: str = ""
     line: int = 0
+    end_line: int = 0  # End line of the workflow definition
     inputs: list[WorkflowInput] = field(default_factory=list)
     outputs: list[WorkflowOutput] = field(default_factory=list)
     calls: list[str] = field(default_factory=list)  # Process/workflow names called
     is_entry: bool = False  # Is this the entry workflow?
+    source_url: str = ""  # URL to view source in remote repository
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
-        return {
+        result = {
             "name": self.name,
             "docstring": self.docstring,
             "file": self.file,
@@ -133,6 +140,9 @@ class Workflow:
             "calls": self.calls,
             "is_entry": self.is_entry,
         }
+        if self.source_url:
+            result["source_url"] = self.source_url
+        return result
 
 
 @dataclass
@@ -164,13 +174,15 @@ class Function:
     docstring: str = ""
     file: str = ""
     line: int = 0
+    end_line: int = 0  # End line of the function definition
     params: list[FunctionParam] = field(default_factory=list)
     return_type: str = ""
     return_description: str = ""
+    source_url: str = ""  # URL to view source in remote repository
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
-        return {
+        result = {
             "name": self.name,
             "docstring": self.docstring,
             "file": self.file,
@@ -179,6 +191,9 @@ class Function:
             "return_type": self.return_type,
             "return_description": self.return_description,
         }
+        if self.source_url:
+            result["source_url"] = self.source_url
+        return result
 
 
 @dataclass
