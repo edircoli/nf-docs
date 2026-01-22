@@ -90,16 +90,6 @@ def main() -> None:
     help="Path to the Nextflow executable (default: nextflow)",
 )
 @click.option(
-    "--no-lsp",
-    is_flag=True,
-    help="Skip Language Server extraction (use regex-based parsing only)",
-)
-@click.option(
-    "--no-auto-download",
-    is_flag=True,
-    help="Don't automatically download the Language Server if not found",
-)
-@click.option(
     "--verbose",
     "-v",
     is_flag=True,
@@ -112,8 +102,6 @@ def generate(
     title: str | None,
     language_server: Path | None,
     nextflow_path: str,
-    no_lsp: bool,
-    no_auto_download: bool,
     verbose: bool,
 ) -> None:
     """
@@ -148,8 +136,6 @@ def generate(
                 workspace_path=pipeline_path,
                 language_server_jar=language_server,
                 nextflow_path=nextflow_path,
-                use_lsp=not no_lsp,
-                auto_download_lsp=not no_auto_download,
             )
 
             pipeline = extractor.extract()
@@ -188,7 +174,6 @@ def generate(
 
     except LSPError as e:
         console.print(f"[red]Language Server error: {e}[/red]")
-        console.print("[yellow]Try running with --no-lsp to use regex-based extraction[/yellow]")
         sys.exit(1)
     except ExtractionError as e:
         console.print(f"[red]Extraction error: {e}[/red]")
@@ -230,7 +215,6 @@ def inspect(pipeline_path: Path, verbose: bool) -> None:
 
             extractor = PipelineExtractor(
                 workspace_path=pipeline_path,
-                use_lsp=False,  # Use fast regex-based extraction for inspect
             )
 
             pipeline = extractor.extract()

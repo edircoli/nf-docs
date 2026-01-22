@@ -58,8 +58,6 @@ nf-docs generate PIPELINE_PATH [OPTIONS]
 | `--title`, `-t` | Custom title for documentation |
 | `--language-server` | Path to the Language Server JAR |
 | `--nextflow-path` | Path to Nextflow executable (default: nextflow) |
-| `--no-lsp` | Skip Language Server, use regex-based parsing only |
-| `--no-auto-download` | Don't auto-download the Language Server |
 | `--verbose`, `-v` | Enable verbose output |
 
 **Examples:**
