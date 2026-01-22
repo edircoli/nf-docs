@@ -303,8 +303,9 @@ def generate(
                 # Write to stdout
                 click.echo(renderer.render(pipeline))
             else:
+                file_word = "file" if len(created_files) == 1 else "files"
                 console.print(
-                    f"\n[green]Created {len(created_files)} files in {default_dir}[/green]"
+                    f"[green]Created {len(created_files)} {file_word} in {default_dir}[/green]"
                 )
                 for f in created_files:
                     # Show path relative to current directory

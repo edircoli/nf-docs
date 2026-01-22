@@ -290,27 +290,27 @@
               </tr>
             </thead>
             <tbody>
-              <tr class="hover:bg-slate-50">
-                <td class="p-3 border-b border-slate-200">Input Parameters</td>
+              <tr class="hover:bg-slate-50 cursor-pointer" onclick="document.querySelector('.nav-link[data-section=inputs]').click()">
+                <td class="p-3 border-b border-slate-200"><a href="#inputs" class="text-primary hover:underline">Input Parameters</a></td>
                 <td class="p-3 border-b border-slate-200">{{ pipeline.inputs|length }}</td>
               </tr>
               {% if pipeline.config_params %}
-              <tr class="hover:bg-slate-50">
-                <td class="p-3 border-b border-slate-200">Config Parameters</td>
+              <tr class="hover:bg-slate-50 cursor-pointer" onclick="document.querySelector('.nav-link[data-section=config]').click()">
+                <td class="p-3 border-b border-slate-200"><a href="#config" class="text-primary hover:underline">Config Parameters</a></td>
                 <td class="p-3 border-b border-slate-200">{{ pipeline.config_params|length }}</td>
               </tr>
               {% endif %}
-              <tr class="hover:bg-slate-50">
-                <td class="p-3 border-b border-slate-200">Workflows</td>
+              <tr class="hover:bg-slate-50 cursor-pointer" onclick="document.querySelector('.nav-link[data-section=workflows]').click()">
+                <td class="p-3 border-b border-slate-200"><a href="#workflows" class="text-primary hover:underline">Workflows</a></td>
                 <td class="p-3 border-b border-slate-200">{{ pipeline.workflows|length }}</td>
               </tr>
-              <tr class="hover:bg-slate-50">
-                <td class="p-3 border-b border-slate-200">Processes</td>
+              <tr class="hover:bg-slate-50 cursor-pointer" onclick="document.querySelector('.nav-link[data-section=processes]').click()">
+                <td class="p-3 border-b border-slate-200"><a href="#processes" class="text-primary hover:underline">Processes</a></td>
                 <td class="p-3 border-b border-slate-200">{{ pipeline.processes|length }}</td>
               </tr>
               {% if pipeline.functions %}
-              <tr class="hover:bg-slate-50">
-                <td class="p-3 border-b border-slate-200">Functions</td>
+              <tr class="hover:bg-slate-50 cursor-pointer" onclick="document.querySelector('.nav-link[data-section=functions]').click()">
+                <td class="p-3 border-b border-slate-200"><a href="#functions" class="text-primary hover:underline">Functions</a></td>
                 <td class="p-3 border-b border-slate-200">{{ pipeline.functions|length }}</td>
               </tr>
               {% endif %}
@@ -337,7 +337,7 @@
                 >{{ pipeline.metadata.homepage }}</a
               >
             </li>
-            {% endif %} {% if pipeline.metadata.repository %}
+            {% endif %} {% if pipeline.metadata.repository and pipeline.metadata.repository != pipeline.metadata.homepage %}
             <li>
               Repository:
               <a
