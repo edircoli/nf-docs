@@ -11,6 +11,7 @@ And merges them into a unified Pipeline model.
 """
 
 import logging
+import re
 from pathlib import Path
 from typing import Any
 
@@ -35,6 +36,7 @@ from nf_docs.progress import (
     ProgressUpdate,
     null_progress,
 )
+from nf_docs.nf_parser import parse_process_hover, parse_workflow_hover
 from nf_docs.schema_parser import find_schema_file, parse_schema
 
 logger = logging.getLogger(__name__)
@@ -393,21 +395,21 @@ class PipelineExtractor:
 
         relative_path = str(file_path.relative_to(self.workspace_path))
 
-        # Get hover information for docstring
+        # Get hover information - contains signature and documentation
         hover = client.get_hover(file_path, line, character)
-        docstring, param_docs = parse_hover_content(hover)
+        signature, docstring, param_docs = parse_hover_content(hover)
 
         # Determine what kind of symbol this is based on parsed type or LSP kind
         if symbol_type == "process" or kind == SymbolKind.METHOD:
-            process = self._create_process_from_symbol(
-                name, docstring, param_docs, relative_path, line + 1, symbol
+            process = self._create_process_from_signature(
+                name, signature, docstring, relative_path, line + 1
             )
             if process and not any(p.name == process.name for p in pipeline.processes):
                 pipeline.processes.append(process)
 
         elif symbol_type == "workflow" or kind == SymbolKind.CLASS:
-            workflow = self._create_workflow_from_symbol(
-                name, docstring, param_docs, relative_path, line + 1, symbol
+            workflow = self._create_workflow_from_signature(
+                name, signature, docstring, relative_path, line + 1
             )
             if workflow and not any(w.name == workflow.name for w in pipeline.workflows):
                 # Entry workflow has empty name (parsed from "<entry>")
@@ -416,8 +418,8 @@ class PipelineExtractor:
                 pipeline.workflows.append(workflow)
 
         elif symbol_type == "function" or kind == SymbolKind.FUNCTION:
-            function = self._create_function_from_symbol(
-                name, docstring, param_docs, relative_path, line + 1, symbol
+            function = self._create_function_from_signature(
+                name, signature, docstring, param_docs, relative_path, line + 1
             )
             if function and not any(f.name == function.name for f in pipeline.functions):
                 pipeline.functions.append(function)
@@ -426,91 +428,88 @@ class PipelineExtractor:
         for child in symbol.get("children", []):
             self._process_symbol(client, file_path, child, pipeline)
 
-    def _create_process_from_symbol(
+    def _create_process_from_signature(
         self,
         name: str,
+        signature: str,
         docstring: str,
-        param_docs: dict[str, str],
         file_path: str,
         line: int,
-        symbol: dict[str, Any],
     ) -> Process | None:
-        """Create a Process from an LSP symbol."""
+        """Create a Process by parsing the LSP signature."""
         process = Process(
             name=name,
-            docstring=docstring,
+            docstring=docstring,  # Actual Groovydoc documentation
             file=file_path,
             line=line,
         )
 
-        # Extract inputs and outputs from children
-        for child in symbol.get("children", []):
-            child_name = child.get("name", "")
-            child_kind = child.get("kind", 0)
-
-            if "input" in child_name.lower() or child_kind == SymbolKind.PROPERTY:
-                inp = ProcessInput(
-                    name=child_name,
-                    type="val",
-                    description=param_docs.get(child_name, ""),
+        # Use the nf_parser to extract inputs/outputs from the signature
+        # The signature is in the format:
+        # process NAME {
+        #   input:
+        #   tuple val(meta), path(reads)
+        #
+        #   output:
+        #   tuple val(meta), path("*.html"), emit: html
+        # }
+        parsed = parse_process_hover(f"```nextflow\n{signature}\n```")
+        if parsed:
+            for inp in parsed.inputs:
+                process.inputs.append(
+                    ProcessInput(name=inp.name, type=inp.type, qualifier=inp.qualifier)
                 )
-                process.inputs.append(inp)
-            elif "output" in child_name.lower():
-                out = ProcessOutput(
-                    name=child_name,
-                    type="path",
-                    description=param_docs.get(child_name, ""),
-                )
-                process.outputs.append(out)
+            for out in parsed.outputs:
+                process.outputs.append(ProcessOutput(name=out.name, type=out.type, emit=out.emit))
 
         return process
 
-    def _create_workflow_from_symbol(
+    def _create_workflow_from_signature(
         self,
         name: str,
+        signature: str,
         docstring: str,
-        param_docs: dict[str, str],
         file_path: str,
         line: int,
-        symbol: dict[str, Any],
     ) -> Workflow | None:
-        """Create a Workflow from an LSP symbol."""
+        """Create a Workflow by parsing the LSP signature."""
         workflow = Workflow(
             name=name,
-            docstring=docstring,
+            docstring=docstring,  # Actual Groovydoc documentation
             file=file_path,
             line=line,
         )
 
-        # Extract take/emit and calls from children
-        for child in symbol.get("children", []):
-            child_name = child.get("name", "")
-
-            if "take" in child_name.lower():
-                inp = WorkflowInput(
-                    name=child_name,
-                    description=param_docs.get(child_name, ""),
-                )
-                workflow.inputs.append(inp)
-            elif "emit" in child_name.lower():
-                out = WorkflowOutput(
-                    name=child_name,
-                    description=param_docs.get(child_name, ""),
-                )
-                workflow.outputs.append(out)
+        # Use the nf_parser to extract takes/emits from the signature
+        parsed = parse_workflow_hover(f"```nextflow\n{signature}\n```")
+        if parsed:
+            for take_name in parsed.takes:
+                # Parse "name: Type" format if present
+                if ":" in take_name:
+                    n, t = take_name.split(":", 1)
+                    workflow.inputs.append(WorkflowInput(name=n.strip(), type=t.strip()))
+                else:
+                    workflow.inputs.append(WorkflowInput(name=take_name))
+            for emit_name in parsed.emits:
+                # Parse "name: Type" format if present
+                if ":" in emit_name:
+                    n, t = emit_name.split(":", 1)
+                    workflow.outputs.append(WorkflowOutput(name=n.strip(), type=t.strip()))
+                else:
+                    workflow.outputs.append(WorkflowOutput(name=emit_name))
 
         return workflow
 
-    def _create_function_from_symbol(
+    def _create_function_from_signature(
         self,
         name: str,
+        signature: str,
         docstring: str,
         param_docs: dict[str, str],
         file_path: str,
         line: int,
-        symbol: dict[str, Any],
     ) -> Function | None:
-        """Create a Function from an LSP symbol."""
+        """Create a Function by parsing the LSP signature."""
         function = Function(
             name=name,
             docstring=docstring,
@@ -519,13 +518,60 @@ class PipelineExtractor:
             return_description=param_docs.get("_return", ""),
         )
 
-        # Extract parameters from children
-        for child in symbol.get("children", []):
-            child_name = child.get("name", "")
-            param = FunctionParam(
-                name=child_name,
-                description=param_docs.get(child_name, ""),
-            )
-            function.params.append(param)
+        # Parse function signature: def name(param1: Type, param2: Type) -> ReturnType
+        # or: def name(param1, param2)
+        match = re.search(r"def\s+\w+\s*\(([^)]*)\)", signature)
+        if match:
+            params_str = match.group(1)
+            if params_str.strip():
+                for param_part in params_str.split(","):
+                    param_part = param_part.strip()
+                    if ":" in param_part:
+                        n, type_str = param_part.split(":", 1)
+                        n = n.strip()
+                        function.params.append(
+                            FunctionParam(
+                                name=n,
+                                type=type_str.strip(),
+                                description=param_docs.get(n, ""),
+                            )
+                        )
+                    else:
+                        n = param_part.strip()
+                        function.params.append(
+                            FunctionParam(
+                                name=n,
+                                description=param_docs.get(n, ""),
+                            )
+                        )
 
         return function
+
+        # Parse: def name(param1: Type, param2: Type) -> ReturnType
+        # or: def name(param1, param2)
+        match = re.search(r"def\s+\w+\s*\(([^)]*)\)", signature)
+        if match:
+            params_str = match.group(1)
+            if params_str.strip():
+                for param_part in params_str.split(","):
+                    param_part = param_part.strip()
+                    if ":" in param_part:
+                        name, type_str = param_part.split(":", 1)
+                        name = name.strip()
+                        params.append(
+                            FunctionParam(
+                                name=name,
+                                type=type_str.strip(),
+                                description=param_docs.get(name, ""),
+                            )
+                        )
+                    else:
+                        name = param_part.strip()
+                        params.append(
+                            FunctionParam(
+                                name=name,
+                                description=param_docs.get(name, ""),
+                            )
+                        )
+
+        return params

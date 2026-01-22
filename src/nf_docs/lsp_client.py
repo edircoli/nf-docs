@@ -788,19 +788,30 @@ class SymbolKind:
     TYPE_PARAMETER = 26
 
 
-def parse_hover_content(hover: dict[str, Any] | None) -> tuple[str, dict[str, str]]:
+def parse_hover_content(hover: dict[str, Any] | None) -> tuple[str, str, dict[str, str]]:
     """
-    Parse hover content to extract docstring and param descriptions.
+    Parse hover content from the Nextflow LSP.
+
+    The Nextflow LSP returns hover content in markdown format:
+    ```nextflow
+    <signature - process/workflow definition with inputs/outputs>
+    ```
+
+    ---
+
+    <documentation - Groovydoc comment if present>
 
     Args:
         hover: Hover response from LSP
 
     Returns:
-        Tuple of (main_docstring, param_descriptions)
-        where param_descriptions is a dict mapping param names to descriptions
+        Tuple of (signature, docstring, param_descriptions)
+        - signature: The code signature block
+        - docstring: The documentation text (Groovydoc)
+        - param_descriptions: dict mapping param names to descriptions
     """
     if not hover or "contents" not in hover:
-        return "", {}
+        return "", "", {}
 
     contents = hover["contents"]
 
@@ -815,47 +826,62 @@ def parse_hover_content(hover: dict[str, Any] | None) -> tuple[str, dict[str, st
             item.get("value", item) if isinstance(item, dict) else str(item) for item in contents
         )
     else:
-        return "", {}
+        return "", "", {}
 
-    # Parse Javadoc-style comments
+    # Split on horizontal rule to separate signature from documentation
+    parts = re.split(r"\n---\n", text, maxsplit=1)
+
+    signature = ""
     docstring = ""
     params: dict[str, str] = {}
 
-    lines = text.split("\n")
-    current_section = "description"
-    current_param = ""
+    # Extract signature from first part (code block)
+    if parts:
+        first_part = parts[0]
+        # Extract content from code fence
+        code_match = re.search(r"```(?:nextflow|groovy)?\s*\n?(.*?)```", first_part, re.DOTALL)
+        if code_match:
+            signature = code_match.group(1).strip()
 
-    for line in lines:
-        line = line.strip()
+    # Extract documentation from second part (after ---)
+    if len(parts) > 1:
+        doc_part = parts[1].strip()
+        # Parse Javadoc-style tags in documentation
+        lines = doc_part.split("\n")
+        current_section = "description"
+        current_param = ""
+        doc_lines = []
 
-        # Skip code fence markers
-        if line.startswith("```"):
-            continue
+        for line in lines:
+            line_stripped = line.strip()
 
-        # Check for @param tag
-        param_match = re.match(r"@param\s+(\w+)\s*(.*)", line)
-        if param_match:
-            current_section = "param"
-            current_param = param_match.group(1)
-            params[current_param] = param_match.group(2).strip()
-            continue
+            # Skip code fence markers
+            if line_stripped.startswith("```"):
+                continue
 
-        # Check for @return tag
-        return_match = re.match(r"@returns?\s*(.*)", line)
-        if return_match:
-            current_section = "return"
-            params["_return"] = return_match.group(1).strip()
-            continue
+            # Check for @param tag
+            param_match = re.match(r"@param\s+(\w+)\s*(.*)", line_stripped)
+            if param_match:
+                current_section = "param"
+                current_param = param_match.group(1)
+                params[current_param] = param_match.group(2).strip()
+                continue
 
-        # Handle continuation lines
-        if current_section == "description":
-            if line and not line.startswith("@"):
-                if docstring:
-                    docstring += " " + line
-                else:
-                    docstring = line
-        elif current_section == "param" and current_param:
-            if line and not line.startswith("@"):
-                params[current_param] += " " + line
+            # Check for @return tag
+            return_match = re.match(r"@returns?\s*(.*)", line_stripped)
+            if return_match:
+                current_section = "return"
+                params["_return"] = return_match.group(1).strip()
+                continue
 
-    return docstring.strip(), params
+            # Handle continuation lines
+            if current_section == "description":
+                if line_stripped and not line_stripped.startswith("@"):
+                    doc_lines.append(line_stripped)
+            elif current_section == "param" and current_param:
+                if line_stripped and not line_stripped.startswith("@"):
+                    params[current_param] += " " + line_stripped
+
+        docstring = " ".join(doc_lines).strip()
+
+    return signature, docstring, params
