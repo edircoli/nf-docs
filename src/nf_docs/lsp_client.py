@@ -15,12 +15,20 @@ import re
 import subprocess
 import sys
 import threading
+import time
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
 from urllib.request import urlretrieve
 
 import httpx
+
+from nf_docs.progress import (
+    ExtractionPhase,
+    ProgressCallbackType,
+    ProgressUpdate,
+    null_progress,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +66,7 @@ class LSPClient:
         server_jar: str | Path | None = None,
         java_path: str = "java",
         auto_download: bool = True,
+        progress_callback: ProgressCallbackType | None = None,
     ):
         """
         Initialize the LSP client.
@@ -67,16 +76,23 @@ class LSPClient:
             server_jar: Path to the language server JAR (optional, will auto-download)
             java_path: Path to Java executable
             auto_download: Whether to auto-download the language server if not found
+            progress_callback: Optional callback for progress updates
         """
         self.workspace_path = Path(workspace_path).resolve()
         self.java_path = java_path
         self.auto_download = auto_download
+        self._progress = progress_callback or null_progress
         self._process: subprocess.Popen | None = None
         self._request_id = 0
         self._response_lock = threading.Lock()
         self._responses: dict[int, Any] = {}
         self._reader_thread: threading.Thread | None = None
         self._running = False
+
+        # Track progress notifications from the LSP
+        self._progress_lock = threading.Lock()
+        self._active_progress: dict[str, dict[str, Any]] = {}  # token -> progress info
+        self._indexing_complete = threading.Event()
 
         # Find or download language server
         if server_jar:
@@ -169,6 +185,13 @@ class LSPClient:
         if self._process is not None:
             return
 
+        self._progress(
+            ProgressUpdate(
+                phase=ExtractionPhase.LSP_STARTING,
+                message="Starting language server...",
+            )
+        )
+
         # Check Java is available
         try:
             subprocess.run(
@@ -226,15 +249,102 @@ class LSPClient:
                     content = self._process.stdout.read(content_length)
                     message = json.loads(content.decode("utf-8"))
 
-                    # Handle response
-                    if "id" in message:
+                    # Handle response (has id, no method)
+                    if "id" in message and "method" not in message:
                         with self._response_lock:
                             self._responses[message["id"]] = message
+
+                    # Handle notifications from server
+                    elif "method" in message:
+                        self._handle_notification(message)
 
             except Exception as e:
                 logger.debug(f"Error reading response: {e}")
                 if not self._running:
                     break
+
+    def _handle_notification(self, message: dict[str, Any]) -> None:
+        """Handle a notification from the language server."""
+        method = message.get("method", "")
+        params = message.get("params", {})
+
+        if method == "window/workDoneProgress/create":
+            # Server is creating a progress token
+            token = params.get("token")
+            if token:
+                with self._progress_lock:
+                    self._active_progress[token] = {"title": "", "message": "", "percentage": None}
+                logger.debug(f"Progress created: {token}")
+
+        elif method == "$/progress":
+            # Progress update
+            token = params.get("token")
+            value = params.get("value", {})
+            kind = value.get("kind")
+
+            with self._progress_lock:
+                if kind == "begin":
+                    title = value.get("title", "")
+                    self._active_progress[token] = {
+                        "title": title,
+                        "message": value.get("message", ""),
+                        "percentage": value.get("percentage"),
+                    }
+                    logger.debug(f"Progress begin [{token}]: {title}")
+
+                elif kind == "report":
+                    if token in self._active_progress:
+                        self._active_progress[token]["message"] = value.get("message", "")
+                        self._active_progress[token]["percentage"] = value.get("percentage")
+
+                    # Report progress to callback
+                    message_text = value.get("message", "")
+                    percentage = value.get("percentage")
+
+                    # Parse message for current/total
+                    # Format: "Indexing: 1 / 60 files" or "Initializing workspace: rnavar (1 / 1)"
+                    current = None
+                    total = None
+                    if message_text and "/" in message_text:
+                        try:
+                            # Find the pattern "N / M" in the message
+                            import re
+
+                            match = re.search(r"(\d+)\s*/\s*(\d+)", message_text)
+                            if match:
+                                current = int(match.group(1))
+                                total = int(match.group(2))
+                        except (ValueError, IndexError):
+                            pass
+
+                    # Only show indexing progress for the indexing token
+                    if token and token.startswith("indexing-") and current is not None:
+                        self._progress(
+                            ProgressUpdate(
+                                phase=ExtractionPhase.LSP_INDEXING,
+                                message="Indexing workspace...",
+                                current=current,
+                                total=total,
+                                detail=f"{current}/{total} files",
+                            )
+                        )
+                    logger.debug(f"Progress [{token}]: {percentage}% - {message_text}")
+
+                elif kind == "end":
+                    if token in self._active_progress:
+                        del self._active_progress[token]
+                    logger.debug(f"Progress end [{token}]")
+
+                    # Check if this was the indexing progress (token is "indexing-<hash>")
+                    if token and token.startswith("indexing-"):
+                        self._indexing_complete.set()
+
+        elif method == "textDocument/publishDiagnostics":
+            # Ignore diagnostics for now
+            pass
+
+        else:
+            logger.debug(f"Unhandled notification: {method}")
 
     def _send_request(self, method: str, params: dict | None = None) -> Any:
         """Send a request to the language server and wait for response."""
@@ -299,6 +409,13 @@ class LSPClient:
 
     def _initialize(self) -> None:
         """Initialize the language server with workspace information."""
+        self._progress(
+            ProgressUpdate(
+                phase=ExtractionPhase.LSP_INITIALIZING,
+                message="Initializing language server...",
+            )
+        )
+
         workspace_uri = self._get_workspace_uri()
 
         init_params = {
@@ -336,48 +453,157 @@ class LSPClient:
         # Send initialized notification
         self._send_notification("initialized", {})
 
-        # Send configuration
+        # Send configuration to trigger workspace initialization.
+        # The LSP only initializes workspaces when didChangeConfiguration is received
+        # AND the configuration differs from defaults in specific fields.
+        # We set excludePatterns to a non-empty list to trigger initialization.
         self._send_notification(
             "workspace/didChangeConfiguration",
             {
                 "settings": {
                     "nextflow": {
                         "files": {
-                            "exclude": []
+                            "exclude": [".git", ".nf-test", "work"]  # Non-empty to trigger init
                         },
-                        "formatting": {
-                            "harshilAlignment": False
-                        },
-                        "java": {
-                            "home": ""
-                        },
-                        "suppressFutureWarnings": False
+                        "formatting": {"harshilAlignment": False},
+                        "java": {"home": ""},
+                        "suppressFutureWarnings": False,
                     }
                 }
             },
         )
 
-        # Give the server time to index the workspace
-        import time
+        # The Nextflow LSP indexes workspace files asynchronously.
+        # The indexing is only triggered when files are opened via didOpen,
+        # and requires two debounce cycles (2+ seconds) to complete the
+        # initial workspace scan.
+        #
+        # We trigger the indexing by opening the main entry file, then
+        # wait for the indexing to complete via progress notifications
+        # or by polling workspace/symbol.
+        self._trigger_and_wait_for_indexing()
 
-        time.sleep(3)
         logger.info("Language server initialized")
+
+    def _trigger_and_wait_for_indexing(
+        self, timeout: float = 300.0, poll_interval: float = 1.0
+    ) -> None:
+        """
+        Trigger workspace indexing and wait for it to complete.
+
+        The Nextflow LSP only scans workspace files when:
+        1. An update is triggered (via didOpen/didChange/didClose)
+        2. There are no pending file changes (uris is empty)
+
+        Since the LSP uses a 1-second debounce, we need to:
+        1. Open a file to trigger the first update
+        2. Wait for the debounce + processing
+        3. Wait for a second update cycle where uris is empty
+
+        The LSP sends $/progress notifications with token "indexing-<hash>"
+        during the workspace scan, which can take a while for large projects.
+
+        Args:
+            timeout: Maximum time to wait in seconds
+            poll_interval: Time between polls in seconds
+        """
+        start = time.time()
+        logger.debug("Triggering workspace indexing...")
+
+        self._progress(
+            ProgressUpdate(
+                phase=ExtractionPhase.LSP_INDEXING,
+                message="Triggering workspace indexing...",
+            )
+        )
+
+        # Find a .nf file to open to trigger the update
+        nf_files = list(self.workspace_path.rglob("*.nf"))
+        if nf_files:
+            # Prefer main.nf if it exists
+            trigger_file = None
+            for f in nf_files:
+                if f.name == "main.nf":
+                    trigger_file = f
+                    break
+            if not trigger_file:
+                trigger_file = nf_files[0]
+
+            logger.debug(f"Opening {trigger_file} to trigger indexing")
+            self.open_document(trigger_file)
+
+            # Close it immediately - we just want to trigger the update
+            self.close_document(trigger_file)
+
+        # Wait for the debounce cycles (1s debounce + processing time)
+        # The first update processes the open/close, the second does workspace scan
+        logger.debug("Waiting for debounce cycles...")
+        time.sleep(3.0)
+
+        self._progress(
+            ProgressUpdate(
+                phase=ExtractionPhase.LSP_INDEXING,
+                message="Indexing workspace...",
+            )
+        )
+
+        # Now poll until we get symbols or indexing completes
+        last_symbol_count = 0
+        stable_polls = 0
+
+        while time.time() - start < timeout:
+            # Check if indexing progress completed
+            if self._indexing_complete.is_set():
+                logger.debug("Workspace indexing complete (via progress notification)")
+                # Give a moment for final processing
+                time.sleep(0.5)
+                return
+
+            # Poll workspace/symbol as a fallback
+            try:
+                symbols = self._send_request("workspace/symbol", {"query": ""})
+                symbol_count = len(symbols) if symbols else 0
+
+                if symbol_count > 0:
+                    if symbol_count == last_symbol_count:
+                        stable_polls += 1
+                        if stable_polls >= 3:
+                            logger.debug(f"Workspace indexed: {symbol_count} symbols (stable)")
+                            self._progress(
+                                ProgressUpdate(
+                                    phase=ExtractionPhase.LSP_INDEXING,
+                                    message="Workspace indexed",
+                                    detail=f"Found {symbol_count} symbols",
+                                )
+                            )
+                            return
+                    else:
+                        stable_polls = 0
+                        last_symbol_count = symbol_count
+                        logger.debug(f"Indexing in progress: {symbol_count} symbols so far")
+
+            except Exception as e:
+                logger.debug(f"Workspace symbol query failed: {e}")
+
+            time.sleep(poll_interval)
+
+        logger.warning(
+            f"Workspace indexing timed out after {timeout}s. Symbol extraction may be incomplete."
+        )
 
     def stop(self) -> None:
         """Stop the language server process."""
         if self._process is None:
             return
 
-        self._running = False
+        self._progress(
+            ProgressUpdate(
+                phase=ExtractionPhase.LSP_STOPPING,
+                message="Stopping language server...",
+            )
+        )
 
-        # Check for any stderr output
-        if self._process.stderr:
-            try:
-                stderr = self._process.stderr.read()
-                if stderr:
-                    logger.debug(f"LSP stderr: {stderr.decode('utf-8', errors='replace')}")
-            except Exception:
-                pass
+        self._running = False
 
         try:
             self._send_request("shutdown")
@@ -391,6 +617,15 @@ class LSPClient:
         except subprocess.TimeoutExpired:
             self._process.kill()
             self._process.wait()
+
+        # Check for any stderr output (non-blocking, process is now dead)
+        if self._process.stderr:
+            try:
+                stderr = self._process.stderr.read()
+                if stderr:
+                    logger.debug(f"LSP stderr: {stderr.decode('utf-8', errors='replace')}")
+            except Exception:
+                pass
 
         self._process = None
         logger.info("Language server stopped")

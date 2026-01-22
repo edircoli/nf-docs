@@ -29,6 +29,12 @@ from nf_docs.models import (
     WorkflowInput,
     WorkflowOutput,
 )
+from nf_docs.progress import (
+    ExtractionPhase,
+    ProgressCallbackType,
+    ProgressUpdate,
+    null_progress,
+)
 from nf_docs.schema_parser import find_schema_file, parse_schema
 
 logger = logging.getLogger(__name__)
@@ -54,6 +60,7 @@ class PipelineExtractor:
         language_server_jar: str | Path | None = None,
         nextflow_path: str = "nextflow",
         use_cache: bool = True,
+        progress_callback: ProgressCallbackType | None = None,
     ):
         """
         Initialize the extractor.
@@ -63,11 +70,13 @@ class PipelineExtractor:
             language_server_jar: Path to the language server JAR (optional)
             nextflow_path: Path to the Nextflow executable
             use_cache: Whether to use caching for extraction results
+            progress_callback: Optional callback for progress updates
         """
         self.workspace_path = Path(workspace_path).resolve()
         self.language_server_jar = language_server_jar
         self.nextflow_path = nextflow_path
         self.cache = PipelineCache() if use_cache else None
+        self._progress = progress_callback or null_progress
 
     def extract(self) -> Pipeline:
         """
@@ -78,10 +87,29 @@ class PipelineExtractor:
         """
         logger.info(f"Extracting documentation from: {self.workspace_path}")
 
+        self._progress(
+            ProgressUpdate(
+                phase=ExtractionPhase.STARTING,
+                message="Starting extraction...",
+            )
+        )
+
         # Check cache first
         if self.cache:
+            self._progress(
+                ProgressUpdate(
+                    phase=ExtractionPhase.CHECKING_CACHE,
+                    message="Checking cache...",
+                )
+            )
             cached = self.cache.get(self.workspace_path)
             if cached:
+                self._progress(
+                    ProgressUpdate(
+                        phase=ExtractionPhase.COMPLETE,
+                        message="Loaded from cache",
+                    )
+                )
                 return cached
 
         pipeline = Pipeline()
@@ -89,6 +117,13 @@ class PipelineExtractor:
         # Extract from schema (has highest priority for inputs and metadata)
         schema_file = find_schema_file(self.workspace_path)
         if schema_file:
+            self._progress(
+                ProgressUpdate(
+                    phase=ExtractionPhase.PARSING_SCHEMA,
+                    message="Parsing schema...",
+                    detail=str(schema_file.name),
+                )
+            )
             logger.info(f"Found schema file: {schema_file}")
             try:
                 schema_metadata, schema_inputs = parse_schema(schema_file)
@@ -98,6 +133,12 @@ class PipelineExtractor:
                 logger.warning(f"Failed to parse schema: {e}")
 
         # Extract from config
+        self._progress(
+            ProgressUpdate(
+                phase=ExtractionPhase.PARSING_CONFIG,
+                message="Parsing config...",
+            )
+        )
         try:
             config_metadata, config_params = parse_config(self.workspace_path, self.nextflow_path)
             # Merge metadata (schema takes priority)
@@ -109,6 +150,12 @@ class PipelineExtractor:
             logger.warning(f"Failed to parse config: {e}")
 
         # Extract from README
+        self._progress(
+            ProgressUpdate(
+                phase=ExtractionPhase.PARSING_README,
+                message="Parsing README...",
+            )
+        )
         readme_description = self._extract_readme_description()
         if readme_description and not pipeline.metadata.description:
             pipeline.metadata.description = readme_description
@@ -120,6 +167,13 @@ class PipelineExtractor:
         if not pipeline.metadata.name:
             pipeline.metadata.name = self.workspace_path.name
 
+        self._progress(
+            ProgressUpdate(
+                phase=ExtractionPhase.FINALIZING,
+                message="Finalizing...",
+            )
+        )
+
         logger.info(
             f"Extraction complete: {len(pipeline.workflows)} workflows, "
             f"{len(pipeline.processes)} processes, {len(pipeline.functions)} functions"
@@ -128,6 +182,14 @@ class PipelineExtractor:
         # Store in cache
         if self.cache:
             self.cache.set(self.workspace_path, pipeline)
+
+        self._progress(
+            ProgressUpdate(
+                phase=ExtractionPhase.COMPLETE,
+                message="Extraction complete",
+                detail=f"{len(pipeline.workflows)} workflows, {len(pipeline.processes)} processes, {len(pipeline.functions)} functions",
+            )
+        )
 
         return pipeline
 
@@ -212,16 +274,24 @@ class PipelineExtractor:
     def _extract_from_lsp(self, pipeline: Pipeline) -> None:
         """Extract processes, workflows, and functions using the Language Server."""
         # Find all Nextflow files
+        self._progress(
+            ProgressUpdate(
+                phase=ExtractionPhase.LSP_SCANNING_FILES,
+                message="Scanning for Nextflow files...",
+            )
+        )
         nf_files = list(self.workspace_path.rglob("*.nf"))
         if not nf_files:
             logger.warning("No .nf files found in workspace")
             return
 
         logger.info(f"Found {len(nf_files)} Nextflow files")
+        # Don't show file count yet - LSP needs to start and index first
 
         with LSPClient(
             self.workspace_path,
             server_jar=self.language_server_jar,
+            progress_callback=self._progress,
         ) as client:
             # Try workspace symbols first to see what the LSP knows about
             workspace_symbols = client.get_workspace_symbols("")
@@ -229,7 +299,17 @@ class PipelineExtractor:
             if workspace_symbols:
                 logger.debug(f"First few: {workspace_symbols[:3]}")
 
-            for nf_file in nf_files:
+            for i, nf_file in enumerate(nf_files):
+                relative_path = nf_file.relative_to(self.workspace_path)
+                self._progress(
+                    ProgressUpdate(
+                        phase=ExtractionPhase.LSP_EXTRACTING_SYMBOLS,
+                        message="Extracting symbols...",
+                        current=i + 1,
+                        total=len(nf_files),
+                        detail=str(relative_path),
+                    )
+                )
                 try:
                     self._extract_file_symbols(client, nf_file, pipeline)
                 except Exception as e:
@@ -254,6 +334,39 @@ class PipelineExtractor:
         finally:
             client.close_document(file_path)
 
+    def _parse_symbol_name(self, raw_name: str) -> tuple[str, str]:
+        """
+        Parse a symbol name from the Nextflow LSP.
+
+        The Nextflow LSP returns symbol names with type prefixes like:
+        - "process FASTQC"
+        - "workflow PIPELINE"
+        - "workflow <entry>" (for entry workflow)
+        - "function myFunc"
+        - "enum MyEnum"
+
+        Args:
+            raw_name: The raw symbol name from the LSP
+
+        Returns:
+            Tuple of (symbol_type, clean_name) where symbol_type is one of
+            "process", "workflow", "function", "enum", or "unknown"
+        """
+        # Known prefixes from the Nextflow LSP
+        prefixes = ["process ", "workflow ", "function ", "enum "]
+
+        for prefix in prefixes:
+            if raw_name.startswith(prefix):
+                symbol_type = prefix.strip()
+                clean_name = raw_name[len(prefix) :]
+                # Handle special entry workflow syntax: "workflow <entry>"
+                if clean_name == "<entry>":
+                    clean_name = ""
+                return symbol_type, clean_name
+
+        # No prefix found - return as unknown
+        return "unknown", raw_name
+
     def _process_symbol(
         self,
         client: LSPClient,
@@ -262,10 +375,13 @@ class PipelineExtractor:
         pipeline: Pipeline,
     ) -> None:
         """Process a document symbol and add to pipeline."""
-        name = symbol.get("name", "")
-        kind = symbol.get("kind", 0)
+        raw_name = symbol.get("name", "")
+        kind = symbol.get("kind")  # May be None for Nextflow symbols
         range_info = symbol.get("range", {})
         selection_range = symbol.get("selectionRange", range_info)
+
+        # Parse the symbol name to extract type and clean name
+        symbol_type, name = self._parse_symbol_name(raw_name)
 
         # Get the line and character for hover
         start = selection_range.get("start", {})
@@ -278,28 +394,25 @@ class PipelineExtractor:
         hover = client.get_hover(file_path, line, character)
         docstring, param_docs = parse_hover_content(hover)
 
-        # Determine what kind of symbol this is
-        if kind == SymbolKind.METHOD or "process" in name.lower():
-            # This might be a process
+        # Determine what kind of symbol this is based on parsed type or LSP kind
+        if symbol_type == "process" or kind == SymbolKind.METHOD:
             process = self._create_process_from_symbol(
                 name, docstring, param_docs, relative_path, line + 1, symbol
             )
             if process and not any(p.name == process.name for p in pipeline.processes):
                 pipeline.processes.append(process)
 
-        elif kind == SymbolKind.CLASS:
-            # This might be a workflow
+        elif symbol_type == "workflow" or kind == SymbolKind.CLASS:
             workflow = self._create_workflow_from_symbol(
                 name, docstring, param_docs, relative_path, line + 1, symbol
             )
             if workflow and not any(w.name == workflow.name for w in pipeline.workflows):
-                # Check if this is the entry workflow
-                if name.lower() in ("main", "entry", ""):
+                # Entry workflow has empty name (parsed from "<entry>")
+                if name == "" or name.lower() in ("main", "entry"):
                     workflow.is_entry = True
                 pipeline.workflows.append(workflow)
 
-        elif kind == SymbolKind.FUNCTION:
-            # This is a function
+        elif symbol_type == "function" or kind == SymbolKind.FUNCTION:
             function = self._create_function_from_symbol(
                 name, docstring, param_docs, relative_path, line + 1, symbol
             )

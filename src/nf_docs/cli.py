@@ -12,14 +12,112 @@ from pathlib import Path
 import rich_click as click
 from rich.console import Console
 from rich.logging import RichHandler
-from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.progress import (
+    BarColumn,
+    MofNCompleteColumn,
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+)
 
 from nf_docs import __version__
 from nf_docs.extractor import ExtractionError, PipelineExtractor
 from nf_docs.lsp_client import LSPError
+from nf_docs.progress import ProgressUpdate
 from nf_docs.renderers import get_renderer
 
 console = Console()
+
+
+class ExtractionProgressDisplay:
+    """
+    Manages the rich progress display for extraction.
+
+    Creates appropriate progress bars based on the extraction phase.
+    """
+
+    def __init__(self, console: Console):
+        self.console = console
+        self._progress: Progress | None = None
+        self._task_id: int | None = None
+        self._in_bar_mode: bool = False
+
+    def __enter__(self) -> "ExtractionProgressDisplay":
+        self._create_spinner_progress()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self._progress:
+            self._progress.__exit__(exc_type, exc_val, exc_tb)
+
+    def _create_spinner_progress(self) -> None:
+        """Create a spinner-based progress display for indeterminate phases."""
+        if self._progress:
+            self._progress.__exit__(None, None, None)
+
+        self._progress = Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            TextColumn("[dim]{task.fields[detail]}[/dim]"),
+            console=self.console,
+            transient=True,
+        )
+        self._progress.__enter__()
+        self._task_id = self._progress.add_task("Starting...", detail="")
+        self._in_bar_mode = False
+
+    def _create_bar_progress(self) -> None:
+        """Create a bar-based progress display for determinate phases."""
+        if self._progress:
+            self._progress.__exit__(None, None, None)
+
+        self._progress = Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            MofNCompleteColumn(),
+            TextColumn("[dim]{task.fields[detail]}[/dim]"),
+            console=self.console,
+            transient=True,
+        )
+        self._progress.__enter__()
+        self._task_id = self._progress.add_task("Processing...", total=100, detail="")
+        self._in_bar_mode = True
+
+    def update(self, progress_update: ProgressUpdate) -> None:
+        """Update the progress display based on the extraction progress."""
+        if not self._progress or self._task_id is None:
+            return
+
+        message = progress_update.message
+        detail = progress_update.detail or ""
+
+        if progress_update.has_progress:
+            # Need bar mode for numeric progress
+            if not self._in_bar_mode:
+                self._create_bar_progress()
+
+            self._progress.update(
+                self._task_id,
+                description=message,
+                completed=progress_update.current,
+                total=progress_update.total,
+                detail=detail,
+            )
+        else:
+            # Need spinner mode for indeterminate progress
+            if self._in_bar_mode:
+                self._create_spinner_progress()
+
+            self._progress.update(
+                self._task_id,
+                description=message,
+                detail=detail,
+            )
+
+    def callback(self, update: ProgressUpdate) -> None:
+        """Callback function for the extractor."""
+        self.update(update)
 
 
 def setup_logging(verbose: bool) -> None:
@@ -144,27 +242,26 @@ def generate(
             console.print(f"[yellow]Cleared {cleared} cache file(s)[/yellow]")
 
     try:
+        with ExtractionProgressDisplay(console) as progress_display:
+            # Extract documentation
+            extractor = PipelineExtractor(
+                workspace_path=pipeline_path,
+                language_server_jar=language_server,
+                nextflow_path=nextflow_path,
+                use_cache=not no_cache,
+                progress_callback=progress_display.callback,
+            )
+
+            pipeline = extractor.extract()
+
+        # Rendering phase (quick, use simple spinner)
         with Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
             console=console,
             transient=True,
         ) as progress:
-            # Extract documentation
-            task = progress.add_task("Extracting documentation...", total=None)
-
-            extractor = PipelineExtractor(
-                workspace_path=pipeline_path,
-                language_server_jar=language_server,
-                nextflow_path=nextflow_path,
-                use_cache=not no_cache,
-            )
-
-            pipeline = extractor.extract()
-            progress.update(task, description="Extraction complete")
-
-            # Get renderer
-            progress.update(task, description=f"Rendering {output_format}...")
+            task = progress.add_task(f"Rendering {output_format}...", total=None)
             renderer_class = get_renderer(output_format)
             renderer = renderer_class(title=title)
 
@@ -173,11 +270,7 @@ def generate(
                 # Write to file/directory
                 if output_format in ("markdown", "html"):
                     created_files = renderer.render_to_directory(pipeline, output_path)
-                    console.print(
-                        f"[green]Created {len(created_files)} files in {output_path}[/green]"
-                    )
-                    for f in created_files:
-                        console.print(f"  - {f.relative_to(output_path)}")
+                    progress.update(task, description="Rendering complete")
                 else:
                     # JSON/YAML - write to single file
                     # If output_path is a directory, use default filename
@@ -188,21 +281,33 @@ def generate(
                         output_file = output_path
                         output_file.parent.mkdir(parents=True, exist_ok=True)
                     renderer.render_to_file(pipeline, output_file)
-                    console.print(f"[green]Written to {output_file}[/green]")
+                    progress.update(task, description="Rendering complete")
             else:
                 # Write to stdout or default directory
                 if output_format in ("json", "yaml"):
-                    # Write to stdout
-                    click.echo(renderer.render(pipeline))
+                    pass  # Will write to stdout after progress
                 else:
                     # Write to default directory
                     default_dir = pipeline_path / "docs"
                     created_files = renderer.render_to_directory(pipeline, default_dir)
-                    console.print(
-                        f"[green]Created {len(created_files)} files in {default_dir}[/green]"
-                    )
-                    for f in created_files:
-                        console.print(f"  - {f.relative_to(default_dir)}")
+                    progress.update(task, description="Rendering complete")
+
+        # Output results after progress display is gone
+        if output_path:
+            if output_format in ("markdown", "html"):
+                console.print(f"[green]Created {len(created_files)} files in {output_path}[/green]")
+                for f in created_files:
+                    console.print(f"  - {f.relative_to(output_path)}")
+            else:
+                console.print(f"[green]Written to {output_file}[/green]")
+        else:
+            if output_format in ("json", "yaml"):
+                # Write to stdout
+                click.echo(renderer.render(pipeline))
+            else:
+                console.print(f"[green]Created {len(created_files)} files in {default_dir}[/green]")
+                for f in created_files:
+                    console.print(f"  - {f.relative_to(default_dir)}")
 
     except LSPError as e:
         console.print(f"[red]Language Server error: {e}[/red]")
@@ -237,20 +342,13 @@ def inspect(pipeline_path: Path, verbose: bool) -> None:
     setup_logging(verbose)
 
     try:
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            console=console,
-            transient=True,
-        ) as progress:
-            task = progress.add_task("Inspecting pipeline...", total=None)
-
+        with ExtractionProgressDisplay(console) as progress_display:
             extractor = PipelineExtractor(
                 workspace_path=pipeline_path,
+                progress_callback=progress_display.callback,
             )
 
             pipeline = extractor.extract()
-            progress.update(task, description="Inspection complete")
 
         # Display summary
         console.print()

@@ -98,3 +98,63 @@ class TestInputGroups:
             groups = pipeline.get_input_groups()
             assert "Input/output options" in groups
             assert "Reference genome options" in groups
+
+
+class TestSymbolNameParsing:
+    """Test parsing of Nextflow LSP symbol names."""
+
+    def test_parse_process_name(self, tmp_path: Path):
+        """Test parsing process symbol names."""
+        extractor = PipelineExtractor(workspace_path=tmp_path)
+
+        symbol_type, name = extractor._parse_symbol_name("process FASTQC")
+        assert symbol_type == "process"
+        assert name == "FASTQC"
+
+    def test_parse_workflow_name(self, tmp_path: Path):
+        """Test parsing workflow symbol names."""
+        extractor = PipelineExtractor(workspace_path=tmp_path)
+
+        symbol_type, name = extractor._parse_symbol_name("workflow PIPELINE")
+        assert symbol_type == "workflow"
+        assert name == "PIPELINE"
+
+    def test_parse_entry_workflow(self, tmp_path: Path):
+        """Test parsing entry workflow symbol name."""
+        extractor = PipelineExtractor(workspace_path=tmp_path)
+
+        symbol_type, name = extractor._parse_symbol_name("workflow <entry>")
+        assert symbol_type == "workflow"
+        assert name == ""
+
+    def test_parse_function_name(self, tmp_path: Path):
+        """Test parsing function symbol names."""
+        extractor = PipelineExtractor(workspace_path=tmp_path)
+
+        symbol_type, name = extractor._parse_symbol_name("function myHelper")
+        assert symbol_type == "function"
+        assert name == "myHelper"
+
+    def test_parse_enum_name(self, tmp_path: Path):
+        """Test parsing enum symbol names."""
+        extractor = PipelineExtractor(workspace_path=tmp_path)
+
+        symbol_type, name = extractor._parse_symbol_name("enum MyEnum")
+        assert symbol_type == "enum"
+        assert name == "MyEnum"
+
+    def test_parse_unknown_name(self, tmp_path: Path):
+        """Test parsing names without known prefix."""
+        extractor = PipelineExtractor(workspace_path=tmp_path)
+
+        symbol_type, name = extractor._parse_symbol_name("something_else")
+        assert symbol_type == "unknown"
+        assert name == "something_else"
+
+    def test_parse_empty_name(self, tmp_path: Path):
+        """Test parsing empty name."""
+        extractor = PipelineExtractor(workspace_path=tmp_path)
+
+        symbol_type, name = extractor._parse_symbol_name("")
+        assert symbol_type == "unknown"
+        assert name == ""
