@@ -134,7 +134,7 @@ workflow {
 @pytest.fixture
 def sample_config_file() -> str:
     """Sample nextflow.config content."""
-    return '''
+    return """
 manifest {
     name = 'test-pipeline'
     version = '1.0.0'
@@ -156,11 +156,13 @@ process {
     cpus = 2
     memory = '4.GB'
 }
-'''
+"""
 
 
 @pytest.fixture
-def sample_pipeline(tmp_path: Path, sample_schema: dict, sample_nextflow_file: str, sample_config_file: str) -> Path:
+def sample_pipeline(
+    tmp_path: Path, sample_schema: dict, sample_nextflow_file: str, sample_config_file: str
+) -> Path:
     """Create a sample pipeline directory."""
     # Create schema
     schema_file = tmp_path / "nextflow_schema.json"

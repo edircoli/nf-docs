@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from nf_docs.config_parser import parse_config
-from nf_docs.lsp_client import LSPClient, LSPError, SymbolKind, parse_hover_content
+from nf_docs.lsp_client import LSPClient, SymbolKind, parse_hover_content
 from nf_docs.models import (
     Function,
     FunctionParam,
@@ -89,9 +89,7 @@ class PipelineExtractor:
 
         # Extract from config
         try:
-            config_metadata, config_params = parse_config(
-                self.workspace_path, self.nextflow_path
-            )
+            config_metadata, config_params = parse_config(self.workspace_path, self.nextflow_path)
             # Merge metadata (schema takes priority)
             pipeline.metadata = self._merge_metadata(pipeline.metadata, config_metadata)
             # Filter config params to exclude those already in inputs
@@ -217,9 +215,7 @@ class PipelineExtractor:
                 except Exception as e:
                     logger.warning(f"Failed to extract from {nf_file}: {e}")
 
-    def _extract_file_symbols(
-        self, client: LSPClient, file_path: Path, pipeline: Pipeline
-    ) -> None:
+    def _extract_file_symbols(self, client: LSPClient, file_path: Path, pipeline: Pipeline) -> None:
         """Extract symbols from a single file using LSP."""
         relative_path = file_path.relative_to(self.workspace_path)
         logger.debug(f"Processing: {relative_path}")

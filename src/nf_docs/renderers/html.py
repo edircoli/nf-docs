@@ -6,14 +6,13 @@ Outputs pipeline documentation as a self-contained static HTML site.
 
 from pathlib import Path
 
-from jinja2 import Environment, BaseLoader
+from jinja2 import BaseLoader, Environment
 
 from nf_docs.models import Pipeline
 from nf_docs.renderers.base import BaseRenderer
 
-
 # Self-contained HTML template
-HTML_TEMPLATE = '''<!DOCTYPE html>
+HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -687,7 +686,7 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
         }
     </script>
 </body>
-</html>'''
+</html>"""
 
 
 class HTMLRenderer(BaseRenderer):

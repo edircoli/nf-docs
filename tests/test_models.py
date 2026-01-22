@@ -1,7 +1,5 @@
 """Tests for data models."""
 
-import pytest
-
 from nf_docs.models import (
     ConfigParam,
     Function,

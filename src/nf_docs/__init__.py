@@ -9,14 +9,14 @@ documentation similar to Sphinx for Python or Javadoc.
 __version__ = "0.1.0"
 
 from nf_docs.models import (
+    ConfigParam,
+    Function,
     Pipeline,
     PipelineInput,
-    ConfigParam,
-    Workflow,
     Process,
-    Function,
     ProcessInput,
     ProcessOutput,
+    Workflow,
     WorkflowInput,
     WorkflowOutput,
 )

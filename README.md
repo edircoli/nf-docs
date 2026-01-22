@@ -2,7 +2,9 @@
 
 Generate API documentation for Nextflow pipelines by querying the Nextflow Language Server.
 
-`nf-docs` extracts docstrings and type information from Nextflow pipelines, producing structured documentation similar to Sphinx for Python or Javadoc. It combines information from multiple sources:
+`nf-docs` extracts docstrings and type information from Nextflow pipelines, producing structured
+documentation similar to Sphinx for Python or Javadoc. It combines information from multiple
+sources:
 
 - **Language Server**: Processes, workflows, functions with their docstrings
 - **nextflow_schema.json**: Typed input parameters with descriptions
@@ -12,11 +14,14 @@ Generate API documentation for Nextflow pipelines by querying the Nextflow Langu
 ## Installation
 
 ```bash
-# Install from source
+# Install with uv (recommended)
+uv pip install -e .
+
+# Or with pip
 pip install -e .
 
-# Or with development dependencies
-pip install -e ".[dev]"
+# With development dependencies
+uv pip install -e ".[dev]"
 ```
 
 ### Requirements
@@ -51,14 +56,14 @@ nf-docs generate PIPELINE_PATH [OPTIONS]
 
 **Options:**
 
-| Option | Description |
-|--------|-------------|
-| `--format`, `-f` | Output format: `json`, `yaml`, `markdown`, `html` (default: markdown) |
-| `--output`, `-o` | Output file or directory |
-| `--title`, `-t` | Custom title for documentation |
-| `--language-server` | Path to the Language Server JAR |
-| `--nextflow-path` | Path to Nextflow executable (default: nextflow) |
-| `--verbose`, `-v` | Enable verbose output |
+| Option              | Description                                                           |
+| ------------------- | --------------------------------------------------------------------- |
+| `--format`, `-f`    | Output format: `json`, `yaml`, `markdown`, `html` (default: markdown) |
+| `--output`, `-o`    | Output file or directory                                              |
+| `--title`, `-t`     | Custom title for documentation                                        |
+| `--language-server` | Path to the Language Server JAR                                       |
+| `--nextflow-path`   | Path to Nextflow executable (default: nextflow)                       |
+| `--verbose`, `-v`   | Enable verbose output                                                 |
 
 **Examples:**
 
@@ -172,7 +177,8 @@ process BWA_MEM {
 
 ## Schema Support
 
-`nf-docs` parses `nextflow_schema.json` files following the [nf-schema specification](https://nextflow-io.github.io/nf-schema/latest/nextflow_schema/):
+`nf-docs` parses `nextflow_schema.json` files following the
+[nf-schema specification](https://nextflow-io.github.io/nf-schema/latest/nextflow_schema/):
 
 ```json
 {
@@ -213,7 +219,14 @@ process BWA_MEM {
 
 ```bash
 # Install dev dependencies
-pip install -e ".[dev]"
+uv pip install -e ".[dev]"
+
+# Install prek (https://prek.j178.dev/)
+# macOS/Linux:
+curl -fsSL https://prek.j178.dev/install.sh | sh
+
+# Set up pre-commit hooks
+prek install
 
 # Run tests
 pytest
@@ -221,24 +234,27 @@ pytest
 # Run tests with coverage
 pytest --cov=nf_docs
 
-# Format code
-black src/ tests/
-
-# Lint
-ruff check src/ tests/
-
-# Type check
-mypy src/
+# Run all checks manually
+prek run --all-files
 ```
+
+### Pre-commit hooks
+
+This project uses [prek](https://prek.j178.dev/) to run checks before each commit:
+
+- **ruff** - Linting and formatting for Python
+- **ty** - Type checking
+- **prettier** - Formatting for Markdown and YAML
 
 ## Test Pipelines
 
 For testing, try these pipelines:
 
-- [nextflow-io/rnaseq-nf](https://github.com/nextflow-io/rnaseq-nf) - Simple, good for initial testing
+- [nextflow-io/rnaseq-nf](https://github.com/nextflow-io/rnaseq-nf) - Simple, good for initial
+  testing
 - [nf-core/fetchngs](https://github.com/nf-core/fetchngs) - Small but real
 - [nf-core/rnaseq](https://github.com/nf-core/rnaseq) - Complex, good stress test
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+Apache 2.0 License - see [LICENSE](LICENSE) for details.

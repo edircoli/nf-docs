@@ -3,15 +3,13 @@
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
-
 from nf_docs.extractor import PipelineExtractor
 
 
 class TestPipelineExtractor:
     def test_extract_schema_inputs(self, sample_pipeline: Path):
         """Test that schema inputs are extracted."""
-        with patch.object(PipelineExtractor, '_extract_from_lsp'):
+        with patch.object(PipelineExtractor, "_extract_from_lsp"):
             extractor = PipelineExtractor(workspace_path=sample_pipeline)
             pipeline = extractor.extract()
 
@@ -23,7 +21,7 @@ class TestPipelineExtractor:
 
     def test_extract_metadata_from_schema(self, sample_pipeline: Path):
         """Test that metadata is extracted from schema."""
-        with patch.object(PipelineExtractor, '_extract_from_lsp'):
+        with patch.object(PipelineExtractor, "_extract_from_lsp"):
             extractor = PipelineExtractor(workspace_path=sample_pipeline)
             pipeline = extractor.extract()
 
@@ -32,7 +30,7 @@ class TestPipelineExtractor:
 
     def test_extract_readme_description(self, sample_pipeline: Path):
         """Test that README description is extracted when schema has none."""
-        with patch.object(PipelineExtractor, '_extract_from_lsp'):
+        with patch.object(PipelineExtractor, "_extract_from_lsp"):
             extractor = PipelineExtractor(workspace_path=sample_pipeline)
             pipeline = extractor.extract()
 
@@ -46,7 +44,7 @@ class TestReadmeExtraction:
         readme = tmp_path / "README.md"
         readme.write_text("# My Pipeline\n\nThis is a test pipeline.\n")
 
-        with patch.object(PipelineExtractor, '_extract_from_lsp'):
+        with patch.object(PipelineExtractor, "_extract_from_lsp"):
             extractor = PipelineExtractor(workspace_path=tmp_path)
             pipeline = extractor.extract()
 
@@ -62,7 +60,7 @@ class TestReadmeExtraction:
             "This is the actual description.\n"
         )
 
-        with patch.object(PipelineExtractor, '_extract_from_lsp'):
+        with patch.object(PipelineExtractor, "_extract_from_lsp"):
             extractor = PipelineExtractor(workspace_path=tmp_path)
             pipeline = extractor.extract()
 
@@ -71,7 +69,7 @@ class TestReadmeExtraction:
 
     def test_no_readme(self, tmp_path: Path):
         """Test extraction when no README exists."""
-        with patch.object(PipelineExtractor, '_extract_from_lsp'):
+        with patch.object(PipelineExtractor, "_extract_from_lsp"):
             extractor = PipelineExtractor(workspace_path=tmp_path)
             pipeline = extractor.extract()
 
@@ -82,7 +80,7 @@ class TestReadmeExtraction:
 class TestMetadataMerging:
     def test_schema_takes_priority(self, sample_pipeline: Path):
         """Test that schema metadata takes priority over config."""
-        with patch.object(PipelineExtractor, '_extract_from_lsp'):
+        with patch.object(PipelineExtractor, "_extract_from_lsp"):
             extractor = PipelineExtractor(workspace_path=sample_pipeline)
             pipeline = extractor.extract()
 
@@ -93,7 +91,7 @@ class TestMetadataMerging:
 class TestInputGroups:
     def test_inputs_grouped_correctly(self, sample_pipeline: Path):
         """Test that inputs are grouped by their schema group."""
-        with patch.object(PipelineExtractor, '_extract_from_lsp'):
+        with patch.object(PipelineExtractor, "_extract_from_lsp"):
             extractor = PipelineExtractor(workspace_path=sample_pipeline)
             pipeline = extractor.extract()
 

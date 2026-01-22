@@ -411,9 +411,7 @@ class LSPClient:
         )
         return result or []
 
-    def get_hover(
-        self, file_path: str | Path, line: int, character: int
-    ) -> dict[str, Any] | None:
+    def get_hover(self, file_path: str | Path, line: int, character: int) -> dict[str, Any] | None:
         """
         Get hover information at a specific position.
 

@@ -1,6 +1,5 @@
 """Tests for schema parser."""
 
-import json
 from pathlib import Path
 
 import pytest

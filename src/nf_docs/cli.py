@@ -9,7 +9,7 @@ import logging
 import sys
 from pathlib import Path
 
-import click
+import rich_click as click
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.progress import Progress, SpinnerColumn, TextColumn
@@ -151,7 +151,9 @@ def generate(
                 # Write to file/directory
                 if output_format in ("markdown", "html"):
                     created_files = renderer.render_to_directory(pipeline, output_path)
-                    console.print(f"[green]Created {len(created_files)} files in {output_path}[/green]")
+                    console.print(
+                        f"[green]Created {len(created_files)} files in {output_path}[/green]"
+                    )
                     for f in created_files:
                         console.print(f"  - {f.relative_to(output_path)}")
                 else:
@@ -168,7 +170,9 @@ def generate(
                     # Write to default directory
                     default_dir = pipeline_path / "docs"
                     created_files = renderer.render_to_directory(pipeline, default_dir)
-                    console.print(f"[green]Created {len(created_files)} files in {default_dir}[/green]")
+                    console.print(
+                        f"[green]Created {len(created_files)} files in {default_dir}[/green]"
+                    )
                     for f in created_files:
                         console.print(f"  - {f.relative_to(default_dir)}")
 
@@ -252,7 +256,7 @@ def inspect(pipeline_path: Path, verbose: bool) -> None:
         # Show config
         config_file = pipeline_path / "nextflow.config"
         if config_file.exists():
-            console.print(f"  Config file: nextflow.config")
+            console.print("  Config file: nextflow.config")
         else:
             console.print("  Config file: [yellow]not found[/yellow]")
 

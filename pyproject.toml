@@ -1,13 +1,9 @@
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
 [project]
 name = "nf-docs"
 version = "0.1.0"
 description = "Generate API documentation for Nextflow pipelines by querying the Nextflow Language Server"
 readme = "README.md"
-license = "MIT"
+license = "Apache-2.0"
 requires-python = ">=3.9"
 authors = [
     { name = "nf-docs contributors" }
@@ -24,7 +20,6 @@ classifiers = [
     "Environment :: Console",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
@@ -35,7 +30,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 dependencies = [
-    "click>=8.0",
+    "rich-click>=1.7",
     "pyyaml>=6.0",
     "jinja2>=3.0",
     "rich>=13.0",
@@ -47,27 +42,18 @@ dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
     "pytest-asyncio>=0.21",
-    "black>=23.0",
     "ruff>=0.1",
-    "mypy>=1.0",
-    "types-PyYAML",
+    "ty>=0.0.1a0",
 ]
 
 [project.scripts]
 nf-docs = "nf_docs.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/nextflow-io/nf-docs"
-Documentation = "https://github.com/nextflow-io/nf-docs#readme"
-Repository = "https://github.com/nextflow-io/nf-docs"
-Issues = "https://github.com/nextflow-io/nf-docs/issues"
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/nf_docs"]
-
-[tool.black]
-line-length = 100
-target-version = ["py39", "py310", "py311", "py312"]
+Homepage = "https://github.com/ewels/nf-docs"
+Documentation = "https://github.com/ewels/nf-docs#readme"
+Repository = "https://github.com/ewels/nf-docs"
+Issues = "https://github.com/ewels/nf-docs/issues"
 
 [tool.ruff]
 line-length = 100
@@ -84,14 +70,11 @@ select = [
     "UP",  # pyupgrade
 ]
 ignore = [
-    "E501",  # line too long (handled by black)
+    "E501",  # line too long (handled by ruff format)
 ]
 
-[tool.mypy]
-python_version = "3.9"
-warn_return_any = true
-warn_unused_configs = true
-ignore_missing_imports = true
+[tool.ruff.format]
+docstring-code-format = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
