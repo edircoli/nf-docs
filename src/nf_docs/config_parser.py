@@ -12,6 +12,8 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+from rich.text import Text
+
 from nf_docs.models import ConfigParam, PipelineMetadata
 
 logger = logging.getLogger(__name__)
@@ -63,7 +65,10 @@ def parse_config(
         )
 
         if result.returncode != 0:
-            logger.warning(f"nextflow config failed: {result.stderr}")
+            error_msg = result.stderr.strip() or result.stdout.strip() or "(no error output)"
+            # Strip ANSI escape codes for cleaner logging
+            error_msg = Text.from_ansi(error_msg).plain
+            logger.warning(f"nextflow config failed: {error_msg}")
             # Try to parse what we can from direct file reading
             return _parse_config_file_directly(workspace)
 

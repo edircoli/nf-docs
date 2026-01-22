@@ -90,6 +90,16 @@ def main() -> None:
     help="Path to the Nextflow executable (default: nextflow)",
 )
 @click.option(
+    "--no-cache",
+    is_flag=True,
+    help="Disable cache, always re-extract from pipeline files",
+)
+@click.option(
+    "--clear-cache",
+    is_flag=True,
+    help="Clear cache for this pipeline before running",
+)
+@click.option(
     "--verbose",
     "-v",
     is_flag=True,
@@ -102,6 +112,8 @@ def generate(
     title: str | None,
     language_server: Path | None,
     nextflow_path: str,
+    no_cache: bool,
+    clear_cache: bool,
     verbose: bool,
 ) -> None:
     """
@@ -122,6 +134,15 @@ def generate(
     """
     setup_logging(verbose)
 
+    # Handle cache clearing
+    if clear_cache:
+        from nf_docs.cache import PipelineCache
+
+        cache = PipelineCache()
+        cleared = cache.clear(pipeline_path)
+        if cleared:
+            console.print(f"[yellow]Cleared {cleared} cache file(s)[/yellow]")
+
     try:
         with Progress(
             SpinnerColumn(),
@@ -136,6 +157,7 @@ def generate(
                 workspace_path=pipeline_path,
                 language_server_jar=language_server,
                 nextflow_path=nextflow_path,
+                use_cache=not no_cache,
             )
 
             pipeline = extractor.extract()
@@ -158,9 +180,15 @@ def generate(
                         console.print(f"  - {f.relative_to(output_path)}")
                 else:
                     # JSON/YAML - write to single file
-                    output_path.parent.mkdir(parents=True, exist_ok=True)
-                    renderer.render_to_file(pipeline, output_path)
-                    console.print(f"[green]Written to {output_path}[/green]")
+                    # If output_path is a directory, use default filename
+                    if output_path.is_dir():
+                        ext = "json" if output_format == "json" else "yaml"
+                        output_file = output_path / f"pipeline.{ext}"
+                    else:
+                        output_file = output_path
+                        output_file.parent.mkdir(parents=True, exist_ok=True)
+                    renderer.render_to_file(pipeline, output_file)
+                    console.print(f"[green]Written to {output_file}[/green]")
             else:
                 # Write to stdout or default directory
                 if output_format in ("json", "yaml"):
@@ -312,12 +340,12 @@ def download_lsp(force: bool) -> None:
     """
     Download the Nextflow Language Server.
 
-    This downloads the language server JAR file to ~/.nf-docs/
-    for use with the generate command.
+    This downloads the language server JAR file to the XDG data directory
+    (~/.local/share/nf-docs/ by default) for use with the generate command.
     """
-    from nf_docs.lsp_client import LANGUAGE_SERVER_JAR
+    from nf_docs.lsp_client import LANGUAGE_SERVER_JAR, get_xdg_data_home
 
-    target_dir = Path.home() / ".nf-docs"
+    target_dir = get_xdg_data_home() / "nf-docs"
     target_file = target_dir / LANGUAGE_SERVER_JAR
 
     if target_file.exists() and not force:
@@ -350,6 +378,52 @@ def download_lsp(force: bool) -> None:
     except Exception as e:
         console.print(f"[red]Download failed: {e}[/red]")
         sys.exit(1)
+
+
+@main.command()
+@click.option(
+    "--all",
+    "-a",
+    "clear_all",
+    is_flag=True,
+    help="Clear all cached pipelines",
+)
+@click.argument(
+    "pipeline_path",
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+    required=False,
+)
+def clear_cache(clear_all: bool, pipeline_path: Path | None) -> None:
+    """
+    Clear the extraction cache.
+
+    By default, clears cache for a specific pipeline. Use --all to clear
+    all cached pipelines.
+
+    Examples:
+
+        # Clear cache for a specific pipeline
+        nf-docs clear-cache /path/to/pipeline
+
+        # Clear all cached pipelines
+        nf-docs clear-cache --all
+    """
+    from nf_docs.cache import PipelineCache
+
+    cache = PipelineCache()
+
+    if clear_all:
+        cleared = cache.clear()
+        console.print(f"[green]Cleared {cleared} cache file(s)[/green]")
+    elif pipeline_path:
+        cleared = cache.clear(pipeline_path)
+        if cleared:
+            console.print(f"[green]Cleared {cleared} cache file(s) for {pipeline_path}[/green]")
+        else:
+            console.print(f"[yellow]No cache found for {pipeline_path}[/yellow]")
+    else:
+        console.print("[red]Please specify a pipeline path or use --all[/red]")
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

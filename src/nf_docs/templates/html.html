@@ -1,0 +1,696 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ title }}</title>
+    <style>
+      /* Tailwind CSS will be injected here */
+    </style>
+  </head>
+  <body class="font-sans leading-relaxed text-slate-800 bg-slate-50">
+    <div class="flex min-h-screen">
+      <!-- Sidebar -->
+      <aside
+        class="w-72 bg-white border-r border-slate-200 p-8 pr-4 fixed h-screen overflow-y-auto hidden md:block"
+      >
+        <h1 class="text-xl font-bold text-primary mb-2">
+          {{ pipeline.metadata.name or 'Pipeline' }}
+        </h1>
+        {% if pipeline.metadata.version %}
+        <div class="text-sm text-slate-500 mb-6">v{{ pipeline.metadata.version }}</div>
+        {% endif %}
+
+        <nav>
+          <ul class="space-y-4">
+            <li>
+              <a
+                href="#overview"
+                class="nav-link block px-2 py-1 rounded transition-colors hover:bg-slate-100 text-slate-800 bg-primary text-white"
+                data-section="overview"
+                >Overview</a
+              >
+            </li>
+
+            {% if pipeline.inputs %}
+            <li>
+              <div
+                class="font-semibold text-xs uppercase tracking-wide text-slate-500 mb-2 px-2"
+              >
+                Inputs
+              </div>
+              <a
+                href="#inputs"
+                class="nav-link block px-2 py-1 rounded transition-colors hover:bg-slate-100 text-slate-800"
+                data-section="inputs"
+                >Parameters ({{ pipeline.inputs|length }})</a
+              >
+              <ul class="ml-4 mt-1 space-y-1 text-sm">
+                {% for group, items in input_groups.items() %}
+                <li>
+                  <a
+                    href="#inputs-{{ group|lower|replace(' ', '-') }}"
+                    class="nav-link block px-2 py-1 rounded transition-colors hover:bg-slate-100 text-slate-800"
+                    data-section="inputs"
+                    >{{ group }}</a
+                  >
+                </li>
+                {% endfor %}
+              </ul>
+            </li>
+            {% endif %} {% if pipeline.config_params %}
+            <li>
+              <a
+                href="#config"
+                class="nav-link block px-2 py-1 rounded transition-colors hover:bg-slate-100 text-slate-800"
+                data-section="config"
+                >Configuration ({{ pipeline.config_params|length }})</a
+              >
+            </li>
+            {% endif %} {% if pipeline.workflows %}
+            <li>
+              <div
+                class="font-semibold text-xs uppercase tracking-wide text-slate-500 mb-2 px-2"
+              >
+                Workflows
+              </div>
+              <a
+                href="#workflows"
+                class="nav-link block px-2 py-1 rounded transition-colors hover:bg-slate-100 text-slate-800"
+                data-section="workflows"
+                >All Workflows ({{ pipeline.workflows|length }})</a
+              >
+              <ul class="ml-4 mt-1 space-y-1 text-sm">
+                {% for wf in pipeline.workflows %}
+                <li>
+                  <a
+                    href="#workflow-{{ wf.name or 'entry' }}"
+                    class="nav-link block px-2 py-1 rounded transition-colors hover:bg-slate-100 text-slate-800"
+                    data-section="workflows"
+                    >{{ wf.name or '(entry)' }}</a
+                  >
+                </li>
+                {% endfor %}
+              </ul>
+            </li>
+            {% endif %} {% if pipeline.processes %}
+            <li>
+              <div
+                class="font-semibold text-xs uppercase tracking-wide text-slate-500 mb-2 px-2"
+              >
+                Processes
+              </div>
+              <a
+                href="#processes"
+                class="nav-link block px-2 py-1 rounded transition-colors hover:bg-slate-100 text-slate-800"
+                data-section="processes"
+                >All Processes ({{ pipeline.processes|length }})</a
+              >
+              <ul class="ml-4 mt-1 space-y-1 text-sm">
+                {% for proc in pipeline.processes[:10] %}
+                <li>
+                  <a
+                    href="#process-{{ proc.name }}"
+                    class="nav-link block px-2 py-1 rounded transition-colors hover:bg-slate-100 text-slate-800"
+                    data-section="processes"
+                    >{{ proc.name }}</a
+                  >
+                </li>
+                {% endfor %} {% if pipeline.processes|length > 10 %}
+                <li class="px-2 py-1 text-slate-500 italic">
+                  ... and {{ pipeline.processes|length - 10 }} more
+                </li>
+                {% endif %}
+              </ul>
+            </li>
+            {% endif %} {% if pipeline.functions %}
+            <li>
+              <a
+                href="#functions"
+                class="nav-link block px-2 py-1 rounded transition-colors hover:bg-slate-100 text-slate-800"
+                data-section="functions"
+                >Functions ({{ pipeline.functions|length }})</a
+              >
+            </li>
+            {% endif %}
+          </ul>
+        </nav>
+      </aside>
+
+      <!-- Main content -->
+      <main class="md:ml-72 flex-1 p-4 md:p-8 lg:p-12 max-w-4xl">
+        <!-- Overview Section -->
+        <section id="overview" class="section">
+          <h1 class="text-3xl font-bold mb-4 text-slate-800">{{ title }}</h1>
+
+          {% if pipeline.metadata.description %}
+          <div class="mb-4 text-slate-600">{{ pipeline.metadata.description|markdown }}</div>
+          {% endif %}
+
+          <h2 class="text-2xl font-semibold mt-8 mb-4 pb-2 border-b border-slate-200">
+            Quick Stats
+          </h2>
+          <table class="w-full border-collapse mb-4">
+            <thead>
+              <tr>
+                <th class="text-left p-3 border-b border-slate-200 bg-slate-100 font-semibold">
+                  Item
+                </th>
+                <th class="text-left p-3 border-b border-slate-200 bg-slate-100 font-semibold">
+                  Count
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="hover:bg-slate-50">
+                <td class="p-3 border-b border-slate-200">Input Parameters</td>
+                <td class="p-3 border-b border-slate-200">{{ pipeline.inputs|length }}</td>
+              </tr>
+              {% if pipeline.config_params %}
+              <tr class="hover:bg-slate-50">
+                <td class="p-3 border-b border-slate-200">Config Parameters</td>
+                <td class="p-3 border-b border-slate-200">{{ pipeline.config_params|length }}</td>
+              </tr>
+              {% endif %}
+              <tr class="hover:bg-slate-50">
+                <td class="p-3 border-b border-slate-200">Workflows</td>
+                <td class="p-3 border-b border-slate-200">{{ pipeline.workflows|length }}</td>
+              </tr>
+              <tr class="hover:bg-slate-50">
+                <td class="p-3 border-b border-slate-200">Processes</td>
+                <td class="p-3 border-b border-slate-200">{{ pipeline.processes|length }}</td>
+              </tr>
+              {% if pipeline.functions %}
+              <tr class="hover:bg-slate-50">
+                <td class="p-3 border-b border-slate-200">Functions</td>
+                <td class="p-3 border-b border-slate-200">{{ pipeline.functions|length }}</td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
+
+          {% if pipeline.metadata.authors %}
+          <h2 class="text-2xl font-semibold mt-8 mb-4 pb-2 border-b border-slate-200">Authors</h2>
+          <ul class="list-disc list-inside mb-4">
+            {% for author in pipeline.metadata.authors %}
+            <li>{{ author }}</li>
+            {% endfor %}
+          </ul>
+          {% endif %} {% if pipeline.metadata.homepage or pipeline.metadata.repository %}
+          <h2 class="text-2xl font-semibold mt-8 mb-4 pb-2 border-b border-slate-200">Links</h2>
+          <ul class="list-disc list-inside mb-4">
+            {% if pipeline.metadata.homepage %}
+            <li>
+              Homepage:
+              <a
+                href="{{ pipeline.metadata.homepage }}"
+                target="_blank"
+                class="text-primary hover:underline"
+                >{{ pipeline.metadata.homepage }}</a
+              >
+            </li>
+            {% endif %} {% if pipeline.metadata.repository %}
+            <li>
+              Repository:
+              <a
+                href="{{ pipeline.metadata.repository }}"
+                target="_blank"
+                class="text-primary hover:underline"
+                >{{ pipeline.metadata.repository }}</a
+              >
+            </li>
+            {% endif %}
+          </ul>
+          {% endif %}
+        </section>
+
+        <!-- Inputs Section -->
+        <section id="inputs" class="section hidden">
+          <h1 class="text-3xl font-bold mb-4 text-slate-800">Pipeline Inputs</h1>
+          <p class="mb-4 text-slate-600">
+            This page documents all input parameters for the pipeline.
+          </p>
+
+          {% for group, items in input_groups.items() %}
+          <h2
+            id="inputs-{{ group|lower|replace(' ', '-') }}"
+            class="text-2xl font-semibold mt-8 mb-4 pb-2 border-b border-slate-200 group"
+          >
+            {{ group }}
+            <a
+              href="#inputs-{{ group|lower|replace(' ', '-') }}"
+              class="ml-2 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity no-underline hover:text-primary"
+              >¶</a
+            >
+          </h2>
+
+          {% for inp in items %}
+          <div
+            id="param-{{ inp.name }}"
+            class="mb-6 pb-6 border-b border-slate-200 last:border-b-0 group"
+          >
+            <div class="font-mono font-semibold text-lg">
+              --{{ inp.name }}
+              <a
+                href="#param-{{ inp.name }}"
+                class="ml-2 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity no-underline hover:text-primary"
+                >¶</a
+              >
+            </div>
+            <div class="flex flex-wrap gap-2 my-2">
+              <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                {{ inp.type }}
+              </span>
+              {% if inp.format %}
+              <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                {{ inp.format }}
+              </span>
+              {% endif %}
+              {% if inp.required %}
+              <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-600">
+                Required
+              </span>
+              {% else %}
+              <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-primary-light text-primary-dark">
+                Optional
+              </span>
+              {% endif %}
+            </div>
+            {% if inp.description %}
+            <div class="mb-2 text-slate-600">{{ inp.description|markdown }}</div>
+            {% endif %} {% if inp.help_text %}
+            <div class="bg-slate-100 p-3 rounded text-sm mt-2">{{ inp.help_text|markdown }}</div>
+            {% endif %} {% if inp.default is not none %}
+            <p class="mt-2">
+              <strong>Default:</strong>
+              <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
+                >{{ inp.default }}</code
+              >
+            </p>
+            {% endif %} {% if inp.enum %}
+            <p class="mt-2">
+              <strong>Allowed values:</strong>
+              {% for val in inp.enum %}
+              <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm">{{ val }}</code>
+              {% if not loop.last %}, {% endif %}
+              {% endfor %}
+            </p>
+            {% endif %}
+          </div>
+          {% endfor %} {% endfor %}
+        </section>
+
+        <!-- Config Section -->
+        {% if pipeline.config_params %}
+        <section id="config" class="section hidden">
+          <h1 class="text-3xl font-bold mb-4 text-slate-800">Configuration Parameters</h1>
+          <p class="mb-4 text-slate-600">
+            These are additional configuration parameters that are not primary pipeline inputs.
+          </p>
+
+          {% for param in pipeline.config_params %}
+          <div class="mb-6 pb-6 border-b border-slate-200 last:border-b-0">
+            <div class="font-mono font-semibold text-lg">{{ param.name }}</div>
+            <div class="flex flex-wrap gap-2 my-2">
+              <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                {{ param.type }}
+              </span>
+            </div>
+            {% if param.description %}
+            <div class="mb-2 text-slate-600">{{ param.description|markdown }}</div>
+            {% endif %} {% if param.default is not none %}
+            <p class="mt-2">
+              <strong>Default:</strong>
+              <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
+                >{{ param.default }}</code
+              >
+            </p>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </section>
+        {% endif %}
+
+        <!-- Workflows Section -->
+        {% if pipeline.workflows %}
+        <section id="workflows" class="section hidden">
+          <h1 class="text-3xl font-bold mb-4 text-slate-800">Workflows</h1>
+          <p class="mb-4 text-slate-600">This page documents all workflows in the pipeline.</p>
+
+          {% for wf in pipeline.workflows %}
+          <div
+            id="workflow-{{ wf.name or 'entry' }}"
+            class="bg-white border border-slate-200 rounded-lg p-4 mb-4 group"
+          >
+            <div class="flex items-center gap-2 mb-2">
+              <span class="font-semibold text-lg">{{ wf.name or '(entry)' }}</span>
+              {% if wf.is_entry %}
+              <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                Entry Point
+              </span>
+              {% endif %}
+              <a
+                href="#workflow-{{ wf.name or 'entry' }}"
+                class="text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity no-underline hover:text-primary"
+                >¶</a
+              >
+            </div>
+            {% if wf.file %}
+            <div class="text-sm text-slate-500 mb-2">{{ wf.file }}:{{ wf.line }}</div>
+            {% endif %} {% if wf.docstring %}
+            <div class="mb-4 text-slate-600">{{ wf.docstring|markdown }}</div>
+            {% endif %} {% if wf.inputs %}
+            <h3 class="text-lg font-semibold mt-4 mb-2">Inputs (take)</h3>
+            <table class="w-full border-collapse mb-4">
+              <thead>
+                <tr>
+                  <th class="text-left p-3 border-b border-slate-200 bg-slate-100 font-semibold">
+                    Name
+                  </th>
+                  <th class="text-left p-3 border-b border-slate-200 bg-slate-100 font-semibold">
+                    Description
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for inp in wf.inputs %}
+                <tr class="hover:bg-slate-50">
+                  <td class="p-3 border-b border-slate-200">
+                    <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
+                      >{{ inp.name }}</code
+                    >
+                  </td>
+                  <td class="p-3 border-b border-slate-200">{{ inp.description or '-' }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% endif %} {% if wf.outputs %}
+            <h3 class="text-lg font-semibold mt-4 mb-2">Outputs (emit)</h3>
+            <table class="w-full border-collapse mb-4">
+              <thead>
+                <tr>
+                  <th class="text-left p-3 border-b border-slate-200 bg-slate-100 font-semibold">
+                    Name
+                  </th>
+                  <th class="text-left p-3 border-b border-slate-200 bg-slate-100 font-semibold">
+                    Description
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for out in wf.outputs %}
+                <tr class="hover:bg-slate-50">
+                  <td class="p-3 border-b border-slate-200">
+                    <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
+                      >{{ out.name }}</code
+                    >
+                  </td>
+                  <td class="p-3 border-b border-slate-200">{{ out.description or '-' }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% endif %} {% if wf.calls %}
+            <h3 class="text-lg font-semibold mt-4 mb-2">Calls</h3>
+            <ul class="list-disc list-inside">
+              {% for call in wf.calls %}
+              <li>
+                <a href="#process-{{ call }}" class="text-primary hover:underline">
+                  <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
+                    >{{ call }}</code
+                  >
+                </a>
+              </li>
+              {% endfor %}
+            </ul>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </section>
+        {% endif %}
+
+        <!-- Processes Section -->
+        {% if pipeline.processes %}
+        <section id="processes" class="section hidden">
+          <h1 class="text-3xl font-bold mb-4 text-slate-800">Processes</h1>
+          <p class="mb-4 text-slate-600">This page documents all processes in the pipeline.</p>
+
+          {% for proc in pipeline.processes %}
+          <div
+            id="process-{{ proc.name }}"
+            class="bg-white border border-slate-200 rounded-lg p-4 mb-4 group"
+          >
+            <div class="flex items-center gap-2 mb-2">
+              <span class="font-semibold text-lg">{{ proc.name }}</span>
+              <a
+                href="#process-{{ proc.name }}"
+                class="text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity no-underline hover:text-primary"
+                >¶</a
+              >
+            </div>
+            {% if proc.file %}
+            <div class="text-sm text-slate-500 mb-2">{{ proc.file }}:{{ proc.line }}</div>
+            {% endif %} {% if proc.docstring %}
+            <div class="mb-4 text-slate-600">{{ proc.docstring|markdown }}</div>
+            {% endif %} {% if proc.inputs %}
+            <h3 class="text-lg font-semibold mt-4 mb-2">Inputs</h3>
+            <table class="w-full border-collapse mb-4">
+              <thead>
+                <tr>
+                  <th class="text-left p-3 border-b border-slate-200 bg-slate-100 font-semibold">
+                    Name
+                  </th>
+                  <th class="text-left p-3 border-b border-slate-200 bg-slate-100 font-semibold">
+                    Type
+                  </th>
+                  <th class="text-left p-3 border-b border-slate-200 bg-slate-100 font-semibold">
+                    Description
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for inp in proc.inputs %}
+                <tr class="hover:bg-slate-50">
+                  <td class="p-3 border-b border-slate-200">
+                    <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
+                      >{{ inp.name }}</code
+                    >
+                  </td>
+                  <td class="p-3 border-b border-slate-200">
+                    <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
+                      >{{ inp.type }}</code
+                    >
+                  </td>
+                  <td class="p-3 border-b border-slate-200">{{ inp.description or '-' }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% endif %} {% if proc.outputs %}
+            <h3 class="text-lg font-semibold mt-4 mb-2">Outputs</h3>
+            <table class="w-full border-collapse mb-4">
+              <thead>
+                <tr>
+                  <th class="text-left p-3 border-b border-slate-200 bg-slate-100 font-semibold">
+                    Name
+                  </th>
+                  <th class="text-left p-3 border-b border-slate-200 bg-slate-100 font-semibold">
+                    Type
+                  </th>
+                  <th class="text-left p-3 border-b border-slate-200 bg-slate-100 font-semibold">
+                    Emit
+                  </th>
+                  <th class="text-left p-3 border-b border-slate-200 bg-slate-100 font-semibold">
+                    Description
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for out in proc.outputs %}
+                <tr class="hover:bg-slate-50">
+                  <td class="p-3 border-b border-slate-200">
+                    <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
+                      >{{ out.name }}</code
+                    >
+                  </td>
+                  <td class="p-3 border-b border-slate-200">
+                    <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
+                      >{{ out.type }}</code
+                    >
+                  </td>
+                  <td class="p-3 border-b border-slate-200">
+                    {% if out.emit %}
+                    <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
+                      >{{ out.emit }}</code
+                    >
+                    {% else %}-{% endif %}
+                  </td>
+                  <td class="p-3 border-b border-slate-200">{{ out.description or '-' }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% endif %} {% if proc.directives %}
+            <h3 class="text-lg font-semibold mt-4 mb-2">Directives</h3>
+            <table class="w-full border-collapse mb-4">
+              <thead>
+                <tr>
+                  <th class="text-left p-3 border-b border-slate-200 bg-slate-100 font-semibold">
+                    Directive
+                  </th>
+                  <th class="text-left p-3 border-b border-slate-200 bg-slate-100 font-semibold">
+                    Value
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for name, value in proc.directives.items() %}
+                <tr class="hover:bg-slate-50">
+                  <td class="p-3 border-b border-slate-200">
+                    <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
+                      >{{ name }}</code
+                    >
+                  </td>
+                  <td class="p-3 border-b border-slate-200">
+                    <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
+                      >{{ value }}</code
+                    >
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </section>
+        {% endif %}
+
+        <!-- Functions Section -->
+        {% if pipeline.functions %}
+        <section id="functions" class="section hidden">
+          <h1 class="text-3xl font-bold mb-4 text-slate-800">Functions</h1>
+          <p class="mb-4 text-slate-600">
+            This page documents helper functions defined in the pipeline.
+          </p>
+
+          {% for func in pipeline.functions %}
+          <div
+            id="function-{{ func.name }}"
+            class="bg-white border border-slate-200 rounded-lg p-4 mb-4 group"
+          >
+            <div class="flex items-center gap-2 mb-2">
+              <span class="font-semibold text-lg">{{ func.name }}</span>
+              <a
+                href="#function-{{ func.name }}"
+                class="text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity no-underline hover:text-primary"
+                >¶</a
+              >
+            </div>
+            {% if func.file %}
+            <div class="text-sm text-slate-500 mb-2">{{ func.file }}:{{ func.line }}</div>
+            {% endif %}
+
+            <pre
+              class="bg-slate-800 text-slate-200 p-4 rounded-lg overflow-x-auto mb-4"
+            ><code>def {{ func.name }}({% for p in func.params %}{{ p.name }}{% if not loop.last %}, {% endif %}{% endfor %})</code></pre>
+
+            {% if func.docstring %}
+            <div class="mb-4 text-slate-600">{{ func.docstring|markdown }}</div>
+            {% endif %} {% if func.params %}
+            <h3 class="text-lg font-semibold mt-4 mb-2">Parameters</h3>
+            <table class="w-full border-collapse mb-4">
+              <thead>
+                <tr>
+                  <th class="text-left p-3 border-b border-slate-200 bg-slate-100 font-semibold">
+                    Name
+                  </th>
+                  <th class="text-left p-3 border-b border-slate-200 bg-slate-100 font-semibold">
+                    Description
+                  </th>
+                  <th class="text-left p-3 border-b border-slate-200 bg-slate-100 font-semibold">
+                    Default
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in func.params %}
+                <tr class="hover:bg-slate-50">
+                  <td class="p-3 border-b border-slate-200">
+                    <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
+                      >{{ p.name }}</code
+                    >
+                  </td>
+                  <td class="p-3 border-b border-slate-200">{{ p.description or '-' }}</td>
+                  <td class="p-3 border-b border-slate-200">
+                    {% if p.default is not none %}
+                    <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
+                      >{{ p.default }}</code
+                    >
+                    {% else %}-{% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% endif %} {% if func.return_description %}
+            <h3 class="text-lg font-semibold mt-4 mb-2">Returns</h3>
+            <p class="text-slate-600">{{ func.return_description }}</p>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </section>
+        {% endif %}
+      </main>
+    </div>
+
+    <script>
+      // Simple navigation
+      document.querySelectorAll(".nav-link").forEach((link) => {
+        link.addEventListener("click", (e) => {
+          e.preventDefault();
+
+          // Update active nav link styling
+          document.querySelectorAll(".nav-link").forEach((l) => {
+            l.classList.remove("bg-primary", "text-white");
+            l.classList.add("text-slate-800");
+          });
+          link.classList.add("bg-primary", "text-white");
+          link.classList.remove("text-slate-800");
+
+          // Show corresponding section
+          const sectionId = link.dataset.section;
+          document.querySelectorAll(".section").forEach((s) => s.classList.add("hidden"));
+          document.getElementById(sectionId).classList.remove("hidden");
+
+          // Scroll to anchor if present
+          const href = link.getAttribute("href");
+          if (href.startsWith("#") && href.length > 1) {
+            const target = document.querySelector(href);
+            if (target) {
+              setTimeout(() => target.scrollIntoView({ behavior: "smooth" }), 100);
+            }
+          } else {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }
+        });
+      });
+
+      // Handle direct hash navigation
+      if (window.location.hash) {
+        const hash = window.location.hash;
+        const target = document.querySelector(hash);
+        if (target) {
+          // Find which section contains this target
+          let section = target.closest(".section");
+          if (section) {
+            document.querySelectorAll(".section").forEach((s) => s.classList.add("hidden"));
+            section.classList.remove("hidden");
+            setTimeout(() => target.scrollIntoView(), 100);
+          }
+        }
+      }
+    </script>
+  </body>
+</html>

@@ -215,16 +215,16 @@ class TestMarkdownRenderer:
 
 class TestHTMLRenderer:
     def test_render(self, sample_pipeline: Pipeline):
-        renderer = HTMLRenderer()
+        renderer = HTMLRenderer(use_tailwind=False)
         output = renderer.render(sample_pipeline)
 
-        # Should be valid HTML
-        assert "<!DOCTYPE html>" in output
+        # Should be valid HTML (lowercase doctype is valid HTML5)
+        assert "<!doctype html>" in output.lower()
         assert "<html" in output
         assert "</html>" in output
 
     def test_render_contains_content(self, sample_pipeline: Pipeline):
-        renderer = HTMLRenderer()
+        renderer = HTMLRenderer(use_tailwind=False)
         output = renderer.render(sample_pipeline)
 
         # Check content is present
@@ -234,18 +234,18 @@ class TestHTMLRenderer:
         assert "--input" in output
 
     def test_render_contains_navigation(self, sample_pipeline: Pipeline):
-        renderer = HTMLRenderer()
+        renderer = HTMLRenderer(use_tailwind=False)
         output = renderer.render(sample_pipeline)
 
-        # Check navigation elements
-        assert "sidebar" in output
-        assert "nav" in output
+        # Check navigation elements (using Tailwind classes now)
+        assert "<aside" in output
+        assert "<nav" in output
         assert "Overview" in output
         assert "Inputs" in output
         assert "Processes" in output
 
     def test_render_self_contained(self, sample_pipeline: Pipeline):
-        renderer = HTMLRenderer()
+        renderer = HTMLRenderer(use_tailwind=False)
         output = renderer.render(sample_pipeline)
 
         # Should include inline CSS and JS
@@ -255,7 +255,7 @@ class TestHTMLRenderer:
         assert "</script>" in output
 
     def test_render_to_directory(self, sample_pipeline: Pipeline, tmp_path: Path):
-        renderer = HTMLRenderer()
+        renderer = HTMLRenderer(use_tailwind=False)
         files = renderer.render_to_directory(sample_pipeline, tmp_path)
 
         # Should create single HTML file
@@ -284,8 +284,8 @@ class TestRendererWithEmptyPipeline:
 
     def test_html_empty(self):
         pipeline = Pipeline()
-        renderer = HTMLRenderer()
+        renderer = HTMLRenderer(use_tailwind=False)
         output = renderer.render(pipeline)
 
-        # Should still produce valid HTML
-        assert "<!DOCTYPE html>" in output
+        # Should still produce valid HTML (lowercase doctype is valid HTML5)
+        assert "<!doctype html>" in output.lower()

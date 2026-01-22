@@ -24,6 +24,15 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
+
+def get_xdg_data_home() -> Path:
+    """Get the XDG data directory."""
+    xdg_data = os.environ.get("XDG_DATA_HOME")
+    if xdg_data:
+        return Path(xdg_data)
+    return Path.home() / ".local" / "share"
+
+
 # Language server download URL (GitHub releases)
 LANGUAGE_SERVER_REPO = "nextflow-io/language-server"
 LANGUAGE_SERVER_JAR = "language-server-all.jar"
@@ -79,9 +88,10 @@ class LSPClient:
 
     def _find_or_download_server(self) -> Path:
         """Find or download the language server JAR."""
-        # Check common locations
+        # XDG-compliant search paths
+        xdg_data_home = get_xdg_data_home()
         search_paths = [
-            Path.home() / ".nf-docs" / LANGUAGE_SERVER_JAR,
+            xdg_data_home / "nf-docs" / LANGUAGE_SERVER_JAR,
             Path.home() / ".local" / "share" / "nf-docs" / LANGUAGE_SERVER_JAR,
             Path("/usr/local/share/nf-docs") / LANGUAGE_SERVER_JAR,
         ]
@@ -97,8 +107,8 @@ class LSPClient:
                 "or enable auto-download."
             )
 
-        # Download to user directory
-        download_dir = Path.home() / ".nf-docs"
+        # Download to XDG data directory
+        download_dir = xdg_data_home / "nf-docs"
         download_dir.mkdir(parents=True, exist_ok=True)
         target_path = download_dir / LANGUAGE_SERVER_JAR
 
@@ -258,6 +268,7 @@ class LSPClient:
             with self._response_lock:
                 if request_id in self._responses:
                     response = self._responses.pop(request_id)
+                    logger.debug(f"Got response for {method}: {response}")
                     if "error" in response:
                         raise LSPError(
                             f"LSP error: {response['error'].get('message', 'Unknown error')}"
@@ -324,6 +335,32 @@ class LSPClient:
 
         # Send initialized notification
         self._send_notification("initialized", {})
+
+        # Send configuration
+        self._send_notification(
+            "workspace/didChangeConfiguration",
+            {
+                "settings": {
+                    "nextflow": {
+                        "files": {
+                            "exclude": []
+                        },
+                        "formatting": {
+                            "harshilAlignment": False
+                        },
+                        "java": {
+                            "home": ""
+                        },
+                        "suppressFutureWarnings": False
+                    }
+                }
+            },
+        )
+
+        # Give the server time to index the workspace
+        import time
+
+        time.sleep(3)
         logger.info("Language server initialized")
 
     def stop(self) -> None:
@@ -332,6 +369,15 @@ class LSPClient:
             return
 
         self._running = False
+
+        # Check for any stderr output
+        if self._process.stderr:
+            try:
+                stderr = self._process.stderr.read()
+                if stderr:
+                    logger.debug(f"LSP stderr: {stderr.decode('utf-8', errors='replace')}")
+            except Exception:
+                pass
 
         try:
             self._send_request("shutdown")
@@ -364,20 +410,26 @@ class LSPClient:
 
         This must be done before querying symbols or hover for a document.
         """
+        import time
+
         path = Path(file_path).resolve()
         content = path.read_text(encoding="utf-8")
 
+        uri = self._get_document_uri(path)
+        logger.debug(f"Opening document: {uri}")
         self._send_notification(
             "textDocument/didOpen",
             {
                 "textDocument": {
-                    "uri": self._get_document_uri(path),
+                    "uri": uri,
                     "languageId": "nextflow",
                     "version": 1,
                     "text": content,
                 }
             },
         )
+        # Give the server time to parse the document
+        time.sleep(0.1)
 
     def close_document(self, file_path: str | Path) -> None:
         """Notify the server that a document is closed."""
@@ -401,14 +453,17 @@ class LSPClient:
         - selectionRange: Location of the symbol name
         - children: Nested symbols
         """
+        uri = self._get_document_uri(file_path)
+        logger.debug(f"Requesting symbols for: {uri}")
         result = self._send_request(
             "textDocument/documentSymbol",
             {
                 "textDocument": {
-                    "uri": self._get_document_uri(file_path),
+                    "uri": uri,
                 }
             },
         )
+        logger.debug(f"Raw symbol response: {result}")
         return result or []
 
     def get_hover(self, file_path: str | Path, line: int, character: int) -> dict[str, Any] | None:

@@ -14,6 +14,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
+from nf_docs.cache import PipelineCache
 from nf_docs.config_parser import parse_config
 from nf_docs.lsp_client import LSPClient, SymbolKind, parse_hover_content
 from nf_docs.models import (
@@ -52,6 +53,7 @@ class PipelineExtractor:
         workspace_path: str | Path,
         language_server_jar: str | Path | None = None,
         nextflow_path: str = "nextflow",
+        use_cache: bool = True,
     ):
         """
         Initialize the extractor.
@@ -60,10 +62,12 @@ class PipelineExtractor:
             workspace_path: Path to the Nextflow pipeline workspace
             language_server_jar: Path to the language server JAR (optional)
             nextflow_path: Path to the Nextflow executable
+            use_cache: Whether to use caching for extraction results
         """
         self.workspace_path = Path(workspace_path).resolve()
         self.language_server_jar = language_server_jar
         self.nextflow_path = nextflow_path
+        self.cache = PipelineCache() if use_cache else None
 
     def extract(self) -> Pipeline:
         """
@@ -73,6 +77,12 @@ class PipelineExtractor:
             Complete Pipeline model with all extracted information
         """
         logger.info(f"Extracting documentation from: {self.workspace_path}")
+
+        # Check cache first
+        if self.cache:
+            cached = self.cache.get(self.workspace_path)
+            if cached:
+                return cached
 
         pipeline = Pipeline()
 
@@ -114,6 +124,10 @@ class PipelineExtractor:
             f"Extraction complete: {len(pipeline.workflows)} workflows, "
             f"{len(pipeline.processes)} processes, {len(pipeline.functions)} functions"
         )
+
+        # Store in cache
+        if self.cache:
+            self.cache.set(self.workspace_path, pipeline)
 
         return pipeline
 
@@ -209,6 +223,12 @@ class PipelineExtractor:
             self.workspace_path,
             server_jar=self.language_server_jar,
         ) as client:
+            # Try workspace symbols first to see what the LSP knows about
+            workspace_symbols = client.get_workspace_symbols("")
+            logger.debug(f"Workspace symbols: {len(workspace_symbols)}")
+            if workspace_symbols:
+                logger.debug(f"First few: {workspace_symbols[:3]}")
+
             for nf_file in nf_files:
                 try:
                     self._extract_file_symbols(client, nf_file, pipeline)
@@ -226,6 +246,7 @@ class PipelineExtractor:
         try:
             # Get document symbols
             symbols = client.get_document_symbols(file_path)
+            logger.debug(f"  Found {len(symbols)} symbols")
 
             for symbol in symbols:
                 self._process_symbol(client, file_path, symbol, pipeline)
