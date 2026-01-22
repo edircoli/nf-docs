@@ -10,9 +10,10 @@
   </head>
   <body class="font-sans leading-relaxed text-slate-800 bg-slate-50">
     <div class="flex min-h-screen">
-      <!-- Sidebar -->
+      <!-- Left Sidebar - Main Navigation -->
       <aside
-        class="w-72 bg-white border-r border-slate-200 p-8 pr-4 fixed h-screen overflow-y-auto hidden md:block"
+        id="left-nav"
+        class="w-56 bg-white border-r border-slate-200 p-6 fixed h-screen overflow-y-auto hidden md:block"
       >
         <h1 class="text-xl font-bold text-primary mb-2">
           {{ pipeline.metadata.name or 'Pipeline' }}
@@ -22,11 +23,11 @@
         {% endif %}
 
         <nav>
-          <ul class="space-y-4">
+          <ul class="space-y-1">
             <li>
               <a
                 href="#overview"
-                class="nav-link block px-2 py-1 rounded transition-colors hover:bg-slate-100 text-slate-800 bg-primary text-white"
+                class="nav-link block px-3 py-2 rounded transition-colors hover:bg-slate-100 text-slate-800 bg-primary text-white"
                 data-section="overview"
                 >Overview</a
               >
@@ -34,102 +35,55 @@
 
             {% if pipeline.inputs %}
             <li>
-              <div
-                class="font-semibold text-xs uppercase tracking-wide text-slate-500 mb-2 px-2"
-              >
-                Inputs
-              </div>
               <a
                 href="#inputs"
-                class="nav-link block px-2 py-1 rounded transition-colors hover:bg-slate-100 text-slate-800"
+                class="nav-link block px-3 py-2 rounded transition-colors hover:bg-slate-100 text-slate-800"
                 data-section="inputs"
-                >Parameters ({{ pipeline.inputs|length }})</a
+                >Parameters</a
               >
-              <ul class="ml-4 mt-1 space-y-1 text-sm">
-                {% for group, items in input_groups.items() %}
-                <li>
-                  <a
-                    href="#inputs-{{ group|lower|replace(' ', '-') }}"
-                    class="nav-link block px-2 py-1 rounded transition-colors hover:bg-slate-100 text-slate-800"
-                    data-section="inputs"
-                    >{{ group }}</a
-                  >
-                </li>
-                {% endfor %}
-              </ul>
             </li>
-            {% endif %} {% if pipeline.config_params %}
+            {% endif %}
+
+            {% if pipeline.config_params %}
             <li>
               <a
                 href="#config"
-                class="nav-link block px-2 py-1 rounded transition-colors hover:bg-slate-100 text-slate-800"
+                class="nav-link block px-3 py-2 rounded transition-colors hover:bg-slate-100 text-slate-800"
                 data-section="config"
-                >Configuration ({{ pipeline.config_params|length }})</a
+                >Configuration</a
               >
             </li>
-            {% endif %} {% if pipeline.workflows %}
+            {% endif %}
+
+            {% if pipeline.workflows %}
             <li>
-              <div
-                class="font-semibold text-xs uppercase tracking-wide text-slate-500 mb-2 px-2"
-              >
-                Workflows
-              </div>
               <a
                 href="#workflows"
-                class="nav-link block px-2 py-1 rounded transition-colors hover:bg-slate-100 text-slate-800"
+                class="nav-link block px-3 py-2 rounded transition-colors hover:bg-slate-100 text-slate-800"
                 data-section="workflows"
-                >All Workflows ({{ pipeline.workflows|length }})</a
+                >Workflows</a
               >
-              <ul class="ml-4 mt-1 space-y-1 text-sm">
-                {% for wf in pipeline.workflows %}
-                <li>
-                  <a
-                    href="#workflow-{{ wf.name or 'entry' }}"
-                    class="nav-link block px-2 py-1 rounded transition-colors hover:bg-slate-100 text-slate-800"
-                    data-section="workflows"
-                    >{{ wf.name or '(entry)' }}</a
-                  >
-                </li>
-                {% endfor %}
-              </ul>
             </li>
-            {% endif %} {% if pipeline.processes %}
+            {% endif %}
+
+            {% if pipeline.processes %}
             <li>
-              <div
-                class="font-semibold text-xs uppercase tracking-wide text-slate-500 mb-2 px-2"
-              >
-                Processes
-              </div>
               <a
                 href="#processes"
-                class="nav-link block px-2 py-1 rounded transition-colors hover:bg-slate-100 text-slate-800"
+                class="nav-link block px-3 py-2 rounded transition-colors hover:bg-slate-100 text-slate-800"
                 data-section="processes"
-                >All Processes ({{ pipeline.processes|length }})</a
+                >Processes</a
               >
-              <ul class="ml-4 mt-1 space-y-1 text-sm">
-                {% for proc in pipeline.processes[:10] %}
-                <li>
-                  <a
-                    href="#process-{{ proc.name }}"
-                    class="nav-link block px-2 py-1 rounded transition-colors hover:bg-slate-100 text-slate-800"
-                    data-section="processes"
-                    >{{ proc.name }}</a
-                  >
-                </li>
-                {% endfor %} {% if pipeline.processes|length > 10 %}
-                <li class="px-2 py-1 text-slate-500 italic">
-                  ... and {{ pipeline.processes|length - 10 }} more
-                </li>
-                {% endif %}
-              </ul>
             </li>
-            {% endif %} {% if pipeline.functions %}
+            {% endif %}
+
+            {% if pipeline.functions %}
             <li>
               <a
                 href="#functions"
-                class="nav-link block px-2 py-1 rounded transition-colors hover:bg-slate-100 text-slate-800"
+                class="nav-link block px-3 py-2 rounded transition-colors hover:bg-slate-100 text-slate-800"
                 data-section="functions"
-                >Functions ({{ pipeline.functions|length }})</a
+                >Functions</a
               >
             </li>
             {% endif %}
@@ -138,7 +92,7 @@
       </aside>
 
       <!-- Main content -->
-      <main class="md:ml-72 flex-1 p-4 md:p-8 lg:p-12">
+      <main class="md:ml-56 lg:mr-64 flex-1 p-4 md:p-8 lg:p-12">
         <!-- Overview Section -->
         <section id="overview" class="section">
           <h1 class="text-3xl font-bold mb-4 text-slate-800">{{ title }}</h1>
@@ -588,22 +542,19 @@
             id="function-{{ func.name }}"
             class="bg-white border border-slate-200 rounded-lg p-4 mb-4 group"
           >
-            <div class="flex items-center gap-2 mb-2">
-              <span class="font-semibold text-lg">{{ func.name }}</span>
+            <!-- Signature header like Sphinx API docs -->
+            <div class="bg-slate-100 border-l-4 border-primary px-4 py-2 mb-4 font-mono text-sm">
+              <span class="text-slate-500 italic">def</span>
+              <span class="font-bold text-primary-dark">{{ func.name }}</span>(<span class="text-slate-600">{% for p in func.params %}{{ p.name }}{% if not loop.last %}, {% endif %}{% endfor %}</span>)
               <a
                 href="#function-{{ func.name }}"
-                class="text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity no-underline hover:text-primary"
-                >¶</a
+                class="ml-2 text-slate-400 hover:text-primary no-underline"
+                >[source]</a
               >
             </div>
             {% if func.file %}
-            <div class="text-sm text-slate-500 mb-2">{{ func.file }}:{{ func.line }}</div>
+            <div class="text-xs text-slate-400 mb-2">Defined in <code>{{ func.file }}:{{ func.line }}</code></div>
             {% endif %}
-
-            <pre
-              class="bg-slate-800 text-slate-200 p-4 rounded-lg overflow-x-auto mb-4"
-            ><code>def {{ func.name }}({% for p in func.params %}{{ p.name }}{% if not loop.last %}, {% endif %}{% endfor %})</code></pre>
-
             {% if func.docstring %}
             <div class="mb-4 text-slate-600">{{ func.docstring|markdown }}</div>
             {% endif %} {% if func.params %}
@@ -651,36 +602,204 @@
         </section>
         {% endif %}
       </main>
+
+      <!-- Right Sidebar - Page Table of Contents -->
+      <aside
+        id="right-nav"
+        class="w-64 bg-white border-l border-slate-200 p-4 fixed right-0 h-screen overflow-y-auto hidden lg:block"
+      >
+        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">
+          On This Page
+        </div>
+
+        <!-- Overview TOC (empty - no sub-items) -->
+        <nav id="toc-overview" class="toc-section">
+        </nav>
+
+        <!-- Inputs TOC -->
+        {% if pipeline.inputs %}
+        <nav id="toc-inputs" class="toc-section hidden">
+          {% for group, items in input_groups.items() %}
+          <div class="mb-3">
+            <div class="font-semibold text-sm text-slate-700 mb-1 toc-group-header cursor-pointer hover:text-primary" data-group="{{ group|lower|replace(' ', '-') }}">
+              {{ group }}
+            </div>
+            <ul class="toc-group-items space-y-0.5 text-xs" data-group="{{ group|lower|replace(' ', '-') }}">
+              {% for inp in items %}
+              <li>
+                <a
+                  href="#param-{{ inp.name }}"
+                  class="toc-link block px-2 py-0.5 rounded text-slate-600 hover:bg-slate-100 hover:text-slate-900 truncate"
+                  data-section="inputs"
+                  title="{{ inp.name }}"
+                  >{{ inp.name }}</a
+                >
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endfor %}
+        </nav>
+        {% endif %}
+
+        <!-- Config TOC -->
+        {% if pipeline.config_params %}
+        <nav id="toc-config" class="toc-section hidden">
+          <ul class="space-y-0.5 text-xs">
+            {% for param in pipeline.config_params %}
+            <li>
+              <a
+                href="#config-{{ param.name }}"
+                class="toc-link block px-2 py-0.5 rounded text-slate-600 hover:bg-slate-100 hover:text-slate-900 truncate"
+                data-section="config"
+                title="{{ param.name }}"
+                >{{ param.name }}</a
+              >
+            </li>
+            {% endfor %}
+          </ul>
+        </nav>
+        {% endif %}
+
+        <!-- Workflows TOC -->
+        {% if pipeline.workflows %}
+        <nav id="toc-workflows" class="toc-section hidden">
+          <ul class="space-y-0.5 text-xs">
+            {% for wf in pipeline.workflows %}
+            <li>
+              <a
+                href="#workflow-{{ wf.name or 'entry' }}"
+                class="toc-link block px-2 py-0.5 rounded text-slate-600 hover:bg-slate-100 hover:text-slate-900 truncate"
+                data-section="workflows"
+                title="{{ wf.name or '(entry)' }}"
+                >{{ wf.name or '(entry)' }}</a
+              >
+            </li>
+            {% endfor %}
+          </ul>
+        </nav>
+        {% endif %}
+
+        <!-- Processes TOC -->
+        {% if pipeline.processes %}
+        <nav id="toc-processes" class="toc-section hidden">
+          <ul class="space-y-0.5 text-xs">
+            {% for proc in pipeline.processes %}
+            <li>
+              <a
+                href="#process-{{ proc.name }}"
+                class="toc-link block px-2 py-0.5 rounded text-slate-600 hover:bg-slate-100 hover:text-slate-900 truncate"
+                data-section="processes"
+                title="{{ proc.name }}"
+                >{{ proc.name }}</a
+              >
+            </li>
+            {% endfor %}
+          </ul>
+        </nav>
+        {% endif %}
+
+        <!-- Functions TOC -->
+        {% if pipeline.functions %}
+        <nav id="toc-functions" class="toc-section hidden">
+          <ul class="space-y-0.5 text-xs">
+            {% for func in pipeline.functions %}
+            <li>
+              <a
+                href="#function-{{ func.name }}"
+                class="toc-link block px-2 py-0.5 rounded text-slate-600 hover:bg-slate-100 hover:text-slate-900 truncate"
+                data-section="functions"
+                title="{{ func.name }}"
+                >{{ func.name }}</a
+              >
+            </li>
+            {% endfor %}
+          </ul>
+        </nav>
+        {% endif %}
+      </aside>
     </div>
 
     <script>
-      // Simple navigation
-      document.querySelectorAll(".nav-link").forEach((link) => {
-        link.addEventListener("click", (e) => {
+      // Track current section
+      let currentSection = 'overview';
+
+      // Show the appropriate TOC for the current section
+      function updateTOC(sectionId) {
+        document.querySelectorAll('.toc-section').forEach(toc => toc.classList.add('hidden'));
+        const tocSection = document.getElementById('toc-' + sectionId);
+        if (tocSection) {
+          tocSection.classList.remove('hidden');
+        }
+        currentSection = sectionId;
+      }
+
+      // Main navigation
+      document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', e => {
           e.preventDefault();
 
           // Update active nav link styling
-          document.querySelectorAll(".nav-link").forEach((l) => {
-            l.classList.remove("bg-primary", "text-white");
-            l.classList.add("text-slate-800");
+          document.querySelectorAll('.nav-link').forEach(l => {
+            l.classList.remove('bg-primary', 'text-white');
+            l.classList.add('text-slate-800');
           });
-          link.classList.add("bg-primary", "text-white");
-          link.classList.remove("text-slate-800");
+          link.classList.add('bg-primary', 'text-white');
+          link.classList.remove('text-slate-800');
 
           // Show corresponding section
           const sectionId = link.dataset.section;
-          document.querySelectorAll(".section").forEach((s) => s.classList.add("hidden"));
-          document.getElementById(sectionId).classList.remove("hidden");
+          document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
+          document.getElementById(sectionId).classList.remove('hidden');
 
-          // Scroll to anchor if present
-          const href = link.getAttribute("href");
-          if (href.startsWith("#") && href.length > 1) {
-            const target = document.querySelector(href);
-            if (target) {
-              setTimeout(() => target.scrollIntoView({ behavior: "smooth" }), 100);
+          // Update right-hand TOC
+          updateTOC(sectionId);
+
+          // Scroll to top
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+      });
+
+      // TOC link navigation
+      document.querySelectorAll('.toc-link').forEach(link => {
+        link.addEventListener('click', e => {
+          e.preventDefault();
+          const href = link.getAttribute('href');
+          const target = document.querySelector(href);
+          if (target) {
+            // Make sure the right section is visible
+            const sectionId = link.dataset.section;
+            if (currentSection !== sectionId) {
+              document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
+              document.getElementById(sectionId).classList.remove('hidden');
+              updateTOC(sectionId);
+
+              // Update left nav highlighting
+              document.querySelectorAll('.nav-link').forEach(l => {
+                l.classList.remove('bg-primary', 'text-white');
+                l.classList.add('text-slate-800');
+                if (l.dataset.section === sectionId) {
+                  l.classList.add('bg-primary', 'text-white');
+                  l.classList.remove('text-slate-800');
+                }
+              });
             }
-          } else {
-            window.scrollTo({ top: 0, behavior: "smooth" });
+            setTimeout(() => target.scrollIntoView({ behavior: 'smooth' }), 50);
+
+            // Update URL hash
+            history.pushState(null, null, href);
+          }
+        });
+      });
+
+      // TOC group header click to toggle collapse (only for inputs section)
+      document.querySelectorAll('.toc-group-header').forEach(header => {
+        header.addEventListener('click', e => {
+          const group = header.dataset.group;
+          const items = document.querySelector(`.toc-group-items[data-group="${group}"]`);
+          if (items) {
+            items.classList.toggle('hidden');
+            header.classList.toggle('text-slate-400');
           }
         });
       });
@@ -691,14 +810,30 @@
         const target = document.querySelector(hash);
         if (target) {
           // Find which section contains this target
-          let section = target.closest(".section");
+          let section = target.closest('.section');
           if (section) {
-            document.querySelectorAll(".section").forEach((s) => s.classList.add("hidden"));
-            section.classList.remove("hidden");
+            const sectionId = section.id;
+            document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
+            section.classList.remove('hidden');
+            updateTOC(sectionId);
+
+            // Update left nav highlighting
+            document.querySelectorAll('.nav-link').forEach(l => {
+              l.classList.remove('bg-primary', 'text-white');
+              l.classList.add('text-slate-800');
+              if (l.dataset.section === sectionId) {
+                l.classList.add('bg-primary', 'text-white');
+                l.classList.remove('text-slate-800');
+              }
+            });
+
             setTimeout(() => target.scrollIntoView(), 100);
           }
         }
       }
+
+      // Initialize TOC for overview (default section)
+      updateTOC('overview');
     </script>
   </body>
 </html>
