@@ -1,0 +1,509 @@
+"""
+Markdown renderer for nf-docs.
+
+Outputs pipeline documentation as a set of Markdown files suitable for
+static site generators like MkDocs, Docusaurus, or GitHub Pages.
+"""
+
+from pathlib import Path
+
+from nf_docs.models import Pipeline, PipelineInput, Process, Workflow
+from nf_docs.renderers.base import BaseRenderer
+
+
+class MarkdownRenderer(BaseRenderer):
+    """
+    Render pipeline documentation as Markdown files.
+
+    Output structure:
+    - index.md: Pipeline overview
+    - inputs.md: Workflow inputs and schema parameters
+    - config.md: Non-input parameters (if any)
+    - workflows.md: All workflows with descriptions
+    - processes.md: All processes with full documentation
+    - functions.md: Helper functions (if any)
+    """
+
+    def render(self, pipeline: Pipeline) -> str:
+        """
+        Render the pipeline to a single Markdown string.
+
+        This concatenates all sections for formats that need a single output.
+
+        Args:
+            pipeline: The Pipeline model to render
+
+        Returns:
+            Combined Markdown string
+        """
+        sections = []
+
+        sections.append(self._render_index(pipeline))
+        sections.append(self._render_inputs(pipeline))
+
+        if pipeline.config_params:
+            sections.append(self._render_config(pipeline))
+
+        if pipeline.workflows:
+            sections.append(self._render_workflows(pipeline))
+
+        if pipeline.processes:
+            sections.append(self._render_processes(pipeline))
+
+        if pipeline.functions:
+            sections.append(self._render_functions(pipeline))
+
+        return "\n\n---\n\n".join(sections)
+
+    def render_to_directory(self, pipeline: Pipeline, output_dir: str | Path) -> list[Path]:
+        """
+        Render the pipeline to a directory of Markdown files.
+
+        Args:
+            pipeline: The Pipeline model to render
+            output_dir: Output directory path
+
+        Returns:
+            List of created file paths
+        """
+        output_path = Path(output_dir)
+        output_path.mkdir(parents=True, exist_ok=True)
+
+        created_files: list[Path] = []
+
+        # index.md - Pipeline overview
+        index_file = output_path / "index.md"
+        index_file.write_text(self._render_index(pipeline), encoding="utf-8")
+        created_files.append(index_file)
+
+        # inputs.md - Workflow inputs and schema parameters
+        inputs_file = output_path / "inputs.md"
+        inputs_file.write_text(self._render_inputs(pipeline), encoding="utf-8")
+        created_files.append(inputs_file)
+
+        # config.md - Non-input parameters (only if they exist)
+        if pipeline.config_params:
+            config_file = output_path / "config.md"
+            config_file.write_text(self._render_config(pipeline), encoding="utf-8")
+            created_files.append(config_file)
+
+        # workflows.md - All workflows
+        if pipeline.workflows:
+            workflows_file = output_path / "workflows.md"
+            workflows_file.write_text(self._render_workflows(pipeline), encoding="utf-8")
+            created_files.append(workflows_file)
+
+        # processes.md - All processes
+        if pipeline.processes:
+            processes_file = output_path / "processes.md"
+            processes_file.write_text(self._render_processes(pipeline), encoding="utf-8")
+            created_files.append(processes_file)
+
+        # functions.md - Helper functions (only if they exist)
+        if pipeline.functions:
+            functions_file = output_path / "functions.md"
+            functions_file.write_text(self._render_functions(pipeline), encoding="utf-8")
+            created_files.append(functions_file)
+
+        return created_files
+
+    def _render_index(self, pipeline: Pipeline) -> str:
+        """Render the index/overview page."""
+        title = self.get_title(pipeline)
+        lines = [f"# {title}"]
+
+        # Version badge
+        if pipeline.metadata.version:
+            lines.append(f"\n**Version:** {pipeline.metadata.version}")
+
+        # Description
+        if pipeline.metadata.description:
+            lines.append(f"\n{pipeline.metadata.description}")
+
+        # Quick links
+        lines.append("\n## Documentation")
+        lines.append("")
+        lines.append("- [Pipeline Inputs](inputs.md) - Input parameters and options")
+
+        if pipeline.config_params:
+            lines.append("- [Configuration](config.md) - Configuration parameters")
+
+        if pipeline.workflows:
+            lines.append("- [Workflows](workflows.md) - Pipeline workflows")
+
+        if pipeline.processes:
+            lines.append("- [Processes](processes.md) - Process definitions")
+
+        if pipeline.functions:
+            lines.append("- [Functions](functions.md) - Helper functions")
+
+        # Pipeline summary
+        lines.append("\n## Summary")
+        lines.append("")
+        lines.append(f"- **Inputs:** {len(pipeline.inputs)} parameters")
+        if pipeline.config_params:
+            lines.append(f"- **Config params:** {len(pipeline.config_params)}")
+        lines.append(f"- **Workflows:** {len(pipeline.workflows)}")
+        lines.append(f"- **Processes:** {len(pipeline.processes)}")
+        if pipeline.functions:
+            lines.append(f"- **Functions:** {len(pipeline.functions)}")
+
+        # Authors
+        if pipeline.metadata.authors:
+            lines.append("\n## Authors")
+            lines.append("")
+            for author in pipeline.metadata.authors:
+                lines.append(f"- {author}")
+
+        # Links
+        links = []
+        if pipeline.metadata.homepage:
+            links.append(f"- [Homepage]({pipeline.metadata.homepage})")
+        if pipeline.metadata.repository:
+            links.append(f"- [Repository]({pipeline.metadata.repository})")
+
+        if links:
+            lines.append("\n## Links")
+            lines.append("")
+            lines.extend(links)
+
+        return "\n".join(lines)
+
+    def _render_inputs(self, pipeline: Pipeline) -> str:
+        """Render the inputs page."""
+        lines = ["# Pipeline Inputs"]
+        lines.append("")
+        lines.append("This page documents all input parameters for the pipeline.")
+
+        if not pipeline.inputs:
+            lines.append("\n*No input parameters defined.*")
+            return "\n".join(lines)
+
+        # Group inputs by their group
+        groups = pipeline.get_input_groups()
+
+        for group_name, inputs in groups.items():
+            lines.append(f"\n## {group_name}")
+            lines.append("")
+
+            for inp in inputs:
+                lines.extend(self._render_input_param(inp))
+                lines.append("")
+
+        return "\n".join(lines)
+
+    def _render_input_param(self, inp: PipelineInput) -> list[str]:
+        """Render a single input parameter."""
+        lines = []
+
+        # Parameter name with anchor
+        anchor = self._make_anchor(inp.name)
+        lines.append(f"### `--{inp.name}` {{#{anchor}}}")
+        lines.append("")
+
+        # Type and requirement badges
+        badges = []
+        badges.append(f"**Type:** `{inp.type}`")
+
+        if inp.required:
+            badges.append("**Required**")
+        else:
+            badges.append("*Optional*")
+
+        if inp.format:
+            badges.append(f"**Format:** `{inp.format}`")
+
+        lines.append(" | ".join(badges))
+        lines.append("")
+
+        # Description
+        if inp.description:
+            lines.append(inp.description)
+            lines.append("")
+
+        # Help text (extended description)
+        if inp.help_text:
+            lines.append(f"> {inp.help_text}")
+            lines.append("")
+
+        # Default value
+        if inp.default is not None:
+            lines.append(f"**Default:** `{inp.default}`")
+            lines.append("")
+
+        # Enum values
+        if inp.enum:
+            lines.append("**Allowed values:**")
+            for value in inp.enum:
+                lines.append(f"- `{value}`")
+            lines.append("")
+
+        # Pattern
+        if inp.pattern:
+            lines.append(f"**Pattern:** `{inp.pattern}`")
+            lines.append("")
+
+        return lines
+
+    def _render_config(self, pipeline: Pipeline) -> str:
+        """Render the configuration page."""
+        lines = ["# Configuration Parameters"]
+        lines.append("")
+        lines.append(
+            "These are additional configuration parameters that are not primary pipeline inputs."
+        )
+        lines.append("")
+
+        for param in pipeline.config_params:
+            lines.append(f"### `{param.name}`")
+            lines.append("")
+
+            lines.append(f"**Type:** `{param.type}`")
+            lines.append("")
+
+            if param.description:
+                lines.append(param.description)
+                lines.append("")
+
+            if param.default is not None:
+                lines.append(f"**Default:** `{param.default}`")
+                lines.append("")
+
+        return "\n".join(lines)
+
+    def _render_workflows(self, pipeline: Pipeline) -> str:
+        """Render the workflows page."""
+        lines = ["# Workflows"]
+        lines.append("")
+        lines.append("This page documents all workflows in the pipeline.")
+
+        if not pipeline.workflows:
+            lines.append("\n*No workflows defined.*")
+            return "\n".join(lines)
+
+        # Table of contents
+        lines.append("\n## Contents")
+        lines.append("")
+        for workflow in pipeline.workflows:
+            name = workflow.name or "(entry)"
+            anchor = self._make_anchor(workflow.name or "entry")
+            entry_badge = " *(entry point)*" if workflow.is_entry else ""
+            lines.append(f"- [{name}](#{anchor}){entry_badge}")
+
+        # Workflow details
+        for workflow in pipeline.workflows:
+            lines.append("")
+            lines.extend(self._render_workflow(workflow, pipeline))
+
+        return "\n".join(lines)
+
+    def _render_workflow(self, workflow: Workflow, pipeline: Pipeline) -> list[str]:
+        """Render a single workflow."""
+        lines = []
+
+        name = workflow.name or "(entry)"
+        anchor = self._make_anchor(workflow.name or "entry")
+        lines.append(f"## {name} {{#{anchor}}}")
+        lines.append("")
+
+        # Entry badge
+        if workflow.is_entry:
+            lines.append("**Entry workflow**")
+            lines.append("")
+
+        # Source location
+        if workflow.file:
+            lines.append(f"*Defined in `{workflow.file}:{workflow.line}`*")
+            lines.append("")
+
+        # Docstring
+        if workflow.docstring:
+            lines.append(workflow.docstring)
+            lines.append("")
+
+        # Inputs (take)
+        if workflow.inputs:
+            lines.append("### Inputs")
+            lines.append("")
+            lines.append("| Name | Description |")
+            lines.append("|------|-------------|")
+            for inp in workflow.inputs:
+                lines.append(f"| `{inp.name}` | {inp.description or '-'} |")
+            lines.append("")
+
+        # Outputs (emit)
+        if workflow.outputs:
+            lines.append("### Outputs")
+            lines.append("")
+            lines.append("| Name | Description |")
+            lines.append("|------|-------------|")
+            for out in workflow.outputs:
+                lines.append(f"| `{out.name}` | {out.description or '-'} |")
+            lines.append("")
+
+        # Process calls
+        if workflow.calls:
+            lines.append("### Calls")
+            lines.append("")
+            lines.append("This workflow calls the following processes/workflows:")
+            lines.append("")
+            for call_name in workflow.calls:
+                # Link to process if it exists
+                process = pipeline.get_process_by_name(call_name)
+                if process:
+                    anchor = self._make_anchor(call_name)
+                    lines.append(f"- [`{call_name}`](processes.md#{anchor})")
+                else:
+                    # Check if it's a workflow
+                    wf = pipeline.get_workflow_by_name(call_name)
+                    if wf:
+                        anchor = self._make_anchor(call_name)
+                        lines.append(f"- [`{call_name}`](#{anchor}) *(workflow)*")
+                    else:
+                        lines.append(f"- `{call_name}`")
+            lines.append("")
+
+        return lines
+
+    def _render_processes(self, pipeline: Pipeline) -> str:
+        """Render the processes page."""
+        lines = ["# Processes"]
+        lines.append("")
+        lines.append("This page documents all processes in the pipeline.")
+
+        if not pipeline.processes:
+            lines.append("\n*No processes defined.*")
+            return "\n".join(lines)
+
+        # Table of contents
+        lines.append("\n## Contents")
+        lines.append("")
+        for process in pipeline.processes:
+            anchor = self._make_anchor(process.name)
+            lines.append(f"- [{process.name}](#{anchor})")
+
+        # Process details
+        for process in pipeline.processes:
+            lines.append("")
+            lines.extend(self._render_process(process))
+
+        return "\n".join(lines)
+
+    def _render_process(self, process: Process) -> list[str]:
+        """Render a single process."""
+        lines = []
+
+        anchor = self._make_anchor(process.name)
+        lines.append(f"## {process.name} {{#{anchor}}}")
+        lines.append("")
+
+        # Source location
+        if process.file:
+            lines.append(f"*Defined in `{process.file}:{process.line}`*")
+            lines.append("")
+
+        # Docstring
+        if process.docstring:
+            lines.append(process.docstring)
+            lines.append("")
+
+        # Inputs
+        if process.inputs:
+            lines.append("### Inputs")
+            lines.append("")
+            lines.append("| Name | Type | Description |")
+            lines.append("|------|------|-------------|")
+            for inp in process.inputs:
+                lines.append(f"| `{inp.name}` | `{inp.type}` | {inp.description or '-'} |")
+            lines.append("")
+
+        # Outputs
+        if process.outputs:
+            lines.append("### Outputs")
+            lines.append("")
+            lines.append("| Name | Type | Emit | Description |")
+            lines.append("|------|------|------|-------------|")
+            for out in process.outputs:
+                emit = f"`{out.emit}`" if out.emit else "-"
+                lines.append(f"| `{out.name}` | `{out.type}` | {emit} | {out.description or '-'} |")
+            lines.append("")
+
+        # Directives
+        if process.directives:
+            lines.append("### Directives")
+            lines.append("")
+            lines.append("| Directive | Value |")
+            lines.append("|-----------|-------|")
+            for name, value in process.directives.items():
+                lines.append(f"| `{name}` | `{value}` |")
+            lines.append("")
+
+        return lines
+
+    def _render_functions(self, pipeline: Pipeline) -> str:
+        """Render the functions page."""
+        lines = ["# Functions"]
+        lines.append("")
+        lines.append("This page documents helper functions defined in the pipeline.")
+
+        if not pipeline.functions:
+            lines.append("\n*No functions defined.*")
+            return "\n".join(lines)
+
+        # Table of contents
+        lines.append("\n## Contents")
+        lines.append("")
+        for func in pipeline.functions:
+            anchor = self._make_anchor(func.name)
+            lines.append(f"- [{func.name}](#{anchor})")
+
+        # Function details
+        for func in pipeline.functions:
+            lines.append("")
+
+            anchor = self._make_anchor(func.name)
+            lines.append(f"## {func.name} {{#{anchor}}}")
+            lines.append("")
+
+            # Source location
+            if func.file:
+                lines.append(f"*Defined in `{func.file}:{func.line}`*")
+                lines.append("")
+
+            # Signature
+            params_str = ", ".join(p.name for p in func.params)
+            lines.append(f"```groovy\ndef {func.name}({params_str})\n```")
+            lines.append("")
+
+            # Docstring
+            if func.docstring:
+                lines.append(func.docstring)
+                lines.append("")
+
+            # Parameters
+            if func.params:
+                lines.append("### Parameters")
+                lines.append("")
+                lines.append("| Name | Description | Default |")
+                lines.append("|------|-------------|---------|")
+                for param in func.params:
+                    default = f"`{param.default}`" if param.default is not None else "-"
+                    lines.append(f"| `{param.name}` | {param.description or '-'} | {default} |")
+                lines.append("")
+
+            # Return
+            if func.return_description:
+                lines.append("### Returns")
+                lines.append("")
+                lines.append(func.return_description)
+                lines.append("")
+
+        return "\n".join(lines)
+
+    def _make_anchor(self, text: str) -> str:
+        """Create a valid anchor ID from text."""
+        # Convert to lowercase and replace spaces/special chars with hyphens
+        anchor = text.lower()
+        anchor = "".join(c if c.isalnum() else "-" for c in anchor)
+        anchor = "-".join(filter(None, anchor.split("-")))  # Remove multiple hyphens
+        return anchor or "unnamed"
