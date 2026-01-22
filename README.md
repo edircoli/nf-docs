@@ -56,14 +56,15 @@ nf-docs generate PIPELINE_PATH [OPTIONS]
 
 **Options:**
 
-| Option              | Description                                                           |
-| ------------------- | --------------------------------------------------------------------- |
-| `--format`, `-f`    | Output format: `json`, `yaml`, `markdown`, `html` (default: markdown) |
-| `--output`, `-o`    | Output file or directory                                              |
-| `--title`, `-t`     | Custom title for documentation                                        |
-| `--language-server` | Path to the Language Server JAR                                       |
-| `--nextflow-path`   | Path to Nextflow executable (default: nextflow)                       |
-| `--verbose`, `-v`   | Enable verbose output                                                 |
+| Option              | Description                                                                  |
+| ------------------- | ---------------------------------------------------------------------------- |
+| `--format`, `-f`    | Output format: `json`, `yaml`, `markdown` (or `md`), `html` (default: markdown) |
+| `--output`, `-o`    | Output file or directory                                                     |
+| `--title`, `-t`     | Custom title for documentation                                               |
+| `--language-server` | Path to the Language Server JAR                                              |
+| `--nextflow-path`   | Path to Nextflow executable (default: nextflow)                              |
+| `--no-cache`        | Force re-extraction, ignoring cached results                                 |
+| `--verbose`, `-v`   | Enable verbose output                                                        |
 
 **Examples:**
 
@@ -148,7 +149,13 @@ docs/
 
 ### HTML
 
-Self-contained static site with navigation.
+Self-contained static site with:
+
+- Three-column layout (navigation, content, table of contents)
+- Full-text search across all documentation
+- Deep linking to all sections and items
+- Links to source code on GitHub/GitLab/Bitbucket (when in a git repository)
+- Responsive design for mobile devices
 
 ## Docstring Format
 
