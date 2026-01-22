@@ -6,6 +6,87 @@
     <title>{{ title }}</title>
     <style>
       /* Tailwind CSS will be injected here */
+
+      /* Prose styles for rendered markdown content */
+      .prose p {
+        margin-bottom: 1em;
+      }
+      .prose p:last-child {
+        margin-bottom: 0;
+      }
+      .prose ul, .prose ol {
+        margin-top: 0.5em;
+        margin-bottom: 1em;
+        padding-left: 1.5em;
+      }
+      .prose ul {
+        list-style-type: disc;
+      }
+      .prose ol {
+        list-style-type: decimal;
+      }
+      .prose li {
+        margin-bottom: 0.25em;
+      }
+      .prose li:last-child {
+        margin-bottom: 0;
+      }
+      .prose code {
+        background-color: rgb(241 245 249); /* slate-100 */
+        padding: 0.125rem 0.375rem;
+        border-radius: 0.25rem;
+        font-family: ui-monospace, monospace;
+        font-size: 0.875em;
+      }
+      .prose pre {
+        background-color: rgb(30 41 59); /* slate-800 */
+        color: rgb(226 232 240); /* slate-200 */
+        padding: 1rem;
+        border-radius: 0.5rem;
+        overflow-x: auto;
+        margin: 1em 0;
+      }
+      .prose pre code {
+        background: none;
+        padding: 0;
+        color: inherit;
+      }
+      .prose a {
+        color: #0DC09D;
+        text-decoration: underline;
+      }
+      .prose a:hover {
+        color: #0A9A7D;
+      }
+      .prose blockquote {
+        border-left: 4px solid rgb(203 213 225); /* slate-300 */
+        padding-left: 1em;
+        margin: 1em 0;
+        color: rgb(100 116 139); /* slate-500 */
+        font-style: italic;
+      }
+      .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+        font-weight: 600;
+        margin-top: 1.5em;
+        margin-bottom: 0.5em;
+      }
+      .prose h1 { font-size: 1.5em; }
+      .prose h2 { font-size: 1.25em; }
+      .prose h3 { font-size: 1.125em; }
+      .prose table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1em 0;
+      }
+      .prose th, .prose td {
+        border: 1px solid rgb(226 232 240); /* slate-200 */
+        padding: 0.5rem;
+        text-align: left;
+      }
+      .prose th {
+        background-color: rgb(241 245 249); /* slate-100 */
+        font-weight: 600;
+      }
     </style>
   </head>
   <body class="font-sans leading-relaxed text-slate-800 bg-slate-50">
@@ -98,7 +179,7 @@
           <h1 class="text-3xl font-bold mb-4 text-slate-800">{{ title }}</h1>
 
           {% if pipeline.metadata.description %}
-          <div class="mb-4 text-slate-600">{{ pipeline.metadata.description|markdown }}</div>
+          <div class="prose mb-4 text-slate-600">{{ pipeline.metadata.description|markdown }}</div>
           {% endif %}
 
           <h2 class="text-2xl font-semibold mt-8 mb-4 pb-2 border-b border-slate-200">
@@ -231,9 +312,9 @@
               {% endif %}
             </div>
             {% if inp.description %}
-            <div class="mb-2 text-slate-600">{{ inp.description|markdown }}</div>
+            <div class="prose mb-2 text-slate-600">{{ inp.description|markdown }}</div>
             {% endif %} {% if inp.help_text %}
-            <div class="bg-slate-100 p-3 rounded text-sm mt-2">{{ inp.help_text|markdown }}</div>
+            <div class="prose bg-slate-100 p-3 rounded text-sm mt-2">{{ inp.help_text|markdown }}</div>
             {% endif %} {% if inp.default is not none %}
             <p class="mt-2">
               <strong>Default:</strong>
@@ -263,15 +344,25 @@
           </p>
 
           {% for param in pipeline.config_params %}
-          <div class="mb-6 pb-6 border-b border-slate-200 last:border-b-0">
-            <div class="font-mono font-semibold text-lg">{{ param.name }}</div>
+          <div
+            id="config-{{ param.name }}"
+            class="mb-6 pb-6 border-b border-slate-200 last:border-b-0 group"
+          >
+            <div class="font-mono font-semibold text-lg">
+              {{ param.name }}
+              <a
+                href="#config-{{ param.name }}"
+                class="ml-2 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity no-underline hover:text-primary"
+                >¶</a
+              >
+            </div>
             <div class="flex flex-wrap gap-2 my-2">
               <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
                 {{ param.type }}
               </span>
             </div>
             {% if param.description %}
-            <div class="mb-2 text-slate-600">{{ param.description|markdown }}</div>
+            <div class="prose mb-2 text-slate-600">{{ param.description|markdown }}</div>
             {% endif %} {% if param.default is not none %}
             <p class="mt-2">
               <strong>Default:</strong>
@@ -315,7 +406,7 @@
             <div class="text-xs text-slate-400 mb-2">Defined in <code>{{ wf.file }}:{{ wf.line }}</code></div>
             {% endif %}
             {% if wf.docstring %}
-            <div class="mb-4 text-slate-600">{{ wf.docstring|markdown }}</div>
+            <div class="prose mb-4 text-slate-600">{{ wf.docstring|markdown }}</div>
             {% endif %}
             {% if wf.inputs %}
             <h3 class="text-lg font-semibold mt-4 mb-2">Inputs (take)</h3>
@@ -413,7 +504,7 @@
             <div class="text-xs text-slate-400 mb-2">Defined in <code>{{ proc.file }}:{{ proc.line }}</code></div>
             {% endif %}
             {% if proc.docstring %}
-            <div class="mb-4 text-slate-600">{{ proc.docstring|markdown }}</div>
+            <div class="prose mb-4 text-slate-600">{{ proc.docstring|markdown }}</div>
             {% endif %}
             {% if proc.inputs %}
             <h3 class="text-lg font-semibold mt-4 mb-2">Inputs</h3>
@@ -556,7 +647,7 @@
             <div class="text-xs text-slate-400 mb-2">Defined in <code>{{ func.file }}:{{ func.line }}</code></div>
             {% endif %}
             {% if func.docstring %}
-            <div class="mb-4 text-slate-600">{{ func.docstring|markdown }}</div>
+            <div class="prose mb-4 text-slate-600">{{ func.docstring|markdown }}</div>
             {% endif %} {% if func.params %}
             <h3 class="text-lg font-semibold mt-4 mb-2">Parameters</h3>
             <div class="overflow-x-auto"><table class="w-full border-collapse mb-4">
@@ -755,6 +846,9 @@
           // Update right-hand TOC
           updateTOC(sectionId);
 
+          // Update URL hash for deep linking
+          history.pushState(null, null, '#' + sectionId);
+
           // Scroll to top
           window.scrollTo({ top: 0, behavior: 'smooth' });
         });
@@ -765,7 +859,9 @@
         link.addEventListener('click', e => {
           e.preventDefault();
           const href = link.getAttribute('href');
-          const target = document.querySelector(href);
+          // Escape special CSS selector characters in the ID
+          const escapedHref = href.replace(/\./g, '\\.');
+          const target = document.querySelector(escapedHref);
           if (target) {
             // Make sure the right section is visible
             const sectionId = link.dataset.section;
@@ -807,10 +903,12 @@
       // Handle direct hash navigation
       if (window.location.hash) {
         const hash = window.location.hash;
-        const target = document.querySelector(hash);
+        // Escape special CSS selector characters in the ID
+        const escapedHash = hash.replace(/\./g, '\\.');
+        const target = document.querySelector(escapedHash);
         if (target) {
-          // Find which section contains this target
-          let section = target.closest('.section');
+          // Find which section contains this target (or if target IS a section)
+          let section = target.classList.contains('section') ? target : target.closest('.section');
           if (section) {
             const sectionId = section.id;
             document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
@@ -827,7 +925,12 @@
               }
             });
 
-            setTimeout(() => target.scrollIntoView(), 100);
+            // Scroll to target (for item-level links) or top (for section links)
+            if (target === section) {
+              window.scrollTo({ top: 0 });
+            } else {
+              setTimeout(() => target.scrollIntoView(), 100);
+            }
           }
         }
       }
