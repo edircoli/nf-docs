@@ -665,7 +665,7 @@
         {% if pipeline.workflows %}
         <nav id="toc-workflows" class="toc-section hidden">
           <ul class="space-y-0.5 text-xs">
-            {% for wf in pipeline.workflows %}
+          {% for wf in pipeline.workflows|sort(attribute='name') %}
             <li>
               <a
                 href="#workflow-{{ wf.name or 'entry' }}"
@@ -684,7 +684,7 @@
         {% if pipeline.processes %}
         <nav id="toc-processes" class="toc-section hidden">
           <ul class="space-y-0.5 text-xs">
-            {% for proc in pipeline.processes %}
+          {% for proc in pipeline.processes|sort(attribute='name') %}
             <li>
               <a
                 href="#process-{{ proc.name }}"
@@ -703,7 +703,7 @@
         {% if pipeline.functions %}
         <nav id="toc-functions" class="toc-section hidden">
           <ul class="space-y-0.5 text-xs">
-            {% for func in pipeline.functions %}
+          {% for func in pipeline.functions|sort(attribute='name') %}
             <li>
               <a
                 href="#function-{{ func.name }}"

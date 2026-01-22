@@ -882,6 +882,6 @@ def parse_hover_content(hover: dict[str, Any] | None) -> tuple[str, str, dict[st
                 if line_stripped and not line_stripped.startswith("@"):
                     params[current_param] += " " + line_stripped
 
-        docstring = " ".join(doc_lines).strip()
+        docstring = "\n".join(doc_lines).strip()
 
     return signature, docstring, params

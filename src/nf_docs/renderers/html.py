@@ -4,6 +4,7 @@ HTML renderer for nf-docs.
 Outputs pipeline documentation as a self-contained static HTML site.
 """
 
+import re
 from pathlib import Path
 
 import markdown
@@ -14,11 +15,41 @@ from nf_docs.models import Pipeline
 from nf_docs.renderers.base import BaseRenderer
 
 
+def _preprocess_markdown(text: str) -> str:
+    """
+    Preprocess text to ensure markdown lists render correctly.
+
+    Standard markdown requires a blank line before list items.
+    This adds a blank line before the first list item when preceded by text.
+    """
+    lines = text.split("\n")
+    result: list[str] = []
+    in_list = False
+
+    for line in lines:
+        stripped = line.lstrip()
+        is_list_item = bool(re.match(r"^[-*+]\s|^\d+\.\s", stripped))
+
+        if is_list_item and not in_list and result:
+            # Starting a new list - add blank line before if previous line wasn't blank
+            if result[-1].strip():
+                result.append("")
+            in_list = True
+        elif not is_list_item and stripped:
+            in_list = False
+
+        result.append(line)
+
+    return "\n".join(result)
+
+
 def md_to_html(text: str | None) -> Markup:
     """Convert markdown text to HTML, safe for Jinja templates."""
     if not text:
         return Markup("")
-    # Convert markdown to HTML, stripping the outer <p> tags for inline use
+    # Preprocess to fix common markdown issues
+    text = _preprocess_markdown(text)
+    # Convert markdown to HTML
     html = markdown.markdown(text, extensions=["tables", "fenced_code"])
     return Markup(html)
 
