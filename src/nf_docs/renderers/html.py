@@ -171,13 +171,16 @@ def _preprocess_markdown(text: str) -> str:
     """
     Preprocess text to ensure markdown lists render correctly.
 
-    Standard markdown requires a blank line before list items.
-    This adds a blank line before the first list item when preceded by text.
+    Standard markdown requires a blank line before list items and 4-space
+    indentation for nested lists. GitHub uses 2-space indentation, so we
+    convert it to 4-space for compatibility.
     """
     # First, preprocess GitHub alerts to separate them
     text = _preprocess_github_alerts(text)
     # Convert unsupported code block languages
     text = _preprocess_code_blocks(text)
+    # Convert 2-space nested list indentation to 4-space
+    text = _fix_nested_list_indentation(text)
 
     lines = text.split("\n")
     result: list[str] = []
@@ -185,10 +188,12 @@ def _preprocess_markdown(text: str) -> str:
 
     for line in lines:
         stripped = line.lstrip()
+        leading_spaces = len(line) - len(stripped)
         is_list_item = bool(re.match(r"^[-*+]\s|^\d+\.\s", stripped))
+        is_top_level_list_item = is_list_item and leading_spaces == 0
 
-        if is_list_item and not in_list and result:
-            # Starting a new list - add blank line before if previous line wasn't blank
+        if is_top_level_list_item and not in_list and result:
+            # Starting a new top-level list - add blank line before if previous line wasn't blank
             if result[-1].strip():
                 result.append("")
             in_list = True
@@ -196,6 +201,44 @@ def _preprocess_markdown(text: str) -> str:
             in_list = False
 
         result.append(line)
+
+    return "\n".join(result)
+
+
+def _fix_nested_list_indentation(text: str) -> str:
+    """
+    Convert 2-space indentation to 4-space for nested lists.
+
+    GitHub-flavored markdown uses 2-space indentation for nested lists,
+    but Python's markdown library requires 4 spaces.
+    """
+    lines = text.split("\n")
+    result: list[str] = []
+    in_code_block = False
+
+    for line in lines:
+        # Track code blocks to avoid modifying them
+        if line.strip().startswith("```"):
+            in_code_block = not in_code_block
+            result.append(line)
+            continue
+
+        if in_code_block:
+            result.append(line)
+            continue
+
+        stripped = line.lstrip()
+        leading_spaces = len(line) - len(stripped)
+        is_list_item = bool(re.match(r"^[-*+]\s|^\d+\.\s", stripped))
+
+        if is_list_item and leading_spaces > 0:
+            # This is a nested list item - convert 2-space to 4-space indentation
+            # Count how many 2-space indentation levels we have
+            indent_level = leading_spaces // 2
+            new_indent = "    " * indent_level
+            result.append(new_indent + stripped)
+        else:
+            result.append(line)
 
     return "\n".join(result)
 
@@ -287,6 +330,35 @@ def md_to_html_with_anchors(text: str | None) -> Markup:
     return md_to_html(text, add_anchors=True)
 
 
+def add_word_breaks(text: str | None) -> Markup:
+    """
+    Add word break opportunities after punctuation characters.
+
+    Inserts <wbr> tags after punctuation like commas, parentheses, underscores,
+    etc. to allow long code strings to wrap at sensible points without breaking
+    mid-word.
+
+    Args:
+        text: The text to process
+
+    Returns:
+        Markup with <wbr> tags inserted after punctuation
+    """
+    if not text:
+        return Markup("")
+
+    # Characters after which we allow a line break
+    break_after = ",)[]{}/->: \t\n"
+
+    result = []
+    for char in str(text):
+        result.append(char)
+        if char in break_after:
+            result.append("<wbr>")
+
+    return Markup("".join(result))
+
+
 def get_repository_avatar_data_url(repository_url: str | None) -> str | None:
     """
     Get avatar as a base64 data URL for a repository's organization/user.
@@ -363,9 +435,10 @@ class HTMLRenderer(BaseRenderer):
         super().__init__(title)
         self.use_tailwind = use_tailwind
         self.env = Environment(loader=PackageLoader("nf_docs", "templates"))
-        # Register markdown filters
+        # Register filters
         self.env.filters["markdown"] = md_to_html
         self.env.filters["markdown_with_anchors"] = md_to_html_with_anchors
+        self.env.filters["wbr"] = add_word_breaks
         self.template = self.env.get_template("html.html")
 
     def render(self, pipeline: Pipeline) -> str:

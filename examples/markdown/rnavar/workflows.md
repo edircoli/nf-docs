@@ -119,265 +119,164 @@ The workflow supports multiple input types including FASTQ, BAM, CRAM, and VCF f
 
 *Defined in `subworkflows/nf-core/bam_stats_samtools/main.nf:9`*
 
-**Keywords:** `statistics`, `counts`, `bam`, `sam`, `cram`
-
-Produces comprehensive statistics from SAM/BAM/CRAM file
-
-### Components
-
-This workflow uses the following modules/subworkflows:
-
-- `samtools/stats`
-- `samtools/idxstats`
-- `samtools/flagstat`
-
 ### Inputs
 
 | Name | Description |
 |------|-------------|
-| `ch_bam_bai` | The input channel containing the BAM/CRAM and it's index Structure: [ val(meta), path(bam), path(bai) ] |
-| `ch_fasta` | Reference genome fasta file Structure: [ path(fasta) ] |
+| `ch_bam_bai` | - |
+| `ch_fasta` | - |
 
 ### Outputs
 
 | Name | Description |
 |------|-------------|
-| `stats` | File containing samtools stats output Structure: [ val(meta), path(stats) ] |
-| `flagstat` | File containing samtools flagstat output Structure: [ val(meta), path(flagstat) ] |
-| `idxstats` | File containing samtools idxstats output Structure: [ val(meta), path(idxstats)] |
-| `versions` | Files containing software versions Structure: [ path(versions.yml) ] |
-
-**Authors:** [@drpatelh](https://github.com/drpatelh)
-**Maintainers:** [@drpatelh](https://github.com/drpatelh)
+| `stats` | - |
+| `flagstat` | - |
+| `idxstats` | - |
+| `versions` | - |
 
 
 ## FASTQ_ALIGN_STAR {#fastq-align-star}
 
 *Defined in `subworkflows/nf-core/fastq_align_star/main.nf:6`*
 
-**Keywords:** `align`, `fasta`, `genome`, `reference`
-
-Align reads to a reference genome using bowtie2 then sort with samtools
-
-### Components
-
-This workflow uses the following modules/subworkflows:
-
-- `star/align`
-- `samtools/sort`
-- `samtools/index`
-- `samtools/stats`
-- `samtools/idxstats`
-- `samtools/flagstat`
-- `bam_sort_stats_samtools`
-
 ### Inputs
 
 | Name | Description |
 |------|-------------|
-| `ch_reads` | List of input FastQ files of size 1 and 2 for single-end and paired-end data, respectively. Structure: [ val(meta), [ path(reads) ] ] |
-| `ch_index` | STAR genome index |
-| `ch_gtf` | GTF file used to set the splice junctions with the --sjdbGTFfile flag |
-| `val_star_ignore_sjdbgtf` | If true the --sjdbGTFfile flag is set |
-| `val_seq_platform` | Sequencing platform to be added to the bam header using the --outSAMattrRGline flag |
-| `val_seq_center` | Sequencing center to be added to the bam header using the --outSAMattrRGline flag |
-| `ch_fasta` | Reference genome fasta file |
-| `ch_transcripts_fasta` | Optional reference genome fasta file |
+| `ch_reads` | - |
+| `ch_index` | - |
+| `ch_gtf` | - |
+| `val_star_ignore_sjdbgtf` | - |
+| `val_seq_platform` | - |
+| `val_seq_center` | - |
+| `ch_fasta` | - |
+| `ch_transcripts_fasta` | - |
 
 ### Outputs
 
 | Name | Description |
 |------|-------------|
-| `orig_bam` | Output BAM file containing read alignments Structure: [ val(meta), path(bam) ] |
-| `log_final` | STAR final log file Structure: [ val(meta), path(log_final) ] |
-| `log_out` | STAR log out file Structure: [ val(meta), path(log_out) ] |
-| `log_progress` | STAR log progress file Structure: [ val(meta), path(log_progress) ] |
-| `bam_sorted` | Sorted BAM file of read alignments (optional) Structure: [ val(meta), path(bam) ] |
-| `orig_bam_transcript` | Output BAM file of transcriptome alignment (optional) Structure: [ val(meta), path(bam) ] |
-| `fastq` | Unmapped FastQ files (optional) Structure: [ val(meta), path(fastq) ] |
-| `tab` | STAR output tab file(s) (optional) Structure: [ val(meta), path(tab) ] |
-| `bam` | BAM file ordered by samtools Structure: [ val(meta), path(bam) ] |
-| `bai` | BAI index of the ordered BAM file Structure: [ val(meta), path(bai) ] |
-| `stats` | File containing samtools stats output Structure: [ val(meta), path(stats) ] |
-| `flagstat` | File containing samtools flagstat output Structure: [ val(meta), path(flagstat) ] |
-| `idxstats` | File containing samtools idxstats output Structure: [ val(meta), path(idxstats) ] |
-| `bam_transcript` | Transcriptome-level BAM file ordered by samtools  (optional) Structure: [ val(meta), path(bam) ] |
-| `bai_transcript` | Transcriptome-level BAI index of the ordered BAM file (optional) Structure: [ val(meta), path(bai) ] |
-| `stats_transcript` | Transcriptome-level file containing samtools stats output (optional) Structure: [ val(meta), path(stats) ] |
-| `flagstat_transcript` | Transcriptome-level file containing samtools flagstat output (optional) Structure: [ val(meta), path(flagstat) ] |
-| `idxstats_transcript` | Transcriptome-level file containing samtools idxstats output (optional) Structure: [ val(meta), path(idxstats) ] |
-| `versions` | File containing software versions |
-
-**Authors:** [@JoseEspinosa](https://github.com/JoseEspinosa)
-**Maintainers:** [@JoseEspinosa](https://github.com/JoseEspinosa)
+| `orig_bam` | - |
+| `log_final` | - |
+| `log_out` | - |
+| `log_progress` | - |
+| `bam_sorted` | - |
+| `fastq` | - |
+| `tab` | - |
+| `orig_bam_transcript` | - |
+| `bam` | - |
+| `bai` | - |
+| `stats` | - |
+| `flagstat` | - |
+| `idxstats` | - |
+| `bam_transcript` | - |
+| `bai_transcript` | - |
+| `stats_transcript` | - |
+| `flagstat_transcript` | - |
+| `idxstats_transcript` | - |
+| `versions` | - |
 
 
 ## VCF_ANNOTATE_SNPEFF {#vcf-annotate-snpeff}
 
 *Defined in `subworkflows/nf-core/vcf_annotate_snpeff/main.nf:8`*
 
-**Keywords:** `vcf`, `annotation`, `snpeff`
-
-Perform annotation with snpEff and bgzip + tabix index the resulting VCF file
-
-### Components
-
-This workflow uses the following modules/subworkflows:
-
-- `snpeff`
-- `snpeff/snpeff`
-- `tabix/bgziptabix`
-
 ### Inputs
 
 | Name | Description |
 |------|-------------|
-| `ch_vcf` | vcf file Structure: [ val(meta), path(vcf) ] |
-| `val_snpeff_db` | db version to use |
-| `ch_snpeff_cache` | path to root cache folder for snpEff (optional) Structure: [ path(cache) ] |
+| `ch_vcf` | - |
+| `val_snpeff_db` | - |
+| `ch_snpeff_cache` | - |
 
 ### Outputs
 
 | Name | Description |
 |------|-------------|
-| `vcf_tbi` | Compressed vcf file + tabix index Structure: [ val(meta), path(vcf), path(tbi) ] |
-| `reports` | html reports Structure: [ path(html) ] |
-| `summary` | html reports Structure: [ path(csv) ] |
-| `genes_txt` | html reports Structure: [ path(txt) ] |
-| `versions` | Files containing software versions Structure: [ path(versions.yml) ] |
-
-**Authors:** [@maxulysse](https://github.com/maxulysse)
-**Maintainers:** [@maxulysse](https://github.com/maxulysse)
+| `vcf_tbi` | - |
+| `reports` | - |
+| `summary` | - |
+| `genes_txt` | - |
+| `versions` | - |
 
 
 ## VCF_ANNOTATE_ENSEMBLVEP {#vcf-annotate-ensemblvep}
 
 *Defined in `subworkflows/nf-core/vcf_annotate_ensemblvep/main.nf:8`*
 
-**Keywords:** `vcf`, `annotation`, `ensemblvep`
-
-Perform annotation with ensemblvep and bgzip + tabix index the resulting VCF file
-
-### Components
-
-This workflow uses the following modules/subworkflows:
-
-- `ensemblvep/vep`
-- `tabix/tabix`
-
 ### Inputs
 
 | Name | Description |
 |------|-------------|
-| `ch_vcf` | vcf file to annotate Structure: [ val(meta), path(vcf), [path(custom_file1), path(custom_file2)... (optional)] ] |
-| `ch_fasta` | Reference genome fasta file (optional) Structure: [ val(meta2), path(fasta) ] |
-| `val_genome` | genome to use |
-| `val_species` | species to use |
-| `val_cache_version` | cache version to use |
-| `ch_cache` | the root cache folder for ensemblvep (optional) Structure: [ val(meta3), path(cache) ] |
-| `ch_extra_files` | any extra files needed by plugins for ensemblvep (optional) Structure: [ path(file1), path(file2)... ] |
+| `ch_vcf` | - |
+| `ch_fasta` | - |
+| `val_genome` | - |
+| `val_species` | - |
+| `val_cache_version` | - |
+| `ch_cache` | - |
+| `ch_extra_files` | - |
 
 ### Outputs
 
 | Name | Description |
 |------|-------------|
-| `vcf_tbi` | Compressed vcf file + tabix index Structure: [ val(meta), path(vcf), path(tbi) ] |
-| `json` | json file Structure: [ val(meta), path(json) ] |
-| `tab` | tab file Structure: [ val(meta), path(tab) ] |
-| `reports` | html reports |
-| `versions` | File containing software versions |
-
-**Authors:** [@maxulysse](https://github.com/maxulysse), [@matthdsm](https://github.com/matthdsm), [@nvnieuwk](https://github.com/nvnieuwk)
-**Maintainers:** [@maxulysse](https://github.com/maxulysse), [@matthdsm](https://github.com/matthdsm), [@nvnieuwk](https://github.com/nvnieuwk)
+| `vcf_tbi` | - |
+| `json` | - |
+| `tab` | - |
+| `reports` | - |
 
 
 ## BAM_MARKDUPLICATES_PICARD {#bam-markduplicates-picard}
 
 *Defined in `subworkflows/nf-core/bam_markduplicates_picard/main.nf:9`*
 
-**Keywords:** `markduplicates`, `bam`, `sam`, `cram`
-
-Picard MarkDuplicates, index BAM file and run samtools stats, flagstat and idxstats
-
-### Components
-
-This workflow uses the following modules/subworkflows:
-
-- `picard/markduplicates`
-- `samtools/index`
-- `samtools/stats`
-- `samtools/idxstats`
-- `samtools/flagstat`
-- `bam_stats_samtools`
-
 ### Inputs
 
 | Name | Description |
 |------|-------------|
-| `ch_reads` | Sequence reads in BAM/CRAM/SAM format Structure: [ val(meta), path(reads) ] |
-| `ch_fasta` | Reference genome fasta file required for CRAM input Structure: [ path(fasta) ] |
-| `ch_fasta` | Index of the reference genome fasta file Structure: [ path(fai) ] |
+| `ch_reads` | - |
+| `ch_fasta` | - |
+| `ch_fai` | - |
 
 ### Outputs
 
 | Name | Description |
 |------|-------------|
-| `bam` | processed BAM/SAM file Structure: [ val(meta), path(bam) ] |
-| `bai` | BAM/SAM samtools index Structure: [ val(meta), path(bai) ] |
-| `cram` | processed CRAM file Structure: [ val(meta), path(cram) ] |
-| `crai` | CRAM samtools index Structure: [ val(meta), path(crai) ] |
-| `csi` | CSI samtools index Structure: [ val(meta), path(csi) ] |
-| `stats` | File containing samtools stats output Structure: [ val(meta), path(stats) ] |
-| `flagstat` | File containing samtools flagstat output Structure: [ val(meta), path(flagstat) ] |
-| `idxstats` | File containing samtools idxstats output Structure: [ val(meta), path(idxstats) ] |
-| `versions` | Files containing software versions Structure: [ path(versions.yml) ] |
-
-**Authors:** [@dmarron](https://github.com/dmarron), [@drpatelh](https://github.com/drpatelh)
-**Maintainers:** [@dmarron](https://github.com/dmarron), [@drpatelh](https://github.com/drpatelh)
+| `bam` | - |
+| `cram` | - |
+| `metrics` | - |
+| `bai` | - |
+| `crai` | - |
+| `csi` | - |
+| `stats` | - |
+| `flagstat` | - |
+| `idxstats` | - |
+| `versions` | - |
 
 
 ## BAM_SORT_STATS_SAMTOOLS {#bam-sort-stats-samtools}
 
 *Defined in `subworkflows/nf-core/bam_sort_stats_samtools/main.nf:9`*
 
-**Keywords:** `sort`, `bam`, `sam`, `cram`
-
-Sort SAM/BAM/CRAM file
-
-### Components
-
-This workflow uses the following modules/subworkflows:
-
-- `samtools/sort`
-- `samtools/index`
-- `samtools/stats`
-- `samtools/idxstats`
-- `samtools/flagstat`
-- `bam_stats_samtools`
-
 ### Inputs
 
 | Name | Description |
 |------|-------------|
-| `meta` | Groovy Map containing sample information e.g. [ id:'test', single_end:false ] |
-| `bam` | BAM/CRAM/SAM file |
-| `fasta` | Reference genome fasta file |
+| `ch_bam` | - |
+| `ch_fasta` | - |
 
 ### Outputs
 
 | Name | Description |
 |------|-------------|
-| `meta` | Groovy Map containing sample information e.g. [ id:'test', single_end:false ] |
-| `bam` | Sorted BAM/CRAM/SAM file |
-| `bai` | BAM/CRAM/SAM index file |
-| `crai` | BAM/CRAM/SAM index file |
-| `stats` | File containing samtools stats output |
-| `flagstat` | File containing samtools flagstat output |
-| `idxstats` | File containing samtools idxstats output |
-| `versions` | File containing software versions |
-
-**Authors:** [@drpatelh](https://github.com/drpatelh), [@ewels](https://github.com/ewels)
-**Maintainers:** [@drpatelh](https://github.com/drpatelh), [@ewels](https://github.com/ewels)
+| `bam` | - |
+| `bai` | - |
+| `csi` | - |
+| `stats` | - |
+| `flagstat` | - |
+| `idxstats` | - |
+| `versions` | - |
 
 
 ## PREPARE_ALIGNMENT {#prepare-alignment}
@@ -659,4 +558,4 @@ comma-separated list (e.g., "snpeff,vep" or "merge").
 ---
 
 *This pipeline was built with [Nextflow](https://nextflow.io).
-Documentation generated by [nf-docs](https://github.com/ewels/nf-docs) v0.1.0 on 2026-01-23 14:11:19 UTC.*
+Documentation generated by [nf-docs](https://github.com/ewels/nf-docs) v0.1.0 on 2026-01-23 17:02:57 UTC.*

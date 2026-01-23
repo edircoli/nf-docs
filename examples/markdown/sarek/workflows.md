@@ -182,256 +182,172 @@ This page documents all workflows in the pipeline.
 
 *Defined in `subworkflows/nf-core/bam_ngscheckmate/main.nf:4`*
 
-**Keywords:** `ngscheckmate`, `qc`, `bam`, `snp`
-
-Take a set of bam files and run NGSCheckMate to determine whether samples match with each other, using a set of SNPs.
-
-### Components
-
-This workflow uses the following modules/subworkflows:
-
-- `bcftools/mpileup`
-- `ngscheckmate/ncm`
-
 ### Inputs
 
 | Name | Description |
 |------|-------------|
-| `meta1` | Groovy Map containing sample information e.g. [ id:'test' ] |
-| `bam` | BAM files for each sample |
-| `meta2` | Groovy Map containing bed file information e.g. [ id:'sarscov2' ] |
-| `snp_bed` | BED file containing the SNPs to analyse. NGSCheckMate provides some default ones for hg19/hg38. |
-| `meta3` | Groovy Map containing reference genome meta information e.g. [ id:'sarscov2' ] |
-| `fasta` | fasta file for the genome |
+| `ch_input` | - |
+| `ch_snp_bed` | - |
+| `ch_fasta` | - |
 
 ### Outputs
 
 | Name | Description |
 |------|-------------|
-| `pdf` | A pdf containing a dendrogram showing how the samples match up |
-| `corr_matrix` | A text file containing the correlation matrix between each sample |
-| `matched` | A txt file containing only the samples that match with each other |
-| `all` | A txt file containing all the sample comparisons, whether they match or not |
-| `vcf` | vcf files for each sample giving the SNP calls |
-| `versions` | File containing software versions |
-
-**Authors:** [@SPPearce](https://github.com/SPPearce)
-**Maintainers:** [@SPPearce](https://github.com/SPPearce)
+| `corr_matrix` | - |
+| `matched` | - |
+| `all` | - |
+| `vcf` | - |
+| `pdf` | - |
+| `versions` | - |
 
 
 ## UTILS_NFCORE_PIPELINE {#utils-nfcore-pipeline}
 
 *Defined in `subworkflows/nf-core/utils_nfcore_pipeline/main.nf:11`*
 
-**Keywords:** `utility`, `pipeline`, `initialise`, `version`
-
-Subworkflow with utility functions specific to the nf-core pipeline template
-
 ### Inputs
 
 | Name | Description |
 |------|-------------|
-| `nextflow_cli_args` | Nextflow CLI positional arguments |
+| `nextflow_cli_args` | - |
 
 ### Outputs
 
 | Name | Description |
 |------|-------------|
-| `success` | Dummy output to indicate success |
-
-**Authors:** [@adamrtalbot](https://github.com/adamrtalbot)
-**Maintainers:** [@adamrtalbot](https://github.com/adamrtalbot), [@maxulysse](https://github.com/maxulysse)
+| `?` | - |
 
 
 ## UTILS_NEXTFLOW_PIPELINE {#utils-nextflow-pipeline}
 
 *Defined in `subworkflows/nf-core/utils_nextflow_pipeline/main.nf:11`*
 
-**Keywords:** `utility`, `pipeline`, `initialise`, `version`
-
-Subworkflow with functionality that may be useful for any Nextflow pipeline
-
 ### Inputs
 
 | Name | Description |
 |------|-------------|
-| `print_version` | Print the version of the pipeline and exit |
-| `dump_parameters` | Dump the parameters of the pipeline to a JSON file |
-| `output_directory` | Path to output dir to write JSON file to. |
-| `check_conda_channel` | Check if the conda channel priority is correct. |
+| `print_version` | - |
+| `dump_parameters` | - |
+| `outdir` | - |
+| `check_conda_channels` | - |
 
 ### Outputs
 
 | Name | Description |
 |------|-------------|
-| `dummy_emit` | Dummy emit to make nf-core subworkflows lint happy |
-
-**Authors:** [@adamrtalbot](https://github.com/adamrtalbot), [@drpatelh](https://github.com/drpatelh)
-**Maintainers:** [@adamrtalbot](https://github.com/adamrtalbot), [@drpatelh](https://github.com/drpatelh), [@maxulysse](https://github.com/maxulysse)
+| `dummy_emit` | - |
 
 
 ## VCF_ANNOTATE_SNPEFF {#vcf-annotate-snpeff}
 
 *Defined in `subworkflows/nf-core/vcf_annotate_snpeff/main.nf:8`*
 
-**Keywords:** `vcf`, `annotation`, `snpeff`
-
-Perform annotation with snpEff and bgzip + tabix index the resulting VCF file
-
-### Components
-
-This workflow uses the following modules/subworkflows:
-
-- `snpeff`
-- `snpeff/snpeff`
-- `tabix/bgziptabix`
-
 ### Inputs
 
 | Name | Description |
 |------|-------------|
-| `ch_vcf` | vcf file Structure: [ val(meta), path(vcf) ] |
-| `val_snpeff_db` | db version to use |
-| `ch_snpeff_cache` | path to root cache folder for snpEff (optional) Structure: [ path(cache) ] |
+| `ch_vcf` | - |
+| `val_snpeff_db` | - |
+| `ch_snpeff_cache` | - |
 
 ### Outputs
 
 | Name | Description |
 |------|-------------|
-| `vcf_tbi` | Compressed vcf file + tabix index Structure: [ val(meta), path(vcf), path(tbi) ] |
-| `reports` | html reports Structure: [ path(html) ] |
-| `summary` | html reports Structure: [ path(csv) ] |
-| `genes_txt` | html reports Structure: [ path(txt) ] |
-| `versions` | Files containing software versions Structure: [ path(versions.yml) ] |
-
-**Authors:** [@maxulysse](https://github.com/maxulysse)
-**Maintainers:** [@maxulysse](https://github.com/maxulysse)
+| `vcf_tbi` | - |
+| `reports` | - |
+| `summary` | - |
+| `genes_txt` | - |
+| `versions` | - |
 
 
 ## UTILS_NFSCHEMA_PLUGIN {#utils-nfschema-plugin}
 
 *Defined in `subworkflows/nf-core/utils_nfschema_plugin/main.nf:9`*
 
-**Keywords:** `validation`, `JSON schema`, `plugin`, `parameters`, `summary`
-
-Run nf-schema to validate parameters and create a summary of changed parameters
-
 ### Inputs
 
 | Name | Description |
 |------|-------------|
-| `input_workflow` | The workflow object of the used pipeline. This object contains meta data used to create the params summary log |
-| `validate_params` | Validate the parameters and error if invalid. |
-| `parameters_schema` | Path to the parameters JSON schema. This has to be the same as the schema given to the `validation.parametersSchema` config option. When this input is empty it will automatically use the configured schema or "${projectDir}/nextflow_schema.json" as default. The schema should not be given in this way for meta pipelines. |
+| `input_workflow` | - |
+| `validate_params` | - |
+| `parameters_schema` | - |
+| `help` | - |
+| `help_full` | - |
+| `show_hidden` | - |
+| `before_text` | - |
+| `after_text` | - |
+| `command` | - |
 
 ### Outputs
 
 | Name | Description |
 |------|-------------|
-| `dummy_emit` | Dummy emit to make nf-core subworkflows lint happy |
-
-**Authors:** [@nvnieuwk](https://github.com/nvnieuwk)
-**Maintainers:** [@nvnieuwk](https://github.com/nvnieuwk)
+| `dummy_emit` | - |
 
 
 ## VCF_ANNOTATE_ENSEMBLVEP {#vcf-annotate-ensemblvep}
 
 *Defined in `subworkflows/nf-core/vcf_annotate_ensemblvep/main.nf:8`*
 
-**Keywords:** `vcf`, `annotation`, `ensemblvep`
-
-Perform annotation with ensemblvep and bgzip + tabix index the resulting VCF file
-
-### Components
-
-This workflow uses the following modules/subworkflows:
-
-- `ensemblvep/vep`
-- `tabix/tabix`
-
 ### Inputs
 
 | Name | Description |
 |------|-------------|
-| `ch_vcf` | vcf file to annotate Structure: [ val(meta), path(vcf), [path(custom_file1), path(custom_file2)... (optional)] ] |
-| `ch_fasta` | Reference genome fasta file (optional) Structure: [ val(meta2), path(fasta) ] |
-| `val_genome` | genome to use |
-| `val_species` | species to use |
-| `val_cache_version` | cache version to use |
-| `ch_cache` | the root cache folder for ensemblvep (optional) Structure: [ val(meta3), path(cache) ] |
-| `ch_extra_files` | any extra files needed by plugins for ensemblvep (optional) Structure: [ path(file1), path(file2)... ] |
+| `ch_vcf` | - |
+| `ch_fasta` | - |
+| `val_genome` | - |
+| `val_species` | - |
+| `val_cache_version` | - |
+| `ch_cache` | - |
+| `ch_extra_files` | - |
 
 ### Outputs
 
 | Name | Description |
 |------|-------------|
-| `vcf_tbi` | Compressed vcf file + tabix index Structure: [ val(meta), path(vcf), path(tbi) ] |
-| `json` | json file Structure: [ val(meta), path(json) ] |
-| `tab` | tab file Structure: [ val(meta), path(tab) ] |
-| `reports` | html reports |
-| `versions` | File containing software versions |
-
-**Authors:** [@maxulysse](https://github.com/maxulysse), [@matthdsm](https://github.com/matthdsm), [@nvnieuwk](https://github.com/nvnieuwk)
-**Maintainers:** [@maxulysse](https://github.com/maxulysse), [@matthdsm](https://github.com/matthdsm), [@nvnieuwk](https://github.com/nvnieuwk)
+| `vcf_tbi` | - |
+| `json` | - |
+| `tab` | - |
+| `reports` | - |
+| `versions` | - |
 
 
 ## BAM_VARIANT_CALLING_SOMATIC_MUTECT2 {#bam-variant-calling-somatic-mutect2}
 
 *Defined in `subworkflows/local/bam_variant_calling_somatic_mutect2/main.nf:17`*
 
-**Keywords:** `gatk4`, `mutect2`, `learnreadorientationmodel`, `getpileupsummaries`, `calculatecontamination`, `filtermutectcalls`, `variant_calling`, `tumor_only`, `filtered_vcf`
-
-Perform variant calling on a paired tumor normal set of samples using mutect2 tumor normal mode.
-f1r2 output of mutect2 is run through learnreadorientationmodel to get the artifact priors.
-Run the input bam files through getpileupsummarries and then calculatecontamination to get the contamination and segmentation tables.
-Filter the mutect2 output vcf using filtermutectcalls, artifact priors and the contamination & segmentation tables for additional filtering.
-
-### Components
-
-This workflow uses the following modules/subworkflows:
-
-- `gatk4/mutect2`
-- `gatk4/learnreadorientationmodel`
-- `gatk4/getpileupsummaries`
-- `gatk4/calculatecontamination`
-- `gatk4/filtermutectcalls`
-
 ### Inputs
 
 | Name | Description |
 |------|-------------|
-| `meta` | Groovy Map containing sample information e.g. [ id:'test' ] |
-| `input` | list containing the tumor and normal BAM files, in that order, also able to take CRAM as an input |
-| `input_index` | list containing the tumor and normal BAM file indexes, in that order, also able to take CRAM index as an input |
-| `which_norm` | optional list of sample headers contained in the normal sample input file. |
-| `fasta` | The reference fasta file |
-| `fai` | Index of reference fasta file |
-| `dict` | GATK sequence dictionary |
-| `germline_resource` | Population vcf of germline sequencing, containing allele fractions. |
-| `germline_resource_tbi` | Index file for the germline resource. |
-| `panel_of_normals` | vcf file to be used as a panel of normals. |
-| `panel_of_normals_tbi` | Index for the panel of normals. |
-| `interval_file` | File containing intervals. |
+| `input` | - |
+| `fasta` | - |
+| `fai` | - |
+| `dict` | - |
+| `germline_resource` | - |
+| `germline_resource_tbi` | - |
+| `panel_of_normals` | - |
+| `panel_of_normals_tbi` | - |
+| `intervals` | - |
+| `joint_mutect2` | - |
 
 ### Outputs
 
 | Name | Description |
 |------|-------------|
-| `versions` | File containing software versions |
-| `mutect2_vcf` | Compressed vcf file to be used for variant_calling. |
-| `mutect2_tbi` | Indexes of the mutect2_vcf file |
-| `mutect2_stats` | Stats files for the mutect2 vcf |
-| `mutect2_f1r2` | file containing information to be passed to LearnReadOrientationModel. |
-| `artifact_priors` | file containing artifact-priors to be used by filtermutectcalls. |
-| `pileup_table_tumor` | File containing the tumor pileup summary table, kept separate as calculatecontamination needs them individually specified. |
-| `pileup_table_normal` | File containing the normal pileup summary table, kept separate as calculatecontamination needs them individually specified. |
-| `contamination_table` | File containing the contamination table. |
-| `segmentation_table` | Output table containing segmentation of tumor minor allele fractions. |
-| `filtered_vcf` | file containing filtered mutect2 calls. |
-| `filtered_tbi` | tbi file that pairs with filtered vcf. |
-| `filtered_stats` | file containing statistics of the filtermutectcalls run. |
-
-**Authors:** [@GCJMackenzie](https://github.com/GCJMackenzie)
+| `?` | - |
+| `?` | - |
+| `?` | - |
+| `index_filtered` | - |
+| `stats_filtered` | - |
+| `artifact_priors` | - |
+| `?` | - |
+| `?` | - |
+| `contamination_table` | - |
+| `segmentation_table` | - |
+| `?` | - |
 
 
 ## SAMPLESHEET_TO_CHANNEL {#samplesheet-to-channel}
@@ -530,53 +446,35 @@ This workflow uses the following modules/subworkflows:
 
 *Defined in `subworkflows/local/bam_variant_calling_tumor_only_mutect2/main.nf:16`*
 
-**Keywords:** `gatk4`, `mutect2`, `getpileupsummaries`, `calculatecontamination`, `filtermutectcalls`, `variant_calling`, `tumor_only`, `filtered_vcf`
-
-Perform variant calling on a single tumor sample using mutect2 tumor only mode.
-Run the input bam file through getpileupsummarries and then calculatecontaminationto get the contamination and segmentation tables.
-Filter the mutect2 output vcf using filtermutectcalls and the contamination & segmentation tables for additional filtering.
-
-### Components
-
-This workflow uses the following modules/subworkflows:
-
-- `gatk4/mutect2`
-- `gatk4/getpileupsummaries`
-- `gatk4/calculatecontamination`
-- `gatk4/filtermutectcalls`
-
 ### Inputs
 
 | Name | Description |
 |------|-------------|
-| `meta` | Groovy Map containing sample information e.g. [ id:'test' ] |
-| `input` | list containing one BAM file, also able to take CRAM as an input |
-| `input_index` | list containing one BAM file indexe, also able to take CRAM index as an input |
-| `fasta` | The reference fasta file |
-| `fai` | Index of reference fasta file |
-| `dict` | GATK sequence dictionary |
-| `germline_resource` | Population vcf of germline sequencing, containing allele fractions. |
-| `germline_resource_tbi` | Index file for the germline resource. |
-| `panel_of_normals` | vcf file to be used as a panel of normals. |
-| `panel_of_normals_tbi` | Index for the panel of normals. |
-| `interval_file` | File containing intervals. |
+| `input` | - |
+| `fasta` | - |
+| `fai` | - |
+| `dict` | - |
+| `germline_resource` | - |
+| `germline_resource_tbi` | - |
+| `panel_of_normals` | - |
+| `panel_of_normals_tbi` | - |
+| `intervals` | - |
+| `joint_mutect2` | - |
 
 ### Outputs
 
 | Name | Description |
 |------|-------------|
-| `versions` | File containing software versions |
-| `mutect2_vcf` | Compressed vcf file to be used for variant_calling. |
-| `mutect2_tbi` | Indexes of the mutect2_vcf file |
-| `mutect2_stats` | Stats files for the mutect2 vcf |
-| `pileup_table` | File containing the pileup summary table. |
-| `contamination_table` | File containing the contamination table. |
-| `segmentation_table` | Output table containing segmentation of tumor minor allele fractions. |
-| `filtered_vcf` | file containing filtered mutect2 calls. |
-| `filtered_tbi` | tbi file that pairs with filtered vcf. |
-| `filtered_stats` | file containing statistics of the filtermutectcalls run. |
-
-**Authors:** [@GCJMackenzie](https://github.com/GCJMackenzie)
+| `?` | - |
+| `?` | - |
+| `?` | - |
+| `index_filtered` | - |
+| `stats_filtered` | - |
+| `artifact_priors` | - |
+| `?` | - |
+| `contamination_table` | - |
+| `segmentation_table` | - |
+| `?` | - |
 
 
 ## BAM_JOINT_CALLING_GERMLINE_SENTIEON {#bam-joint-calling-germline-sentieon}
@@ -1758,53 +1656,28 @@ This workflow uses the following modules/subworkflows:
 
 *Defined in `subworkflows/local/bam_variant_calling_tumor_only_tnscope/main.nf:9`*
 
-**Keywords:** `gatk4`, `mutect2`, `getpileupsummaries`, `calculatecontamination`, `filtermutectcalls`, `variant_calling`, `tumor_only`, `filtered_vcf`
-
-Perform variant calling on a single tumor sample using mutect2 tumor only mode.
-Run the input bam file through getpileupsummarries and then calculatecontaminationto get the contamination and segmentation tables.
-Filter the mutect2 output vcf using filtermutectcalls and the contamination & segmentation tables for additional filtering.
-
-### Components
-
-This workflow uses the following modules/subworkflows:
-
-- `gatk4/mutect2`
-- `gatk4/getpileupsummaries`
-- `gatk4/calculatecontamination`
-- `gatk4/filtermutectcalls`
-
 ### Inputs
 
 | Name | Description |
 |------|-------------|
-| `meta` | Groovy Map containing sample information e.g. [ id:'test' ] |
-| `input` | list containing one BAM file, also able to take CRAM as an input |
-| `input_index` | list containing one BAM file indexe, also able to take CRAM index as an input |
-| `fasta` | The reference fasta file |
-| `fai` | Index of reference fasta file |
-| `dict` | GATK sequence dictionary |
-| `germline_resource` | Population vcf of germline sequencing, containing allele fractions. |
-| `germline_resource_tbi` | Index file for the germline resource. |
-| `panel_of_normals` | vcf file to be used as a panel of normals. |
-| `panel_of_normals_tbi` | Index for the panel of normals. |
-| `interval_file` | File containing intervals. |
+| `input` | - |
+| `fasta` | - |
+| `fai` | - |
+| `dict` | - |
+| `germline_resource` | - |
+| `germline_resource_tbi` | - |
+| `panel_of_normals` | - |
+| `panel_of_normals_tbi` | - |
+| `intervals` | - |
 
 ### Outputs
 
 | Name | Description |
 |------|-------------|
-| `versions` | File containing software versions |
-| `mutect2_vcf` | Compressed vcf file to be used for variant_calling. |
-| `mutect2_tbi` | Indexes of the mutect2_vcf file |
-| `mutect2_stats` | Stats files for the mutect2 vcf |
-| `pileup_table` | File containing the pileup summary table. |
-| `contamination_table` | File containing the contamination table. |
-| `segmentation_table` | Output table containing segmentation of tumor minor allele fractions. |
-| `filtered_vcf` | file containing filtered mutect2 calls. |
-| `filtered_tbi` | tbi file that pairs with filtered vcf. |
-| `filtered_stats` | file containing statistics of the filtermutectcalls run. |
-
-**Authors:** [@GCJMackenzie](https://github.com/GCJMackenzie)
+| `?` | - |
+| `tbi` | - |
+| `?` | - |
+| `?` | - |
 
 
 ## BAM_VARIANT_CALLING_HAPLOTYPECALLER {#bam-variant-calling-haplotypecaller}
@@ -2231,4 +2104,4 @@ This workflow uses the following modules/subworkflows:
 ---
 
 *This pipeline was built with [Nextflow](https://nextflow.io).
-Documentation generated by [nf-docs](https://github.com/ewels/nf-docs) v0.1.0 on 2026-01-23 14:20:18 UTC.*
+Documentation generated by [nf-docs](https://github.com/ewels/nf-docs) v0.1.0 on 2026-01-23 17:02:59 UTC.*

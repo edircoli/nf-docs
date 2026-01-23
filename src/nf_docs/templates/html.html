@@ -52,7 +52,6 @@
         border-radius: 0.25rem;
         font-family: ui-monospace, monospace;
         font-size: 0.875em;
-        word-break: break-word;
       }
       .prose pre {
         background-color: rgb(30 41 59); /* slate-800 */
@@ -121,6 +120,11 @@
       /* Scroll offset for fixed top nav */
       [id] {
         scroll-margin-top: 4.5rem; /* 3.5rem nav + 1rem padding */
+      }
+
+      /* Prevent horizontal overflow on main content */
+      main {
+        overflow-x: hidden;
       }
 
       /* Paragraph anchor links */
@@ -640,6 +644,8 @@
       .highlight .vi { color: #ffa657 } /* Name.Variable.Instance */
       .highlight .vm { color: #ffa657 } /* Name.Variable.Magic */
       .highlight .il { color: #79c0ff } /* Literal.Number.Integer.Long */
+      .highlight .p { color: #8b949e } /* Punctuation */
+      .highlight .x { color: #c9d1d9 } /* Other */
 
       /* ==================== Footer Styles ==================== */
 
@@ -1326,7 +1332,7 @@
             <h3 class="text-lg font-semibold mt-4 mb-2">Components</h3>
             <div class="flex flex-wrap gap-2 mb-4">
               {% for comp in wf.meta_components %}
-              <code class="bg-slate-100 px-2 py-1 rounded font-mono text-sm">{{ comp }}</code>
+              <code class="bg-slate-100 px-2 py-1 rounded font-mono text-sm">{{ comp|wbr }}</code>
               {% endfor %}
             </div>
             {% endif %}
@@ -1352,7 +1358,7 @@
                 <tr class="hover:bg-slate-50">
                   <td class="p-3 border-b border-slate-200">
                     <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
-                      >{{ inp.name }}</code
+                      >{{ inp.name|wbr }}</code
                     >
                   </td>
                   <td class="p-3 border-b border-slate-200">
@@ -1368,7 +1374,7 @@
                 <tr class="hover:bg-slate-50">
                   <td class="p-3 border-b border-slate-200">
                     <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
-                      >{{ inp.name }}</code
+                      >{{ inp.name|wbr }}</code
                     >
                   </td>
                   <td class="p-3 border-b border-slate-200">{{ inp.description or '-' }}</td>
@@ -1400,7 +1406,7 @@
                 <tr class="hover:bg-slate-50">
                   <td class="p-3 border-b border-slate-200">
                     <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
-                      >{{ out.name }}</code
+                      >{{ out.name|wbr }}</code
                     >
                   </td>
                   <td class="p-3 border-b border-slate-200">
@@ -1416,7 +1422,7 @@
                 <tr class="hover:bg-slate-50">
                   <td class="p-3 border-b border-slate-200">
                     <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
-                      >{{ out.name }}</code
+                      >{{ out.name|wbr }}</code
                     >
                   </td>
                   <td class="p-3 border-b border-slate-200">{{ out.description or '-' }}</td>
@@ -1434,7 +1440,7 @@
               <li>
                 <a href="#process-{{ call }}" class="text-primary hover:underline">
                   <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
-                    >{{ call }}</code
+                    >{{ call|wbr }}</code
                   >
                 </a>
               </li>
@@ -1594,12 +1600,12 @@
                 <tr class="hover:bg-slate-50">
                   <td class="p-3 border-b border-slate-200">
                     <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
-                      >{{ inp.name }}</code
+                      >{{ inp.name|wbr }}</code
                     >
                   </td>
                   <td class="p-3 border-b border-slate-200">
                     <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
-                      >{{ inp.type or '-' }}</code
+                      >{{ (inp.type or '-')|wbr }}</code
                     >
                   </td>
                   <td class="p-3 border-b border-slate-200">
@@ -1615,12 +1621,12 @@
                 <tr class="hover:bg-slate-50">
                   <td class="p-3 border-b border-slate-200">
                     <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
-                      >{{ inp.name }}</code
+                      >{{ inp.name|wbr }}</code
                     >
                   </td>
                   <td class="p-3 border-b border-slate-200">
                     <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
-                      >{{ inp.type }}</code
+                      >{{ inp.type|wbr }}</code
                     >
                   </td>
                   <td class="p-3 border-b border-slate-200">{{ inp.description or '-' }}</td>
@@ -1658,18 +1664,18 @@
                 <tr class="hover:bg-slate-50">
                   <td class="p-3 border-b border-slate-200">
                     <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
-                      >{{ out.name }}</code
+                      >{{ out.name|wbr }}</code
                     >
                   </td>
                   <td class="p-3 border-b border-slate-200">
                     <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
-                      >{{ out.type or '-' }}</code
+                      >{{ (out.type or '-')|wbr }}</code
                     >
                   </td>
                   <td class="p-3 border-b border-slate-200">
                     {% if out.pattern %}
                     <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
-                      >{{ out.pattern }}</code
+                      >{{ out.pattern|wbr }}</code
                     >
                     {% else %}-{% endif %}
                   </td>
@@ -1686,18 +1692,18 @@
                 <tr class="hover:bg-slate-50">
                   <td class="p-3 border-b border-slate-200">
                     <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
-                      >{{ out.name }}</code
+                      >{{ out.name|wbr }}</code
                     >
                   </td>
                   <td class="p-3 border-b border-slate-200">
                     <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
-                      >{{ out.type }}</code
+                      >{{ out.type|wbr }}</code
                     >
                   </td>
                   <td class="p-3 border-b border-slate-200">
                     {% if out.emit %}
                     <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
-                      >{{ out.emit }}</code
+                      >{{ out.emit|wbr }}</code
                     >
                     {% else %}-{% endif %}
                   </td>
@@ -1727,12 +1733,12 @@
                 <tr class="hover:bg-slate-50">
                   <td class="p-3 border-b border-slate-200">
                     <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
-                      >{{ name }}</code
+                      >{{ name|wbr }}</code
                     >
                   </td>
                   <td class="p-3 border-b border-slate-200">
                     <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
-                      >{{ value }}</code
+                      >{{ value|wbr }}</code
                     >
                   </td>
                 </tr>
@@ -1834,14 +1840,14 @@
                 <tr class="hover:bg-slate-50">
                   <td class="p-3 border-b border-slate-200">
                     <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
-                      >{{ p.name }}</code
+                      >{{ p.name|wbr }}</code
                     >
                   </td>
                   <td class="p-3 border-b border-slate-200">{{ p.description or '-' }}</td>
                   <td class="p-3 border-b border-slate-200">
                     {% if p.default is not none %}
                     <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
-                      >{{ p.default }}</code
+                      >{{ p.default|wbr }}</code
                     >
                     {% else %}-{% endif %}
                   </td>

@@ -122,6 +122,11 @@
         scroll-margin-top: 4.5rem; /* 3.5rem nav + 1rem padding */
       }
 
+      /* Prevent horizontal overflow on main content */
+      main {
+        overflow-x: hidden;
+      }
+
       /* Paragraph anchor links */
       .paragraph-link {
         margin-left: 0.5rem;
@@ -257,6 +262,32 @@
       }
       html.dark .mobile-nav-link:hover {
         background-color: rgb(51 65 85); /* slate-700 */
+      }
+      html.dark #mobile-toc-link {
+        color: rgb(203 213 225); /* slate-300 */
+      }
+      html.dark #mobile-toc-link:hover {
+        background-color: rgb(51 65 85); /* slate-700 */
+      }
+      html.dark #mobile-toc-back {
+        color: rgb(203 213 225); /* slate-300 */
+      }
+      html.dark #mobile-toc-back:hover {
+        background-color: rgb(51 65 85); /* slate-700 */
+      }
+      html.dark #mobile-toc-nav .sticky {
+        background-color: rgb(30 41 59); /* slate-800 */
+        border-color: rgb(51 65 85); /* slate-700 */
+      }
+      html.dark .mobile-toc-link {
+        color: rgb(148 163 184); /* slate-400 */
+      }
+      html.dark .mobile-toc-link:hover {
+        background-color: rgb(51 65 85); /* slate-700 */
+        color: rgb(226 232 240); /* slate-200 */
+      }
+      html.dark .mobile-toc-group-header {
+        color: rgb(203 213 225); /* slate-300 */
       }
       html.dark #mobile-search-input {
         background-color: rgb(51 65 85); /* slate-700 */
@@ -613,6 +644,8 @@
       .highlight .vi { color: #ffa657 } /* Name.Variable.Instance */
       .highlight .vm { color: #ffa657 } /* Name.Variable.Magic */
       .highlight .il { color: #79c0ff } /* Literal.Number.Integer.Long */
+      .highlight .p { color: #8b949e } /* Punctuation */
+      .highlight .x { color: #c9d1d9 } /* Other */
 
       /* ==================== Footer Styles ==================== */
 
@@ -703,12 +736,9 @@
         
         <img
           id="repo-avatar"
-          src="https://github.com/nextflow-io.png?size=48"
+          src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAGKUlEQVR4nOxZe0wU3R29dx47u7O7sBS+BQRFKeXVKmBRAoaC2gqpBa1RQo1CjDHaViWKmrS2VisN1VobjG19RFuxpKYVxaBWtKVFIigPQUUoymvtUsHKc2HZx8y9DaYYC3dgdwc/YsL5a/ae351zzu59zJ2lwCeO2QAzjdkAM43ZADMNRoqAfvogzR9yn2LTUCcyvnkhNrXVCNXPS8TqhkogIvxR3PBKlomLXMFEhnydCg6Iovy9QyCv9DYlblVI+pw0QEHuy/HtqN/UZr/xjzz71XtnsWnYOh2+oZdOx21Zu49ZuXQbVHL68bwpcaukT6eHEKXTBnKZKXn8xSP19NKvxLpi+EOw61ZuUF/KaWJXxx8kmZ/Sj6vC1GceofzxPeXcnk1HAE05fx9eqVSdyL6s3L3xT1Ct8nHZh6sd/wdasWb5IdWJ7ILR8etoJ+il8+J/+6O/MdHhm2TqT88qxESFpvMn9/0Z0DQ9VS309tTxp39QSgf4xk2HtrQgQhbcb/on7hvsgDqNO+RVn012I8rLI5Ty12uE+7V3pdUoiv/F3iJ6vt9U5hEydj+0l1ZftN+t/A1qam+UKpSc3RO0I0IiFZu/9UMmOnzDZHUjuRdShJKKmyROsWNDNpeefEKqL8ZYEEqrztiu3DmJXr5qd8SXwwHGwKYmrON2bfw9ZBktiUcDQ63DafvDgNVm/z8hP72P+lLOS8jQGqL5IfOrkZ+eXS9WNVQ742fKMTvBYLOhCbUa7zEJ0emQorjxPFQqvoDNFgNqaKn7sF2ZnXGMDvRfRjQ/MNRh3pUbhxrbmp3149IkFirqa6x5BZlSPJeefBAo2PdfDvTT+7IJ0VtItVgQzSOHfr0WGV7/2xUvLq9C9uKyIvvDp5dIHHTXLGBWxiSNfWZTEzMBBCpSra3wrz8Wn7x44qoPWcuo9VzhTwDGdhLHxCxcM3bNLotMJdVgk9lou1h0Wo4HWQFwm9Eg1DdfJ3FMVOjydxc6rRvl572EVGO7XX4GWG02OR5kb2TC/cc3SO3QXfMl6KVT0+GBCwEkP/UKZTVFcvVlBxCb2+ukOOjlMYfy8ZxHJDGwolZjk1x9p/eBCeCVHPu1xetJlPCo4TbUqt3osAWR4zkMgFUoqbgjV17yQOMwRGRHvYMdJAoLojC6oaG+QdK5QZCtPR2/AJznO0eTn9NJ4sxZx6OoAJ9A5d6MQgItmFbvVIHhEVlBZM8BOmjuIikO9Q10oa4eowTN0CHzw+Tqyw7AxC5KIbVji+0/2PimC70wPAcYEPcKOmYhcX9wBrICQE93NyZxCfFQIja0lAGEAO43DYuGTuIDmuKb8dsAp3D4IESCrACKjJQDkGXcSJzwoK547FqsbSI+XkMtH8Cmrdomx4PLAeglX45RpC7fT+KwxdZr/3v1+4lrv3k/H2BgIdVymak/p4IDQlz14VIAKnj+XNXh714FEBDf19hLHpwC/abhsc+ovbPTXlZzmVQLGVqrytl1bfSo6ZIXZzvQi8Oi+JPZ5VCt8ifx2GLrseUX/2p8uy2/+CgWxBGiCb1HOJ93oJwK/2KQ034cLaTm+eq5HWmHld9PPw851lOqznrh+h6xqqFifDvuGxyEOi2kwwJXkPpBDa9nk+K2Qp2WQa3/egLMFuKQm9BPkuEULPPVsBgqaG4EvTg8iYkISZIaMmMQGlqKRrKOfRuIiFzAKxn+3KEy2t978kM9BmahtvGm8OjZHWR4/VyselbldACpV4tSQF1va83bjybigaGhyeqgt6e3+sLhSqjhFzh672l9tUiCaHj9wLwzd9VU5keBu3u6zbuPxaM3vc+mQ1v+eaC++Yp5Z+438Nv+Xkf7oDZjp/l7P0sQW17dk6vvcoDR1cZy9mrGSPYvvwNMw8TVZdL+b/v7zNtzkq0Ft7KwIE75y0nB6cdpPDhksJdW/872x7+cxt09Pa4Kv4MoItv5a6fst8oLFWlJWWzyss1QqXDqRe/UkxgDM+rsbhSbOyqF8rprQvnjMiCKH+cPDk5BM/FRSUxsRCodERxLeXqEjq58k01iadA0A/30esAp5J/aXIVWPephzozpfx745P/kmw0w05gNMNP4bwAAAP//cM87mFXxDdoAAAAASUVORK5CYII="
           alt="Organization avatar"
           class="w-6 h-6 rounded mr-2"
-          style="display: none;"
-          onerror="this.style.display='none'"
-          onload="this.style.display='block'"
         />
         
         <h1 class="text-lg font-bold text-primary">
@@ -792,22 +822,34 @@
       </div>
 
       <!-- Mobile Navigation Links -->
-      <nav class="p-4 border-b border-slate-200">
-        <!-- Search link for mobile -->
-        <a
-          href="#search-results"
-          id="mobile-search-link"
-          class="flex items-center gap-2 px-3 py-2 rounded transition-colors hover:bg-slate-100 text-slate-800"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-          </svg>
-          Search
-        </a>
-      </nav>
+      <div id="mobile-main-nav">
+        <nav class="p-4 border-b border-slate-200">
+          <!-- Search link for mobile -->
+          <a
+            href="#search-results"
+            id="mobile-search-link"
+            class="flex items-center gap-2 px-3 py-2 rounded transition-colors hover:bg-slate-100 text-slate-800"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+            Search
+          </a>
+          <hr class="my-2 border-slate-200" />
+          <!-- Table of contents link for mobile -->
+          <button
+            id="mobile-toc-link"
+            class="flex items-center gap-2 px-3 py-2 rounded transition-colors hover:bg-slate-100 text-slate-800 w-full text-left"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+            </svg>
+            Table of contents
+          </button>
+        </nav>
 
-      <!-- Mobile Navigation Links -->
-      <nav class="p-4 overflow-y-auto" style="max-height: calc(100vh - 140px);">
+        <!-- Mobile Navigation Links -->
+        <nav class="p-4 overflow-y-auto" style="max-height: calc(100vh - 180px);">
         <ul class="space-y-1">
           <li>
             <a
@@ -864,7 +906,28 @@
           </a>
         </div>
         
-      </nav>
+        </nav>
+      </div>
+
+      <!-- Mobile Table of Contents (hidden by default) -->
+      <div id="mobile-toc-nav" class="hidden h-full flex flex-col">
+        <!-- Floating back button -->
+        <div class="sticky top-0 z-10 p-4 border-b border-slate-200 bg-white">
+          <button
+            id="mobile-toc-back"
+            class="flex items-center gap-2 px-3 py-2 rounded transition-colors hover:bg-slate-100 text-slate-800 w-full text-left"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Back to navigation
+          </button>
+        </div>
+        <!-- ToC content -->
+        <nav id="mobile-toc-content" class="p-4 overflow-y-auto flex-1">
+          <!-- Content will be populated by JavaScript -->
+        </nav>
+      </div>
     </aside>
 
     <div class="flex min-h-screen pt-14">
@@ -943,9 +1006,17 @@
             </div>
           </div>
 
-          <p class="mb-4 text-slate-600">
+          <p id="search-query-wrapper" class="mb-4 text-slate-600 hidden">
             Showing results for "<span id="search-query-display" class="font-semibold"></span>"
           </p>
+
+          <div id="search-empty-state" class="py-8 text-center text-slate-500">
+            <svg class="w-12 h-12 mx-auto mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+            <p class="text-lg">Enter a search term</p>
+            <p class="text-sm mt-2">Find parameters, processes, workflows, and more</p>
+          </div>
 
           <div id="search-results-content">
             <!-- Results will be populated by JavaScript -->
@@ -1203,7 +1274,7 @@
               <span>Documentation generated by</span>
               <a href="https://github.com/ewels/nf-docs" target="_blank" rel="noopener noreferrer">nf-docs</a>
               <span class="nf-docs-version">v0.1.0</span>
-              <span>on 2026-01-23 14:07:30 UTC</span>
+              <span>on 2026-01-23 17:02:55 UTC</span>
             </div>
           </div>
         </footer>
@@ -1561,6 +1632,8 @@
       const searchResultsContent = document.getElementById('search-results-content');
       const searchNoResults = document.getElementById('search-no-results');
       const searchQueryDisplay = document.getElementById('search-query-display');
+      const searchQueryWrapper = document.getElementById('search-query-wrapper');
+      const searchEmptyState = document.getElementById('search-empty-state');
 
       // Debounce function
       function debounce(func, wait) {
@@ -1585,9 +1658,22 @@
       // Search function
       function performSearch(query) {
         if (!query || query.length < 2) {
-          // Clear search and show previous section
+          // If we're on the search results page, stay there but show empty state
+          if (currentSection === 'search-results' || !searchResultsSection.classList.contains('hidden')) {
+            searchResultsContent.innerHTML = '';
+            searchNoResults.classList.add('hidden');
+            searchQueryWrapper.classList.add('hidden');
+            searchEmptyState.classList.remove('hidden');
+            searchClear.classList.add('hidden');
+            // Update URL to remove search param
+            const url = new URL(window.location);
+            url.searchParams.delete('search');
+            history.replaceState(null, null, url.pathname + url.hash);
+            return;
+          }
+          // Otherwise, show previous section
           searchResultsSection.classList.add('hidden');
-          if (currentSection !== 'search-results') {
+          if (currentSection && currentSection !== 'search-results') {
             document.getElementById(currentSection).classList.remove('hidden');
           } else {
             document.getElementById('overview').classList.remove('hidden');
@@ -1603,6 +1689,8 @@
         }
 
         searchClear.classList.remove('hidden');
+        searchEmptyState.classList.add('hidden');
+        searchQueryWrapper.classList.remove('hidden');
         const lowerQuery = query.toLowerCase();
         const results = {
           workflows: [],
@@ -1888,7 +1976,16 @@
         mobileSearchInput.value = '';
         searchInput.value = '';
         mobileSearchClear.classList.add('hidden');
-        clearSearch();
+        searchClear.classList.add('hidden');
+        // Clear results but stay on search page with empty state
+        searchResultsContent.innerHTML = '';
+        searchNoResults.classList.add('hidden');
+        searchQueryWrapper.classList.add('hidden');
+        searchEmptyState.classList.remove('hidden');
+        // Update URL to remove search param
+        const url = new URL(window.location);
+        url.searchParams.delete('search');
+        history.replaceState(null, null, url.pathname + url.hash);
       });
 
       // Close mobile menu on escape key
@@ -1897,6 +1994,81 @@
           closeMobileMenu();
         }
       });
+
+      // ==================== Mobile Table of Contents ====================
+
+      const mobileTocLink = document.getElementById('mobile-toc-link');
+      const mobileTocBack = document.getElementById('mobile-toc-back');
+      const mobileMainNav = document.getElementById('mobile-main-nav');
+      const mobileTocNav = document.getElementById('mobile-toc-nav');
+      const mobileTocContent = document.getElementById('mobile-toc-content');
+
+      // Populate mobile ToC based on current section
+      function populateMobileToc() {
+        mobileTocContent.innerHTML = '';
+
+        // Get the current active ToC section from the right sidebar
+        const activeTocSection = document.querySelector('.toc-section:not(.hidden)');
+        
+        if (!activeTocSection || activeTocSection.children.length === 0) {
+          // No ToC content for this section
+          mobileTocContent.innerHTML = '<p class="text-slate-500 text-sm px-2">No table of contents available for this section.</p>';
+          return;
+        }
+
+        // Clone the ToC content
+        const clonedContent = activeTocSection.cloneNode(true);
+        clonedContent.classList.remove('hidden', 'toc-section');
+        clonedContent.removeAttribute('id');
+
+        // Update classes for mobile styling
+        clonedContent.querySelectorAll('.toc-link').forEach(link => {
+          link.classList.remove('toc-link');
+          link.classList.add('mobile-toc-link', 'block', 'px-3', 'py-2', 'rounded', 'text-slate-600', 'hover:bg-slate-100', 'hover:text-slate-900', 'transition-colors');
+          
+          // Add click handler
+          link.addEventListener('click', e => {
+            e.preventDefault();
+            const href = link.getAttribute('href');
+            const escapedHref = href.replace(/\./g, '\\.');
+            const target = document.querySelector(escapedHref);
+            
+            if (target) {
+              closeMobileMenu();
+              setTimeout(() => target.scrollIntoView({ behavior: 'smooth' }), 100);
+              history.pushState(null, null, href);
+            }
+          });
+        });
+
+        // Update group headers for mobile
+        clonedContent.querySelectorAll('.toc-group-header').forEach(header => {
+          header.classList.add('mobile-toc-group-header', 'font-semibold', 'text-sm', 'text-slate-700', 'mb-1', 'px-3', 'py-1');
+        });
+
+        // Update spacing
+        clonedContent.querySelectorAll('ul').forEach(ul => {
+          ul.classList.add('space-y-1', 'text-sm');
+        });
+
+        mobileTocContent.appendChild(clonedContent);
+      }
+
+      // Show mobile ToC
+      function showMobileToc() {
+        populateMobileToc();
+        mobileMainNav.classList.add('hidden');
+        mobileTocNav.classList.remove('hidden');
+      }
+
+      // Show mobile main nav
+      function showMobileMainNav() {
+        mobileTocNav.classList.add('hidden');
+        mobileMainNav.classList.remove('hidden');
+      }
+
+      mobileTocLink.addEventListener('click', showMobileToc);
+      mobileTocBack.addEventListener('click', showMobileMainNav);
 
       // ==================== Dark Mode Toggle ====================
 
