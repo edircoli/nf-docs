@@ -4,6 +4,21 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ title }}</title>
+    <script>
+      // Apply theme before page renders to avoid flash
+      (function() {
+        const STORAGE_KEY = 'nf-docs-theme';
+        const stored = localStorage.getItem(STORAGE_KEY);
+        let theme = stored;
+        if (!theme) {
+          // Auto-detect from OS preference
+          theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
     <style>
       /* Tailwind CSS will be injected here */
 
@@ -97,6 +112,252 @@
       [id] {
         scroll-margin-top: 4.5rem; /* 3.5rem nav + 1rem padding */
       }
+
+      /* Paragraph anchor links */
+      .paragraph-link {
+        margin-left: 0.5rem;
+        color: rgb(148 163 184); /* slate-400 */
+        opacity: 0.7;
+        transition: opacity 0.2s, color 0.2s;
+        text-decoration: none;
+      }
+      .heading-anchor:hover .paragraph-link {
+        opacity: 1;
+        color: #0DC09D; /* primary */
+      }
+
+      /* Dark mode paragraph links */
+      html.dark .paragraph-link {
+        color: rgb(100 116 139); /* slate-500 */
+        opacity: 0.8;
+      }
+      html.dark .heading-anchor:hover .paragraph-link {
+        opacity: 1;
+        color: #0DC09D; /* primary */
+      }
+
+      /* ==================== Dark Mode Styles ==================== */
+
+      /* Theme toggle button */
+      .theme-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      .theme-toggle:hover {
+        background-color: rgb(241 245 249); /* slate-100 */
+      }
+      .theme-toggle svg {
+        width: 1.25rem;
+        height: 1.25rem;
+        color: rgb(100 116 139); /* slate-500 */
+      }
+      .theme-toggle:hover svg {
+        color: rgb(71 85 105); /* slate-600 */
+      }
+      /* Hide icons based on current theme */
+      .theme-toggle .icon-sun { display: none; }
+      .theme-toggle .icon-moon { display: block; }
+
+      /* Dark mode base styles */
+      html.dark body {
+        background-color: rgb(15 23 42); /* slate-900 */
+        color: rgb(226 232 240); /* slate-200 */
+      }
+      html.dark .theme-toggle:hover {
+        background-color: rgb(51 65 85); /* slate-700 */
+      }
+      html.dark .theme-toggle svg {
+        color: rgb(148 163 184); /* slate-400 */
+      }
+      html.dark .theme-toggle:hover svg {
+        color: rgb(226 232 240); /* slate-200 */
+      }
+      html.dark .theme-toggle .icon-sun { display: block; }
+      html.dark .theme-toggle .icon-moon { display: none; }
+
+      /* Dark mode - Header */
+      html.dark header {
+        background-color: rgb(30 41 59); /* slate-800 */
+        border-color: rgb(51 65 85); /* slate-700 */
+      }
+      html.dark header .text-slate-500 {
+        color: rgb(148 163 184); /* slate-400 */
+      }
+      html.dark header .text-slate-600 {
+        color: rgb(148 163 184); /* slate-400 */
+      }
+
+      /* Dark mode - Search input */
+      html.dark #search-input {
+        background-color: rgb(51 65 85); /* slate-700 */
+        border-color: rgb(71 85 105); /* slate-600 */
+        color: rgb(226 232 240); /* slate-200 */
+      }
+      html.dark #search-input::placeholder {
+        color: rgb(148 163 184); /* slate-400 */
+      }
+      html.dark #search-input:focus {
+        border-color: transparent;
+      }
+      html.dark #search-clear {
+        color: rgb(148 163 184); /* slate-400 */
+      }
+      html.dark #search-clear:hover {
+        color: rgb(226 232 240); /* slate-200 */
+      }
+
+      /* Dark mode - Left sidebar */
+      html.dark #left-nav {
+        background-color: rgb(30 41 59); /* slate-800 */
+        border-color: rgb(51 65 85); /* slate-700 */
+      }
+      html.dark .nav-link {
+        color: rgb(203 213 225); /* slate-300 */
+      }
+      html.dark .nav-link:hover:not(.bg-primary) {
+        background-color: rgb(51 65 85); /* slate-700 */
+      }
+      html.dark .nav-link.text-slate-800 {
+        color: rgb(203 213 225); /* slate-300 */
+      }
+      /* Active nav link in dark mode - ensure bright white text */
+      html.dark .nav-link.bg-primary {
+        color: rgb(255 255 255); /* white */
+      }
+
+      /* Light mode - don't apply hover to active nav link */
+      .nav-link.bg-primary:hover {
+        background-color: #0DC09D; /* keep primary background on hover */
+      }
+
+      /* Dark mode - Right sidebar */
+      html.dark #right-nav {
+        background-color: rgb(30 41 59); /* slate-800 */
+        border-color: rgb(51 65 85); /* slate-700 */
+      }
+      html.dark #right-nav .text-slate-500 {
+        color: rgb(148 163 184); /* slate-400 */
+      }
+      html.dark .toc-group-header {
+        color: rgb(203 213 225); /* slate-300 */
+      }
+      html.dark .toc-link {
+        color: rgb(148 163 184); /* slate-400 */
+      }
+      html.dark .toc-link:hover {
+        background-color: rgb(51 65 85); /* slate-700 */
+        color: rgb(226 232 240); /* slate-200 */
+      }
+
+      /* Dark mode - Main content */
+      html.dark main {
+        background-color: rgb(15 23 42); /* slate-900 */
+      }
+      html.dark .text-slate-800 {
+        color: rgb(226 232 240); /* slate-200 */
+      }
+      html.dark .text-slate-600 {
+        color: rgb(148 163 184); /* slate-400 */
+      }
+      html.dark .text-slate-500 {
+        color: rgb(148 163 184); /* slate-400 */
+      }
+      html.dark .text-slate-400 {
+        color: rgb(100 116 139); /* slate-500 */
+      }
+      html.dark .text-slate-300 {
+        color: rgb(71 85 105); /* slate-600 */
+      }
+      html.dark .border-slate-200 {
+        border-color: rgb(51 65 85); /* slate-700 */
+      }
+
+      /* Dark mode - Cards and panels */
+      html.dark .bg-white {
+        background-color: rgb(30 41 59); /* slate-800 */
+      }
+      html.dark .bg-slate-50 {
+        background-color: rgb(15 23 42); /* slate-900 */
+      }
+      html.dark .bg-slate-100 {
+        background-color: rgb(51 65 85); /* slate-700 */
+      }
+      html.dark .hover\:bg-slate-50:hover {
+        background-color: rgb(51 65 85); /* slate-700 */
+      }
+      html.dark .hover\:bg-slate-100:hover {
+        background-color: rgb(51 65 85); /* slate-700 */
+      }
+
+      /* Dark mode - Tables */
+      html.dark th {
+        background-color: rgb(51 65 85); /* slate-700 */
+        color: rgb(226 232 240); /* slate-200 */
+      }
+      html.dark td {
+        border-color: rgb(51 65 85); /* slate-700 */
+      }
+      html.dark tr:hover {
+        background-color: rgb(51 65 85); /* slate-700 */
+      }
+
+      /* Dark mode - Code blocks */
+      html.dark .prose code {
+        background-color: rgb(51 65 85); /* slate-700 */
+        color: rgb(226 232 240); /* slate-200 */
+      }
+      html.dark code.bg-slate-100 {
+        background-color: rgb(51 65 85); /* slate-700 */
+        color: rgb(226 232 240); /* slate-200 */
+      }
+
+      /* Dark mode - Prose blockquote */
+      html.dark .prose blockquote {
+        border-color: rgb(71 85 105); /* slate-600 */
+        color: rgb(148 163 184); /* slate-400 */
+      }
+
+      /* Dark mode - Prose table */
+      html.dark .prose th, html.dark .prose td {
+        border-color: rgb(51 65 85); /* slate-700 */
+      }
+      html.dark .prose th {
+        background-color: rgb(51 65 85); /* slate-700 */
+      }
+
+      /* Dark mode - Badges/tags */
+      html.dark .bg-purple-100 {
+        background-color: rgba(139, 92, 246, 0.2); /* purple with opacity */
+        color: rgb(196 181 253); /* purple-300 */
+      }
+      html.dark .bg-red-100 {
+        background-color: rgba(239, 68, 68, 0.2); /* red with opacity */
+        color: rgb(252 165 165); /* red-300 */
+      }
+      html.dark .bg-green-100 {
+        background-color: rgba(34, 197, 94, 0.2); /* green with opacity */
+        color: rgb(134 239 172); /* green-300 */
+      }
+      html.dark .bg-primary-light {
+        background-color: rgba(13, 192, 157, 0.2); /* primary with opacity */
+      }
+
+      /* Dark mode - Search highlight */
+      html.dark .search-highlight {
+        background-color: rgba(234, 179, 8, 0.3); /* yellow with opacity */
+        color: rgb(253 224 71); /* yellow-300 */
+      }
+
+      /* Dark mode - Help text background */
+      html.dark .prose.bg-slate-100 {
+        background-color: rgb(51 65 85); /* slate-700 */
+      }
     </style>
   </head>
   <body class="font-sans leading-relaxed text-slate-800 bg-slate-50">
@@ -132,6 +393,23 @@
             </svg>
           </button>
         </div>
+
+        <!-- Dark mode toggle -->
+        <button
+          id="theme-toggle"
+          class="theme-toggle"
+          title="Toggle dark mode"
+          aria-label="Toggle dark mode"
+        >
+          <!-- Sun icon (shown in dark mode) -->
+          <svg class="icon-sun" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+          </svg>
+          <!-- Moon icon (shown in light mode) -->
+          <svg class="icon-moon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+          </svg>
+        </button>
 
         <!-- Repository link -->
         {% if pipeline.metadata.repository %}
@@ -362,12 +640,12 @@
           {% for group, items in input_groups.items() %}
           <h2
             id="inputs-{{ group|lower|replace(' ', '-') }}"
-            class="text-2xl font-semibold mt-8 mb-4 pb-2 border-b border-slate-200 group"
+            class="text-2xl font-semibold mt-8 mb-4 pb-2 border-b border-slate-200 heading-anchor"
           >
             {{ group }}
             <a
               href="#inputs-{{ group|lower|replace(' ', '-') }}"
-              class="ml-2 text-slate-300 opacity-30 group-hover:opacity-100 transition-opacity no-underline hover:text-primary"
+              class="paragraph-link"
               >¶</a
             >
           </h2>
@@ -375,13 +653,13 @@
           {% for inp in items %}
           <div
             id="param-{{ inp.name }}"
-            class="mb-6 pb-6 border-b border-slate-200 last:border-b-0 group"
+            class="mb-6 pb-6 border-b border-slate-200 last:border-b-0"
           >
-            <div class="font-mono font-semibold text-lg">
+            <div class="font-mono font-semibold text-lg heading-anchor">
               --{{ inp.name }}
               <a
                 href="#param-{{ inp.name }}"
-                class="ml-2 text-slate-300 opacity-30 group-hover:opacity-100 transition-opacity no-underline hover:text-primary"
+                class="paragraph-link"
                 >¶</a
               >
             </div>
@@ -439,13 +717,13 @@
           {% for param in pipeline.config_params %}
           <div
             id="config-{{ param.name }}"
-            class="mb-6 pb-6 border-b border-slate-200 last:border-b-0 group"
+            class="mb-6 pb-6 border-b border-slate-200 last:border-b-0"
           >
-            <div class="font-mono font-semibold text-lg">
+            <div class="font-mono font-semibold text-lg heading-anchor">
               {{ param.name }}
               <a
                 href="#config-{{ param.name }}"
-                class="ml-2 text-slate-300 opacity-30 group-hover:opacity-100 transition-opacity no-underline hover:text-primary"
+                class="paragraph-link"
                 >¶</a
               >
             </div>
@@ -478,10 +756,10 @@
           {% for wf in pipeline.workflows|sort(attribute='name') %}
           <div
             id="workflow-{{ wf.name or 'entry' }}"
-            class="bg-white border border-slate-200 rounded-lg p-4 mb-4 group"
+            class="bg-white border border-slate-200 rounded-lg p-4 mb-4"
           >
             <!-- Signature header like Sphinx API docs -->
-            <div class="bg-slate-100 border-l-4 border-primary px-4 py-2 mb-4 font-mono text-sm">
+            <div class="bg-slate-100 border-l-4 border-primary px-4 py-2 mb-4 font-mono text-sm heading-anchor">
               <span class="text-slate-500 italic">workflow</span>
               <span class="font-bold text-primary-dark">{{ wf.name or '&lt;entry&gt;' }}</span>
               {% if wf.is_entry %}
@@ -501,7 +779,7 @@
               {% endif %}
               <a
                 href="#workflow-{{ wf.name or 'entry' }}"
-                class="ml-2 text-slate-300 opacity-30 group-hover:opacity-100 transition-opacity no-underline hover:text-primary"
+                class="paragraph-link"
                 >¶</a
               >
             </div>
@@ -591,10 +869,10 @@
           {% for proc in pipeline.processes|sort(attribute='name') %}
           <div
             id="process-{{ proc.name }}"
-            class="bg-white border border-slate-200 rounded-lg p-4 mb-4 group"
+            class="bg-white border border-slate-200 rounded-lg p-4 mb-4"
           >
             <!-- Signature header like Sphinx API docs -->
-            <div class="bg-slate-100 border-l-4 border-primary px-4 py-2 mb-4 font-mono text-sm">
+            <div class="bg-slate-100 border-l-4 border-primary px-4 py-2 mb-4 font-mono text-sm heading-anchor">
               <span class="text-slate-500 italic">process</span>
               <span class="font-bold text-primary-dark">{{ proc.name }}</span>
               {% if proc.source_url %}
@@ -609,7 +887,7 @@
               {% endif %}
               <a
                 href="#process-{{ proc.name }}"
-                class="ml-2 text-slate-300 opacity-30 group-hover:opacity-100 transition-opacity no-underline hover:text-primary"
+                class="paragraph-link"
                 >¶</a
               >
             </div>
@@ -744,10 +1022,10 @@
           {% for func in pipeline.functions|sort(attribute='name') %}
           <div
             id="function-{{ func.name }}"
-            class="bg-white border border-slate-200 rounded-lg p-4 mb-4 group"
+            class="bg-white border border-slate-200 rounded-lg p-4 mb-4"
           >
             <!-- Signature header like Sphinx API docs -->
-            <div class="bg-slate-100 border-l-4 border-primary px-4 py-2 mb-4 font-mono text-sm">
+            <div class="bg-slate-100 border-l-4 border-primary px-4 py-2 mb-4 font-mono text-sm heading-anchor">
               <span class="text-slate-500 italic">def</span>
               <span class="font-bold text-primary-dark">{{ func.name }}</span>(<span class="text-slate-600">{% for p in func.params %}{{ p.name }}{% if not loop.last %}, {% endif %}{% endfor %}</span>)
               {% if func.source_url %}
@@ -762,7 +1040,7 @@
               {% endif %}
               <a
                 href="#function-{{ func.name }}"
-                class="ml-2 text-slate-300 opacity-30 group-hover:opacity-100 transition-opacity no-underline hover:text-primary"
+                class="paragraph-link"
                 >¶</a
               >
             </div>
@@ -1413,6 +1691,63 @@
           searchInput.value = '';
           performSearch('');
           searchInput.blur();
+        }
+      });
+
+      // ==================== Dark Mode Toggle ====================
+
+      const THEME_STORAGE_KEY = 'nf-docs-theme';
+      const themeToggle = document.getElementById('theme-toggle');
+
+      // Get the current theme (from localStorage or system preference)
+      function getCurrentTheme() {
+        const stored = localStorage.getItem(THEME_STORAGE_KEY);
+        if (stored) {
+          return stored;
+        }
+        // Auto-detect from OS preference
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+
+      // Apply theme to the document
+      function applyTheme(theme) {
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }
+
+      // Toggle theme and save to localStorage
+      function toggleTheme() {
+        const current = getCurrentTheme();
+        const newTheme = current === 'dark' ? 'light' : 'dark';
+        localStorage.setItem(THEME_STORAGE_KEY, newTheme);
+        applyTheme(newTheme);
+      }
+
+      // Theme toggle button click handler
+      themeToggle.addEventListener('click', toggleTheme);
+
+      // Listen for OS theme changes (only if user hasn't set a preference)
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+        const stored = localStorage.getItem(THEME_STORAGE_KEY);
+        if (!stored) {
+          // User hasn't set a preference, follow OS
+          applyTheme(e.matches ? 'dark' : 'light');
+        }
+      });
+
+      // Listen for storage changes from other tabs/windows
+      window.addEventListener('storage', e => {
+        if (e.key === THEME_STORAGE_KEY) {
+          if (e.newValue) {
+            applyTheme(e.newValue);
+          } else {
+            // Storage was cleared, revert to OS preference
+            const osTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            applyTheme(osTheme);
+          }
         }
       });
     </script>
