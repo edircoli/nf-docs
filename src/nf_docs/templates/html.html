@@ -1203,10 +1203,28 @@
             {% if wf.meta_authors or wf.meta_maintainers %}
             <div class="mt-4 pt-3 border-t border-slate-200 text-xs text-slate-500">
               {% if wf.meta_authors %}
-              <span class="mr-4"><strong>Authors:</strong> {{ wf.meta_authors|join(', ') }}</span>
+              <span class="mr-4"><strong>Authors:</strong>
+                {% for author in wf.meta_authors %}
+                  {%- if author.startswith('@') -%}
+                    <a href="https://github.com/{{ author[1:] }}" target="_blank" class="text-primary hover:underline">{{ author }}</a>
+                  {%- else -%}
+                    {{ author }}
+                  {%- endif -%}
+                  {%- if not loop.last %}, {% endif -%}
+                {% endfor %}
+              </span>
               {% endif %}
               {% if wf.meta_maintainers %}
-              <span><strong>Maintainers:</strong> {{ wf.meta_maintainers|join(', ') }}</span>
+              <span><strong>Maintainers:</strong>
+                {% for maintainer in wf.meta_maintainers %}
+                  {%- if maintainer.startswith('@') -%}
+                    <a href="https://github.com/{{ maintainer[1:] }}" target="_blank" class="text-primary hover:underline">{{ maintainer }}</a>
+                  {%- else -%}
+                    {{ maintainer }}
+                  {%- endif -%}
+                  {%- if not loop.last %}, {% endif -%}
+                {% endfor %}
+              </span>
               {% endif %}
             </div>
             {% endif %}
@@ -1277,7 +1295,15 @@
             <h3 class="text-lg font-semibold mt-4 mb-2">Tools</h3>
             {% for tool in proc.meta_tools %}
             <div class="mb-3 p-3 bg-slate-50 rounded border border-slate-200">
-              <div class="font-semibold text-primary-dark">{{ tool.name }}</div>
+              <div class="font-semibold text-primary-dark">
+                {% if tool.homepage %}
+                <a href="{{ tool.homepage }}" target="_blank" class="hover:underline">{{ tool.name }}</a>
+                {% elif tool.documentation %}
+                <a href="{{ tool.documentation }}" target="_blank" class="hover:underline">{{ tool.name }}</a>
+                {% else %}
+                {{ tool.name }}
+                {% endif %}
+              </div>
               {% if tool.description %}
               <div class="prose text-sm text-slate-600 mt-1">{{ tool.description|markdown }}</div>
               {% endif %}
@@ -1288,7 +1314,9 @@
                 {% if tool.documentation %}
                 <a href="{{ tool.documentation }}" target="_blank" class="text-primary hover:underline">Documentation</a>
                 {% endif %}
-                {% if tool.identifier %}
+                {% if tool.identifier and tool.identifier.startswith('biotools:') %}
+                <a href="https://bio.tools/{{ tool.identifier.replace('biotools:', '') }}" target="_blank" class="text-primary hover:underline">{{ tool.identifier }}</a>
+                {% elif tool.identifier %}
                 <span class="text-slate-500">{{ tool.identifier }}</span>
                 {% endif %}
                 {% if tool.licence %}
@@ -1474,10 +1502,28 @@
             {% if proc.meta_authors or proc.meta_maintainers %}
             <div class="mt-4 pt-3 border-t border-slate-200 text-xs text-slate-500">
               {% if proc.meta_authors %}
-              <span class="mr-4"><strong>Authors:</strong> {{ proc.meta_authors|join(', ') }}</span>
+              <span class="mr-4"><strong>Authors:</strong>
+                {% for author in proc.meta_authors %}
+                  {%- if author.startswith('@') -%}
+                    <a href="https://github.com/{{ author[1:] }}" target="_blank" class="text-primary hover:underline">{{ author }}</a>
+                  {%- else -%}
+                    {{ author }}
+                  {%- endif -%}
+                  {%- if not loop.last %}, {% endif -%}
+                {% endfor %}
+              </span>
               {% endif %}
               {% if proc.meta_maintainers %}
-              <span><strong>Maintainers:</strong> {{ proc.meta_maintainers|join(', ') }}</span>
+              <span><strong>Maintainers:</strong>
+                {% for maintainer in proc.meta_maintainers %}
+                  {%- if maintainer.startswith('@') -%}
+                    <a href="https://github.com/{{ maintainer[1:] }}" target="_blank" class="text-primary hover:underline">{{ maintainer }}</a>
+                  {%- else -%}
+                    {{ maintainer }}
+                  {%- endif -%}
+                  {%- if not loop.last %}, {% endif -%}
+                {% endfor %}
+              </span>
               {% endif %}
             </div>
             {% endif %}

@@ -415,9 +415,17 @@ class MarkdownRenderer(BaseRenderer):
         # Authors/Maintainers (from meta.yml)
         if workflow.meta_authors or workflow.meta_maintainers:
             if workflow.meta_authors:
-                lines.append(f"**Authors:** {', '.join(workflow.meta_authors)}")
+                authors_linked = [
+                    f"[{a}](https://github.com/{a[1:]})" if a.startswith("@") else a
+                    for a in workflow.meta_authors
+                ]
+                lines.append(f"**Authors:** {', '.join(authors_linked)}")
             if workflow.meta_maintainers:
-                lines.append(f"**Maintainers:** {', '.join(workflow.meta_maintainers)}")
+                maintainers_linked = [
+                    f"[{m}](https://github.com/{m[1:]})" if m.startswith("@") else m
+                    for m in workflow.meta_maintainers
+                ]
+                lines.append(f"**Maintainers:** {', '.join(maintainers_linked)}")
             lines.append("")
 
         return lines
@@ -484,7 +492,13 @@ class MarkdownRenderer(BaseRenderer):
             lines.append("")
             for tool in process.meta_tools:
                 tool_name = tool.get("name", "Unknown")
-                lines.append(f"#### {tool_name}")
+                # Link tool name to homepage or documentation
+                if tool.get("homepage"):
+                    lines.append(f"#### [{tool_name}]({tool['homepage']})")
+                elif tool.get("documentation"):
+                    lines.append(f"#### [{tool_name}]({tool['documentation']})")
+                else:
+                    lines.append(f"#### {tool_name}")
                 lines.append("")
                 if tool.get("description"):
                     lines.append(tool["description"])
@@ -494,8 +508,13 @@ class MarkdownRenderer(BaseRenderer):
                     tool_links.append(f"[Homepage]({tool['homepage']})")
                 if tool.get("documentation"):
                     tool_links.append(f"[Documentation]({tool['documentation']})")
-                if tool.get("identifier"):
-                    tool_links.append(f"ID: `{tool['identifier']}`")
+                # Link biotools identifiers to bio.tools
+                identifier = tool.get("identifier", "")
+                if identifier.startswith("biotools:"):
+                    biotools_id = identifier.replace("biotools:", "")
+                    tool_links.append(f"[{identifier}](https://bio.tools/{biotools_id})")
+                elif identifier:
+                    tool_links.append(f"ID: `{identifier}`")
                 if tool.get("licence"):
                     tool_links.append(f"License: {', '.join(tool['licence'])}")
                 if tool_links:
@@ -553,9 +572,17 @@ class MarkdownRenderer(BaseRenderer):
         # Authors/Maintainers (from meta.yml)
         if process.meta_authors or process.meta_maintainers:
             if process.meta_authors:
-                lines.append(f"**Authors:** {', '.join(process.meta_authors)}")
+                authors_linked = [
+                    f"[{a}](https://github.com/{a[1:]})" if a.startswith("@") else a
+                    for a in process.meta_authors
+                ]
+                lines.append(f"**Authors:** {', '.join(authors_linked)}")
             if process.meta_maintainers:
-                lines.append(f"**Maintainers:** {', '.join(process.meta_maintainers)}")
+                maintainers_linked = [
+                    f"[{m}](https://github.com/{m[1:]})" if m.startswith("@") else m
+                    for m in process.meta_maintainers
+                ]
+                lines.append(f"**Maintainers:** {', '.join(maintainers_linked)}")
             lines.append("")
 
         return lines
