@@ -12,6 +12,7 @@ And merges them into a unified Pipeline model.
 
 import logging
 import re
+import urllib.request
 from pathlib import Path
 from typing import Any
 
@@ -47,6 +48,55 @@ from nf_docs.progress import (
 from nf_docs.schema_parser import find_schema_file, parse_schema
 
 logger = logging.getLogger(__name__)
+
+# Cache for nf-core module URL checks to avoid repeated HTTP requests
+_nfcore_module_url_cache: dict[str, str | None] = {}
+
+
+def get_nfcore_module_url(file_path: str) -> str | None:
+    """
+    Check if a process file is an nf-core module and return its documentation URL.
+
+    Args:
+        file_path: Relative path to the process file (e.g., 'modules/nf-core/bbmap/bbsplit/main.nf')
+
+    Returns:
+        URL to nf-core module docs if valid, None otherwise
+    """
+    # Check if the file is in modules/nf-core/
+    if not file_path.startswith("modules/nf-core/"):
+        return None
+
+    # Extract the module path after modules/nf-core/
+    parts = file_path.split("/")
+    if len(parts) < 4 or parts[-1] != "main.nf":
+        return None
+
+    # Get the module name parts (everything between 'nf-core' and 'main.nf')
+    module_parts = parts[2:-1]  # e.g., ['bbmap', 'bbsplit']
+    module_name = "_".join(module_parts)  # e.g., 'bbmap_bbsplit'
+
+    # Check cache first
+    if module_name in _nfcore_module_url_cache:
+        return _nfcore_module_url_cache[module_name]
+
+    # Build the nf-core module URL
+    url = f"https://nf-co.re/modules/{module_name}/"
+
+    # Check if the URL is accessible
+    try:
+        req = urllib.request.Request(url, method="HEAD")
+        req.add_header("User-Agent", "nf-docs")
+        with urllib.request.urlopen(req, timeout=5) as response:
+            if response.status == 200:
+                _nfcore_module_url_cache[module_name] = url
+                logger.debug(f"Found nf-core module: {module_name}")
+                return url
+    except Exception as e:
+        logger.debug(f"nf-core module check failed for {module_name}: {e}")
+
+    _nfcore_module_url_cache[module_name] = None
+    return None
 
 
 class ExtractionError(Exception):
@@ -542,6 +592,10 @@ class PipelineExtractor:
                 # Apply meta.yml data if available (for modules)
                 if meta and isinstance(meta, ModuleMeta):
                     process.apply_module_meta(meta)
+                # Check for nf-core module URL
+                nfcore_url = get_nfcore_module_url(relative_path)
+                if nfcore_url:
+                    process.nfcore_module_url = nfcore_url
                 pipeline.processes.append(process)
 
         elif symbol_type == "workflow" or kind == SymbolKind.CLASS:

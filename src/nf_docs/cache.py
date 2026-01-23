@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 from typing import Any
 
+import nf_docs
 from nf_docs.models import (
     ConfigParam,
     Function,
@@ -38,9 +39,6 @@ def get_xdg_cache_home() -> Path:
     return Path.home() / ".cache"
 
 
-import nf_docs
-
-
 class PipelineCache:
     """
     Cache for extracted Pipeline models.
@@ -55,6 +53,7 @@ class PipelineCache:
         "nextflow_schema.json",
         "nextflow.config",
         "README.md",
+        "meta.yml",  # Module/subworkflow metadata files
     ]
 
     def __init__(self, cache_dir: Path | None = None):
@@ -301,6 +300,14 @@ class PipelineCache:
                     calls=wf_data.get("calls", []),
                     is_entry=wf_data.get("is_entry", False),
                     source_url=wf_data.get("source_url", ""),
+                    # meta.yml fields
+                    meta_description=wf_data.get("meta_description", ""),
+                    meta_keywords=wf_data.get("meta_keywords", []),
+                    meta_components=wf_data.get("meta_components", []),
+                    meta_inputs=wf_data.get("meta_inputs", []),
+                    meta_outputs=wf_data.get("meta_outputs", []),
+                    meta_authors=wf_data.get("meta_authors", []),
+                    meta_maintainers=wf_data.get("meta_maintainers", []),
                 )
             )
 
@@ -336,6 +343,15 @@ class PipelineCache:
                     outputs=proc_outputs,
                     directives=proc_data.get("directives", {}),
                     source_url=proc_data.get("source_url", ""),
+                    nfcore_module_url=proc_data.get("nfcore_module_url", ""),
+                    # meta.yml fields
+                    meta_description=proc_data.get("meta_description", ""),
+                    meta_keywords=proc_data.get("meta_keywords", []),
+                    meta_tools=proc_data.get("meta_tools", []),
+                    meta_inputs=proc_data.get("meta_inputs", []),
+                    meta_outputs=proc_data.get("meta_outputs", []),
+                    meta_authors=proc_data.get("meta_authors", []),
+                    meta_maintainers=proc_data.get("meta_maintainers", []),
                 )
             )
 

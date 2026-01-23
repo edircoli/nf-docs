@@ -65,6 +65,7 @@ class Process:
     directives: dict[str, Any] = field(default_factory=dict)
     script: str = ""  # Script content (optional)
     source_url: str = ""  # URL to view source in remote repository
+    nfcore_module_url: str = ""  # URL to nf-core module docs (if applicable)
 
     # meta.yml fields (for nf-core modules)
     meta_description: str = ""  # Description from meta.yml
@@ -82,12 +83,15 @@ class Process:
             "docstring": self.docstring,
             "file": self.file,
             "line": self.line,
+            "end_line": self.end_line,
             "inputs": [i.to_dict() for i in self.inputs],
             "outputs": [o.to_dict() for o in self.outputs],
             "directives": self.directives,
         }
         if self.source_url:
             result["source_url"] = self.source_url
+        if self.nfcore_module_url:
+            result["nfcore_module_url"] = self.nfcore_module_url
         # Include meta.yml data if present
         if self.meta_description:
             result["meta_description"] = self.meta_description
@@ -185,6 +189,7 @@ class Workflow:
             "docstring": self.docstring,
             "file": self.file,
             "line": self.line,
+            "end_line": self.end_line,
             "inputs": [i.to_dict() for i in self.inputs],
             "outputs": [o.to_dict() for o in self.outputs],
             "calls": self.calls,
@@ -266,6 +271,7 @@ class Function:
             "docstring": self.docstring,
             "file": self.file,
             "line": self.line,
+            "end_line": self.end_line,
             "params": [p.to_dict() for p in self.params],
             "return_type": self.return_type,
             "return_description": self.return_description,
