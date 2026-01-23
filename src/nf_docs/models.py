@@ -3,11 +3,14 @@ Data models for the nf-docs internal schema.
 
 These models represent the unified internal representation of Nextflow
 pipeline documentation, collected from the Language Server, nextflow_schema.json,
-and nextflow.config.
+nextflow.config, and meta.yml files.
 """
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from nf_docs.meta_parser import ModuleMeta, SubworkflowMeta
 
 
 @dataclass
@@ -53,7 +56,7 @@ class Process:
     """Represents a Nextflow process with full documentation."""
 
     name: str
-    docstring: str = ""
+    docstring: str = ""  # Documentation from code comments (Groovydoc)
     file: str = ""
     line: int = 0
     end_line: int = 0  # End line of the process definition
@@ -62,6 +65,15 @@ class Process:
     directives: dict[str, Any] = field(default_factory=dict)
     script: str = ""  # Script content (optional)
     source_url: str = ""  # URL to view source in remote repository
+
+    # meta.yml fields (for nf-core modules)
+    meta_description: str = ""  # Description from meta.yml
+    meta_keywords: list[str] = field(default_factory=list)
+    meta_tools: list[dict[str, Any]] = field(default_factory=list)  # Tool info from meta.yml
+    meta_inputs: list[dict[str, Any]] = field(default_factory=list)  # Input descriptions
+    meta_outputs: list[dict[str, Any]] = field(default_factory=list)  # Output descriptions
+    meta_authors: list[str] = field(default_factory=list)
+    meta_maintainers: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
@@ -76,7 +88,36 @@ class Process:
         }
         if self.source_url:
             result["source_url"] = self.source_url
+        # Include meta.yml data if present
+        if self.meta_description:
+            result["meta_description"] = self.meta_description
+        if self.meta_keywords:
+            result["meta_keywords"] = self.meta_keywords
+        if self.meta_tools:
+            result["meta_tools"] = self.meta_tools
+        if self.meta_inputs:
+            result["meta_inputs"] = self.meta_inputs
+        if self.meta_outputs:
+            result["meta_outputs"] = self.meta_outputs
+        if self.meta_authors:
+            result["meta_authors"] = self.meta_authors
+        if self.meta_maintainers:
+            result["meta_maintainers"] = self.meta_maintainers
         return result
+
+    def has_meta(self) -> bool:
+        """Check if this process has meta.yml documentation."""
+        return bool(self.meta_description or self.meta_tools or self.meta_inputs)
+
+    def apply_module_meta(self, meta: "ModuleMeta") -> None:
+        """Apply metadata from a parsed ModuleMeta object."""
+        self.meta_description = meta.description
+        self.meta_keywords = meta.keywords
+        self.meta_tools = [t.to_dict() for t in meta.tools]
+        self.meta_inputs = [i.to_dict() for i in meta.inputs]
+        self.meta_outputs = [o.to_dict() for o in meta.outputs]
+        self.meta_authors = meta.authors
+        self.meta_maintainers = meta.maintainers
 
 
 @dataclass
@@ -118,7 +159,7 @@ class Workflow:
     """Represents a Nextflow workflow with documentation."""
 
     name: str
-    docstring: str = ""
+    docstring: str = ""  # Documentation from code comments (Groovydoc)
     file: str = ""
     line: int = 0
     end_line: int = 0  # End line of the workflow definition
@@ -127,6 +168,15 @@ class Workflow:
     calls: list[str] = field(default_factory=list)  # Process/workflow names called
     is_entry: bool = False  # Is this the entry workflow?
     source_url: str = ""  # URL to view source in remote repository
+
+    # meta.yml fields (for nf-core subworkflows)
+    meta_description: str = ""  # Description from meta.yml
+    meta_keywords: list[str] = field(default_factory=list)
+    meta_components: list[str] = field(default_factory=list)  # Modules/subworkflows used
+    meta_inputs: list[dict[str, Any]] = field(default_factory=list)  # Input descriptions
+    meta_outputs: list[dict[str, Any]] = field(default_factory=list)  # Output descriptions
+    meta_authors: list[str] = field(default_factory=list)
+    meta_maintainers: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
@@ -142,7 +192,36 @@ class Workflow:
         }
         if self.source_url:
             result["source_url"] = self.source_url
+        # Include meta.yml data if present
+        if self.meta_description:
+            result["meta_description"] = self.meta_description
+        if self.meta_keywords:
+            result["meta_keywords"] = self.meta_keywords
+        if self.meta_components:
+            result["meta_components"] = self.meta_components
+        if self.meta_inputs:
+            result["meta_inputs"] = self.meta_inputs
+        if self.meta_outputs:
+            result["meta_outputs"] = self.meta_outputs
+        if self.meta_authors:
+            result["meta_authors"] = self.meta_authors
+        if self.meta_maintainers:
+            result["meta_maintainers"] = self.meta_maintainers
         return result
+
+    def has_meta(self) -> bool:
+        """Check if this workflow has meta.yml documentation."""
+        return bool(self.meta_description or self.meta_components or self.meta_inputs)
+
+    def apply_subworkflow_meta(self, meta: "SubworkflowMeta") -> None:
+        """Apply metadata from a parsed SubworkflowMeta object."""
+        self.meta_description = meta.description
+        self.meta_keywords = meta.keywords
+        self.meta_components = meta.components
+        self.meta_inputs = [i.to_dict() for i in meta.inputs]
+        self.meta_outputs = [o.to_dict() for o in meta.outputs]
+        self.meta_authors = meta.authors
+        self.meta_maintainers = meta.maintainers
 
 
 @dataclass

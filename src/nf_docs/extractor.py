@@ -20,6 +20,11 @@ from nf_docs.config import get_config
 from nf_docs.config_parser import parse_config
 from nf_docs.git_utils import GitInfo, build_source_url, get_git_info
 from nf_docs.lsp_client import LSPClient, SymbolKind, parse_hover_content
+from nf_docs.meta_parser import (
+    ModuleMeta,
+    SubworkflowMeta,
+    parse_meta_for_file,
+)
 from nf_docs.models import (
     Function,
     FunctionParam,
@@ -439,6 +444,11 @@ class PipelineExtractor:
         relative_path = file_path.relative_to(self.workspace_path)
         logger.debug(f"Processing: {relative_path}")
 
+        # Parse meta.yml if present (for nf-core modules/subworkflows)
+        meta = parse_meta_for_file(file_path, self.workspace_path)
+        if meta:
+            logger.debug(f"  Found meta.yml: {meta.name}")
+
         # Open the document
         client.open_document(file_path)
 
@@ -448,7 +458,7 @@ class PipelineExtractor:
             logger.debug(f"  Found {len(symbols)} symbols")
 
             for symbol in symbols:
-                self._process_symbol(client, file_path, symbol, pipeline, git_info)
+                self._process_symbol(client, file_path, symbol, pipeline, git_info, meta)
 
         finally:
             client.close_document(file_path)
@@ -493,6 +503,7 @@ class PipelineExtractor:
         symbol: dict[str, Any],
         pipeline: Pipeline,
         git_info: GitInfo | None = None,
+        meta: ModuleMeta | SubworkflowMeta | None = None,
     ) -> None:
         """Process a document symbol and add to pipeline."""
         raw_name = symbol.get("name", "")
@@ -528,6 +539,9 @@ class PipelineExtractor:
                 name, signature, docstring, relative_path, line + 1, end_line + 1, source_url
             )
             if process and not any(p.name == process.name for p in pipeline.processes):
+                # Apply meta.yml data if available (for modules)
+                if meta and isinstance(meta, ModuleMeta):
+                    process.apply_module_meta(meta)
                 pipeline.processes.append(process)
 
         elif symbol_type == "workflow" or kind == SymbolKind.CLASS:
@@ -538,6 +552,9 @@ class PipelineExtractor:
                 # Entry workflow has empty name (parsed from "<entry>")
                 if name == "" or name.lower() in ("main", "entry"):
                     workflow.is_entry = True
+                # Apply meta.yml data if available (for subworkflows)
+                if meta and isinstance(meta, SubworkflowMeta):
+                    workflow.apply_subworkflow_meta(meta)
                 pipeline.workflows.append(workflow)
 
         elif symbol_type == "function" or kind == SymbolKind.FUNCTION:
@@ -556,7 +573,7 @@ class PipelineExtractor:
 
         # Process child symbols
         for child in symbol.get("children", []):
-            self._process_symbol(client, file_path, child, pipeline, git_info)
+            self._process_symbol(client, file_path, child, pipeline, git_info, meta)
 
     def _create_process_from_signature(
         self,

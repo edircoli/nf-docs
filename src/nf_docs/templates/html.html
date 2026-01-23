@@ -1055,10 +1055,41 @@
             {% if wf.file %}
             <div class="text-xs text-slate-400 mb-2">Defined in <code>{{ wf.file }}:{{ wf.line }}</code></div>
             {% endif %}
-            {% if wf.docstring %}
+
+            <!-- Keywords badges (from meta.yml) -->
+            {% if wf.meta_keywords %}
+            <div class="flex flex-wrap gap-1 mb-3">
+              {% for keyword in wf.meta_keywords %}
+              <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-slate-200 text-slate-600">{{ keyword }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- meta.yml description (if present) -->
+            {% if wf.meta_description %}
+            <div class="prose mb-4 text-slate-600">{{ wf.meta_description|markdown }}</div>
+            {% endif %}
+
+            <!-- Code documentation (Groovydoc) - show if present and different from meta description -->
+            {% if wf.docstring and wf.docstring != wf.meta_description %}
+            {% if wf.meta_description %}
+            <h3 class="text-lg font-semibold mt-4 mb-2">Code Documentation</h3>
+            {% endif %}
             <div class="prose mb-4 text-slate-600">{{ wf.docstring|markdown }}</div>
             {% endif %}
-            {% if wf.inputs %}
+
+            <!-- Components section (from meta.yml - modules/subworkflows used) -->
+            {% if wf.meta_components %}
+            <h3 class="text-lg font-semibold mt-4 mb-2">Components</h3>
+            <div class="flex flex-wrap gap-2 mb-4">
+              {% for comp in wf.meta_components %}
+              <code class="bg-slate-100 px-2 py-1 rounded font-mono text-sm">{{ comp }}</code>
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Inputs section - combine LSP inputs with meta.yml descriptions -->
+            {% if wf.inputs or wf.meta_inputs %}
             <h3 class="text-lg font-semibold mt-4 mb-2">Inputs (take)</h3>
             <div class="overflow-x-auto"><table class="w-full border-collapse mb-4">
               <thead>
@@ -1072,6 +1103,24 @@
                 </tr>
               </thead>
               <tbody>
+                {% if wf.meta_inputs %}
+                {# Use meta.yml inputs as they have better descriptions #}
+                {% for inp in wf.meta_inputs %}
+                <tr class="hover:bg-slate-50">
+                  <td class="p-3 border-b border-slate-200">
+                    <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
+                      >{{ inp.name }}</code
+                    >
+                  </td>
+                  <td class="p-3 border-b border-slate-200">
+                    {% if inp.description %}
+                    <div class="prose prose-sm">{{ inp.description|markdown }}</div>
+                    {% else %}-{% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                {# Fall back to LSP inputs #}
                 {% for inp in wf.inputs %}
                 <tr class="hover:bg-slate-50">
                   <td class="p-3 border-b border-slate-200">
@@ -1082,9 +1131,13 @@
                   <td class="p-3 border-b border-slate-200">{{ inp.description or '-' }}</td>
                 </tr>
                 {% endfor %}
+                {% endif %}
               </tbody>
             </table></div>
-            {% endif %} {% if wf.outputs %}
+            {% endif %}
+
+            <!-- Outputs section - combine LSP outputs with meta.yml descriptions -->
+            {% if wf.outputs or wf.meta_outputs %}
             <h3 class="text-lg font-semibold mt-4 mb-2">Outputs (emit)</h3>
             <div class="overflow-x-auto"><table class="w-full border-collapse mb-4">
               <thead>
@@ -1098,6 +1151,24 @@
                 </tr>
               </thead>
               <tbody>
+                {% if wf.meta_outputs %}
+                {# Use meta.yml outputs as they have better descriptions #}
+                {% for out in wf.meta_outputs %}
+                <tr class="hover:bg-slate-50">
+                  <td class="p-3 border-b border-slate-200">
+                    <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
+                      >{{ out.name }}</code
+                    >
+                  </td>
+                  <td class="p-3 border-b border-slate-200">
+                    {% if out.description %}
+                    <div class="prose prose-sm">{{ out.description|markdown }}</div>
+                    {% else %}-{% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                {# Fall back to LSP outputs #}
                 {% for out in wf.outputs %}
                 <tr class="hover:bg-slate-50">
                   <td class="p-3 border-b border-slate-200">
@@ -1108,9 +1179,12 @@
                   <td class="p-3 border-b border-slate-200">{{ out.description or '-' }}</td>
                 </tr>
                 {% endfor %}
+                {% endif %}
               </tbody>
             </table></div>
-            {% endif %} {% if wf.calls %}
+            {% endif %}
+
+            {% if wf.calls %}
             <h3 class="text-lg font-semibold mt-4 mb-2">Calls</h3>
             <ul class="list-disc list-inside">
               {% for call in wf.calls %}
@@ -1123,6 +1197,18 @@
               </li>
               {% endfor %}
             </ul>
+            {% endif %}
+
+            <!-- Authors/Maintainers (from meta.yml) -->
+            {% if wf.meta_authors or wf.meta_maintainers %}
+            <div class="mt-4 pt-3 border-t border-slate-200 text-xs text-slate-500">
+              {% if wf.meta_authors %}
+              <span class="mr-4"><strong>Authors:</strong> {{ wf.meta_authors|join(', ') }}</span>
+              {% endif %}
+              {% if wf.meta_maintainers %}
+              <span><strong>Maintainers:</strong> {{ wf.meta_maintainers|join(', ') }}</span>
+              {% endif %}
+            </div>
             {% endif %}
           </div>
           {% endfor %}
@@ -1163,10 +1249,58 @@
             {% if proc.file %}
             <div class="text-xs text-slate-400 mb-2">Defined in <code>{{ proc.file }}:{{ proc.line }}</code></div>
             {% endif %}
-            {% if proc.docstring %}
+
+            <!-- Keywords badges (from meta.yml) -->
+            {% if proc.meta_keywords %}
+            <div class="flex flex-wrap gap-1 mb-3">
+              {% for keyword in proc.meta_keywords %}
+              <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-slate-200 text-slate-600">{{ keyword }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- meta.yml description (if present) -->
+            {% if proc.meta_description %}
+            <div class="prose mb-4 text-slate-600">{{ proc.meta_description|markdown }}</div>
+            {% endif %}
+
+            <!-- Code documentation (Groovydoc) - show if present and different from meta description -->
+            {% if proc.docstring and proc.docstring != proc.meta_description %}
+            {% if proc.meta_description %}
+            <h3 class="text-lg font-semibold mt-4 mb-2">Code Documentation</h3>
+            {% endif %}
             <div class="prose mb-4 text-slate-600">{{ proc.docstring|markdown }}</div>
             {% endif %}
-            {% if proc.inputs %}
+
+            <!-- Tools section (from meta.yml) -->
+            {% if proc.meta_tools %}
+            <h3 class="text-lg font-semibold mt-4 mb-2">Tools</h3>
+            {% for tool in proc.meta_tools %}
+            <div class="mb-3 p-3 bg-slate-50 rounded border border-slate-200">
+              <div class="font-semibold text-primary-dark">{{ tool.name }}</div>
+              {% if tool.description %}
+              <div class="prose text-sm text-slate-600 mt-1">{{ tool.description|markdown }}</div>
+              {% endif %}
+              <div class="flex flex-wrap gap-3 mt-2 text-xs">
+                {% if tool.homepage %}
+                <a href="{{ tool.homepage }}" target="_blank" class="text-primary hover:underline">Homepage</a>
+                {% endif %}
+                {% if tool.documentation %}
+                <a href="{{ tool.documentation }}" target="_blank" class="text-primary hover:underline">Documentation</a>
+                {% endif %}
+                {% if tool.identifier %}
+                <span class="text-slate-500">{{ tool.identifier }}</span>
+                {% endif %}
+                {% if tool.licence %}
+                <span class="text-slate-500">License: {{ tool.licence|join(', ') }}</span>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            <!-- Inputs section - combine LSP inputs with meta.yml descriptions -->
+            {% if proc.inputs or proc.meta_inputs %}
             <h3 class="text-lg font-semibold mt-4 mb-2">Inputs</h3>
             <div class="overflow-x-auto"><table class="w-full border-collapse mb-4">
               <thead>
@@ -1183,6 +1317,29 @@
                 </tr>
               </thead>
               <tbody>
+                {% if proc.meta_inputs %}
+                {# Use meta.yml inputs as they have better descriptions #}
+                {% for inp in proc.meta_inputs %}
+                <tr class="hover:bg-slate-50">
+                  <td class="p-3 border-b border-slate-200">
+                    <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
+                      >{{ inp.name }}</code
+                    >
+                  </td>
+                  <td class="p-3 border-b border-slate-200">
+                    <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
+                      >{{ inp.type or '-' }}</code
+                    >
+                  </td>
+                  <td class="p-3 border-b border-slate-200">
+                    {% if inp.description %}
+                    <div class="prose prose-sm">{{ inp.description|markdown }}</div>
+                    {% else %}-{% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                {# Fall back to LSP inputs #}
                 {% for inp in proc.inputs %}
                 <tr class="hover:bg-slate-50">
                   <td class="p-3 border-b border-slate-200">
@@ -1198,9 +1355,13 @@
                   <td class="p-3 border-b border-slate-200">{{ inp.description or '-' }}</td>
                 </tr>
                 {% endfor %}
+                {% endif %}
               </tbody>
             </table></div>
-            {% endif %} {% if proc.outputs %}
+            {% endif %}
+
+            <!-- Outputs section - combine LSP outputs with meta.yml descriptions -->
+            {% if proc.outputs or proc.meta_outputs %}
             <h3 class="text-lg font-semibold mt-4 mb-2">Outputs</h3>
             <div class="overflow-x-auto"><table class="w-full border-collapse mb-4">
               <thead>
@@ -1212,7 +1373,7 @@
                     Type
                   </th>
                   <th class="text-left p-3 border-b border-slate-200 bg-slate-100 font-semibold">
-                    Emit
+                    {% if not proc.meta_outputs %}Emit{% else %}Pattern{% endif %}
                   </th>
                   <th class="text-left p-3 border-b border-slate-200 bg-slate-100 font-semibold">
                     Description
@@ -1220,6 +1381,36 @@
                 </tr>
               </thead>
               <tbody>
+                {% if proc.meta_outputs %}
+                {# Use meta.yml outputs as they have better descriptions #}
+                {% for out in proc.meta_outputs %}
+                <tr class="hover:bg-slate-50">
+                  <td class="p-3 border-b border-slate-200">
+                    <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
+                      >{{ out.name }}</code
+                    >
+                  </td>
+                  <td class="p-3 border-b border-slate-200">
+                    <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
+                      >{{ out.type or '-' }}</code
+                    >
+                  </td>
+                  <td class="p-3 border-b border-slate-200">
+                    {% if out.pattern %}
+                    <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
+                      >{{ out.pattern }}</code
+                    >
+                    {% else %}-{% endif %}
+                  </td>
+                  <td class="p-3 border-b border-slate-200">
+                    {% if out.description %}
+                    <div class="prose prose-sm">{{ out.description|markdown }}</div>
+                    {% else %}-{% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                {# Fall back to LSP outputs #}
                 {% for out in proc.outputs %}
                 <tr class="hover:bg-slate-50">
                   <td class="p-3 border-b border-slate-200">
@@ -1242,9 +1433,12 @@
                   <td class="p-3 border-b border-slate-200">{{ out.description or '-' }}</td>
                 </tr>
                 {% endfor %}
+                {% endif %}
               </tbody>
             </table></div>
-            {% endif %} {% if proc.directives %}
+            {% endif %}
+
+            {% if proc.directives %}
             <h3 class="text-lg font-semibold mt-4 mb-2">Directives</h3>
             <div class="overflow-x-auto"><table class="w-full border-collapse mb-4">
               <thead>
@@ -1274,6 +1468,18 @@
                 {% endfor %}
               </tbody>
             </table></div>
+            {% endif %}
+
+            <!-- Authors/Maintainers (from meta.yml) -->
+            {% if proc.meta_authors or proc.meta_maintainers %}
+            <div class="mt-4 pt-3 border-t border-slate-200 text-xs text-slate-500">
+              {% if proc.meta_authors %}
+              <span class="mr-4"><strong>Authors:</strong> {{ proc.meta_authors|join(', ') }}</span>
+              {% endif %}
+              {% if proc.meta_maintainers %}
+              <span><strong>Maintainers:</strong> {{ proc.meta_maintainers|join(', ') }}</span>
+              {% endif %}
+            </div>
             {% endif %}
           </div>
           {% endfor %}

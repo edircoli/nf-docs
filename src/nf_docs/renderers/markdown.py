@@ -331,29 +331,63 @@ class MarkdownRenderer(BaseRenderer):
             lines.append(f"*Defined in `{workflow.file}:{workflow.line}`*")
             lines.append("")
 
-        # Docstring
-        if workflow.docstring:
+        # Keywords (from meta.yml)
+        if workflow.meta_keywords:
+            keywords_str = ", ".join(f"`{kw}`" for kw in workflow.meta_keywords)
+            lines.append(f"**Keywords:** {keywords_str}")
+            lines.append("")
+
+        # meta.yml description
+        if workflow.meta_description:
+            lines.append(workflow.meta_description)
+            lines.append("")
+
+        # Code documentation (Groovydoc) - show if present and different
+        if workflow.docstring and workflow.docstring != workflow.meta_description:
+            if workflow.meta_description:
+                lines.append("### Code Documentation")
+                lines.append("")
             lines.append(workflow.docstring)
             lines.append("")
 
-        # Inputs (take)
-        if workflow.inputs:
+        # Components (from meta.yml)
+        if workflow.meta_components:
+            lines.append("### Components")
+            lines.append("")
+            lines.append("This workflow uses the following modules/subworkflows:")
+            lines.append("")
+            for comp in workflow.meta_components:
+                lines.append(f"- `{comp}`")
+            lines.append("")
+
+        # Inputs (take) - prefer meta.yml if available
+        if workflow.meta_inputs or workflow.inputs:
             lines.append("### Inputs")
             lines.append("")
             lines.append("| Name | Description |")
             lines.append("|------|-------------|")
-            for inp in workflow.inputs:
-                lines.append(f"| `{inp.name}` | {inp.description or '-'} |")
+            if workflow.meta_inputs:
+                for inp in workflow.meta_inputs:
+                    desc = inp.get("description", "-").replace("\n", " ").strip() or "-"
+                    lines.append(f"| `{inp.get('name', '')}` | {desc} |")
+            else:
+                for inp in workflow.inputs:
+                    lines.append(f"| `{inp.name}` | {inp.description or '-'} |")
             lines.append("")
 
-        # Outputs (emit)
-        if workflow.outputs:
+        # Outputs (emit) - prefer meta.yml if available
+        if workflow.meta_outputs or workflow.outputs:
             lines.append("### Outputs")
             lines.append("")
             lines.append("| Name | Description |")
             lines.append("|------|-------------|")
-            for out in workflow.outputs:
-                lines.append(f"| `{out.name}` | {out.description or '-'} |")
+            if workflow.meta_outputs:
+                for out in workflow.meta_outputs:
+                    desc = out.get("description", "-").replace("\n", " ").strip() or "-"
+                    lines.append(f"| `{out.get('name', '')}` | {desc} |")
+            else:
+                for out in workflow.outputs:
+                    lines.append(f"| `{out.name}` | {out.description or '-'} |")
             lines.append("")
 
         # Process calls
@@ -376,6 +410,14 @@ class MarkdownRenderer(BaseRenderer):
                         lines.append(f"- [`{call_name}`](#{anchor}) *(workflow)*")
                     else:
                         lines.append(f"- `{call_name}`")
+            lines.append("")
+
+        # Authors/Maintainers (from meta.yml)
+        if workflow.meta_authors or workflow.meta_maintainers:
+            if workflow.meta_authors:
+                lines.append(f"**Authors:** {', '.join(workflow.meta_authors)}")
+            if workflow.meta_maintainers:
+                lines.append(f"**Maintainers:** {', '.join(workflow.meta_maintainers)}")
             lines.append("")
 
         return lines
@@ -417,30 +459,85 @@ class MarkdownRenderer(BaseRenderer):
             lines.append(f"*Defined in `{process.file}:{process.line}`*")
             lines.append("")
 
-        # Docstring
-        if process.docstring:
+        # Keywords (from meta.yml)
+        if process.meta_keywords:
+            keywords_str = ", ".join(f"`{kw}`" for kw in process.meta_keywords)
+            lines.append(f"**Keywords:** {keywords_str}")
+            lines.append("")
+
+        # meta.yml description
+        if process.meta_description:
+            lines.append(process.meta_description)
+            lines.append("")
+
+        # Code documentation (Groovydoc) - show if present and different
+        if process.docstring and process.docstring != process.meta_description:
+            if process.meta_description:
+                lines.append("### Code Documentation")
+                lines.append("")
             lines.append(process.docstring)
             lines.append("")
 
-        # Inputs
-        if process.inputs:
+        # Tools (from meta.yml)
+        if process.meta_tools:
+            lines.append("### Tools")
+            lines.append("")
+            for tool in process.meta_tools:
+                tool_name = tool.get("name", "Unknown")
+                lines.append(f"#### {tool_name}")
+                lines.append("")
+                if tool.get("description"):
+                    lines.append(tool["description"])
+                    lines.append("")
+                tool_links = []
+                if tool.get("homepage"):
+                    tool_links.append(f"[Homepage]({tool['homepage']})")
+                if tool.get("documentation"):
+                    tool_links.append(f"[Documentation]({tool['documentation']})")
+                if tool.get("identifier"):
+                    tool_links.append(f"ID: `{tool['identifier']}`")
+                if tool.get("licence"):
+                    tool_links.append(f"License: {', '.join(tool['licence'])}")
+                if tool_links:
+                    lines.append(" | ".join(tool_links))
+                    lines.append("")
+
+        # Inputs - prefer meta.yml if available
+        if process.meta_inputs or process.inputs:
             lines.append("### Inputs")
             lines.append("")
             lines.append("| Name | Type | Description |")
             lines.append("|------|------|-------------|")
-            for inp in process.inputs:
-                lines.append(f"| `{inp.name}` | `{inp.type}` | {inp.description or '-'} |")
+            if process.meta_inputs:
+                for inp in process.meta_inputs:
+                    desc = inp.get("description", "-").replace("\n", " ").strip() or "-"
+                    lines.append(f"| `{inp.get('name', '')}` | `{inp.get('type', '-')}` | {desc} |")
+            else:
+                for inp in process.inputs:
+                    lines.append(f"| `{inp.name}` | `{inp.type}` | {inp.description or '-'} |")
             lines.append("")
 
-        # Outputs
-        if process.outputs:
+        # Outputs - prefer meta.yml if available
+        if process.meta_outputs or process.outputs:
             lines.append("### Outputs")
             lines.append("")
-            lines.append("| Name | Type | Emit | Description |")
-            lines.append("|------|------|------|-------------|")
-            for out in process.outputs:
-                emit = f"`{out.emit}`" if out.emit else "-"
-                lines.append(f"| `{out.name}` | `{out.type}` | {emit} | {out.description or '-'} |")
+            if process.meta_outputs:
+                lines.append("| Name | Type | Pattern | Description |")
+                lines.append("|------|------|---------|-------------|")
+                for out in process.meta_outputs:
+                    desc = out.get("description", "-").replace("\n", " ").strip() or "-"
+                    pattern = out.get("pattern", "-") or "-"
+                    lines.append(
+                        f"| `{out.get('name', '')}` | `{out.get('type', '-')}` | `{pattern}` | {desc} |"
+                    )
+            else:
+                lines.append("| Name | Type | Emit | Description |")
+                lines.append("|------|------|------|-------------|")
+                for out in process.outputs:
+                    emit = f"`{out.emit}`" if out.emit else "-"
+                    lines.append(
+                        f"| `{out.name}` | `{out.type}` | {emit} | {out.description or '-'} |"
+                    )
             lines.append("")
 
         # Directives
@@ -451,6 +548,14 @@ class MarkdownRenderer(BaseRenderer):
             lines.append("|-----------|-------|")
             for name, value in process.directives.items():
                 lines.append(f"| `{name}` | `{value}` |")
+            lines.append("")
+
+        # Authors/Maintainers (from meta.yml)
+        if process.meta_authors or process.meta_maintainers:
+            if process.meta_authors:
+                lines.append(f"**Authors:** {', '.join(process.meta_authors)}")
+            if process.meta_maintainers:
+                lines.append(f"**Maintainers:** {', '.join(process.meta_maintainers)}")
             lines.append("")
 
         return lines
