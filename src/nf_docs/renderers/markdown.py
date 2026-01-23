@@ -7,6 +7,7 @@ static site generators like MkDocs, Docusaurus, or GitHub Pages.
 
 from pathlib import Path
 
+from nf_docs.generation_info import get_markdown_footer
 from nf_docs.models import Pipeline, PipelineInput, Process, Workflow
 from nf_docs.renderers.base import BaseRenderer
 
@@ -53,7 +54,12 @@ class MarkdownRenderer(BaseRenderer):
         if pipeline.functions:
             sections.append(self._render_functions(pipeline))
 
-        return "\n\n---\n\n".join(sections)
+        content = "\n\n---\n\n".join(sections)
+
+        # Add footer
+        content += "\n\n" + get_markdown_footer()
+
+        return content
 
     def render_to_directory(self, pipeline: Pipeline, output_dir: str | Path) -> list[Path]:
         """
@@ -70,39 +76,48 @@ class MarkdownRenderer(BaseRenderer):
         output_path.mkdir(parents=True, exist_ok=True)
 
         created_files: list[Path] = []
+        footer = get_markdown_footer()
 
         # index.md - Pipeline overview
         index_file = output_path / "index.md"
-        index_file.write_text(self._render_index(pipeline), encoding="utf-8")
+        index_file.write_text(self._render_index(pipeline) + "\n\n" + footer, encoding="utf-8")
         created_files.append(index_file)
 
         # inputs.md - Workflow inputs and schema parameters
         inputs_file = output_path / "inputs.md"
-        inputs_file.write_text(self._render_inputs(pipeline), encoding="utf-8")
+        inputs_file.write_text(self._render_inputs(pipeline) + "\n\n" + footer, encoding="utf-8")
         created_files.append(inputs_file)
 
         # config.md - Non-input parameters (only if they exist)
         if pipeline.config_params:
             config_file = output_path / "config.md"
-            config_file.write_text(self._render_config(pipeline), encoding="utf-8")
+            config_file.write_text(
+                self._render_config(pipeline) + "\n\n" + footer, encoding="utf-8"
+            )
             created_files.append(config_file)
 
         # workflows.md - All workflows
         if pipeline.workflows:
             workflows_file = output_path / "workflows.md"
-            workflows_file.write_text(self._render_workflows(pipeline), encoding="utf-8")
+            workflows_file.write_text(
+                self._render_workflows(pipeline) + "\n\n" + footer, encoding="utf-8"
+            )
             created_files.append(workflows_file)
 
         # processes.md - All processes
         if pipeline.processes:
             processes_file = output_path / "processes.md"
-            processes_file.write_text(self._render_processes(pipeline), encoding="utf-8")
+            processes_file.write_text(
+                self._render_processes(pipeline) + "\n\n" + footer, encoding="utf-8"
+            )
             created_files.append(processes_file)
 
         # functions.md - Helper functions (only if they exist)
         if pipeline.functions:
             functions_file = output_path / "functions.md"
-            functions_file.write_text(self._render_functions(pipeline), encoding="utf-8")
+            functions_file.write_text(
+                self._render_functions(pipeline) + "\n\n" + footer, encoding="utf-8"
+            )
             created_files.append(functions_file)
 
         return created_files

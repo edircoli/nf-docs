@@ -36,6 +36,7 @@ dependencies = [
     "rich>=13.0",
     "httpx>=0.25",
     "markdown>=3.0",
+    "pygments>=2.0",
 ]
 
 [project.optional-dependencies]

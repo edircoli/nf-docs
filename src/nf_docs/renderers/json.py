@@ -7,6 +7,7 @@ Outputs pipeline documentation as structured JSON data.
 import json
 from pathlib import Path
 
+from nf_docs.generation_info import get_generation_info
 from nf_docs.models import Pipeline
 from nf_docs.renderers.base import BaseRenderer
 
@@ -47,6 +48,9 @@ class JSONRenderer(BaseRenderer):
         # Add custom title if provided
         if self.title:
             data["pipeline"]["name"] = self.title
+
+        # Add generation metadata
+        data["generated_by"] = get_generation_info()
 
         return json.dumps(data, indent=self.indent, ensure_ascii=False)
 

@@ -11,6 +11,7 @@ import markdown
 from jinja2 import Environment, PackageLoader
 from markupsafe import Markup
 
+from nf_docs.generation_info import get_generation_info, get_generation_timestamp
 from nf_docs.models import Pipeline
 from nf_docs.renderers.base import BaseRenderer
 
@@ -52,50 +53,114 @@ ALERT_TYPES = {
 
 def _preprocess_github_alerts(text: str) -> str:
     """
-    Convert GitHub-style alerts to HTML.
+    Preprocess GitHub-style alerts to ensure they are separated.
+
+    This adds a special HTML comment separator between consecutive alert blocks
+    so markdown doesn't merge them into a single blockquote.
+    """
+    # Pattern to find alert start markers
+    alert_start_pattern = re.compile(
+        r"^>\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]", re.IGNORECASE
+    )
+
+    lines = text.split("\n")
+    result: list[str] = []
+    last_non_empty_was_blockquote = False
+
+    for line in lines:
+        stripped = line.strip()
+
+        # Check if this is an alert marker line
+        is_alert_start = bool(alert_start_pattern.match(stripped))
+        is_blockquote_line = stripped.startswith(">")
+
+        if is_alert_start:
+            # If we were in a blockquote, add a separator to break them apart
+            if last_non_empty_was_blockquote:
+                # Insert an HTML comment that markdown will pass through,
+                # which breaks the blockquote chain
+                result.append("")
+                result.append("<!-- -->")
+                result.append("")
+
+        if stripped:
+            last_non_empty_was_blockquote = is_blockquote_line
+
+        result.append(line)
+
+    return "\n".join(result)
+
+
+def _process_github_alerts(html: str) -> str:
+    """
+    Convert GitHub-style alerts in already-processed HTML.
 
     GitHub alerts use the syntax:
     > [!NOTE]
     > Content here
 
-    This converts them to styled div elements.
+    Which gets converted by markdown to a blockquote. We detect these
+    and transform them into styled alert divs.
     """
-    # Pattern to match GitHub-style alerts
-    # Matches: > [!TYPE]\n> content lines
+    # Pattern to match blockquotes that start with alert markers
+    # After markdown processing, we might get:
+    # - <blockquote><p>[!NOTE]</p>...</blockquote>
+    # - <blockquote><p>[!NOTE]<br/>content</p>...</blockquote>
+    # - <blockquote><p>[!NOTE]\ncontent</p>...</blockquote>
     alert_pattern = re.compile(
-        r"^(>\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*\n)((?:>\s?.*\n?)*)",
-        re.MULTILINE,
+        r"<blockquote>\s*<p>\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]"
+        r"(?:<br\s*/?>|\n)?\s*(.*?)</blockquote>",
+        re.IGNORECASE | re.DOTALL,
     )
 
     def replace_alert(match: re.Match[str]) -> str:
-        alert_type = match.group(2)
-        content_block = match.group(3)
+        alert_type = match.group(1).upper()
+        content = match.group(2).strip()
 
-        # Remove the leading '> ' from each line and join
-        content_lines = []
-        for line in content_block.split("\n"):
-            # Remove leading '>' and optional space
-            if line.startswith(">"):
-                line = line[1:]
-                if line.startswith(" "):
-                    line = line[1:]
-            content_lines.append(line)
+        # If content starts with </p>, we have separate paragraphs
+        # Otherwise the content continues in the same paragraph
+        if content.startswith("</p>"):
+            content = content[4:].strip()
 
-        content = "\n".join(content_lines).strip()
+        # Handle case where first line text ends with </p> but has no opening <p>
+        # e.g., "This is text.</p>\n<ul>..." -> "<p>This is text.</p>\n<ul>..."
+        first_close_p = content.find("</p>")
+        if first_close_p > 0:
+            before_close = content[:first_close_p]
+            # If there's no <p> before this </p>, wrap the text in <p>
+            if "<p>" not in before_close and not before_close.strip().startswith("<"):
+                content = "<p>" + content
 
         icon, css_class = ALERT_TYPES.get(alert_type, ALERT_TYPES["NOTE"])
         title = alert_type.capitalize()
 
-        # Return HTML that will be passed through (not further markdown processed)
-        # We use a special marker that we'll handle after markdown processing
         return (
             f'<div class="alert alert-{css_class}">'
             f'<div class="alert-title">{icon}<span>{title}</span></div>'
-            f'<div class="alert-content">\n\n{content}\n\n</div>'
-            f"</div>\n\n"
+            f'<div class="alert-content">{content}</div>'
+            f"</div>"
         )
 
-    return alert_pattern.sub(replace_alert, text)
+    result = alert_pattern.sub(replace_alert, html)
+
+    # Remove the HTML comment separators we added during preprocessing
+    result = re.sub(r"\s*<!-- -->\s*", "\n", result)
+
+    return result
+
+
+def _preprocess_code_blocks(text: str) -> str:
+    """
+    Preprocess fenced code blocks.
+
+    Converts unsupported language identifiers to supported ones:
+    - ```nextflow -> ```groovy (Nextflow uses Groovy syntax)
+    - ```nf -> ```groovy
+    """
+    # Replace nextflow/nf language identifier with groovy
+    text = re.sub(r"^```nextflow\b", "```groovy", text, flags=re.MULTILINE | re.IGNORECASE)
+    text = re.sub(r"^```nf\b", "```groovy", text, flags=re.MULTILINE | re.IGNORECASE)
+    return text
 
 
 def _preprocess_markdown(text: str) -> str:
@@ -105,8 +170,10 @@ def _preprocess_markdown(text: str) -> str:
     Standard markdown requires a blank line before list items.
     This adds a blank line before the first list item when preceded by text.
     """
-    # First, convert GitHub-style alerts
+    # First, preprocess GitHub alerts to separate them
     text = _preprocess_github_alerts(text)
+    # Convert unsupported code block languages
+    text = _preprocess_code_blocks(text)
 
     lines = text.split("\n")
     result: list[str] = []
@@ -186,8 +253,25 @@ def md_to_html(text: str | None, add_anchors: bool = False) -> Markup:
         return Markup("")
     # Preprocess to fix common markdown issues
     text = _preprocess_markdown(text)
-    # Convert markdown to HTML
-    html = markdown.markdown(text, extensions=["tables", "fenced_code"])
+    # Convert markdown to HTML with syntax highlighting
+    # codehilite provides Pygments-based syntax highlighting
+    # fenced_code must come before codehilite for proper integration
+    html = markdown.markdown(
+        text,
+        extensions=[
+            "tables",
+            "fenced_code",
+            "codehilite",
+        ],
+        extension_configs={
+            "codehilite": {
+                "css_class": "highlight",
+                "guess_lang": False,  # Don't guess language if not specified
+            }
+        },
+    )
+    # Process GitHub-style alerts (must be done after markdown conversion)
+    html = _process_github_alerts(html)
     # Optionally add heading anchors
     if add_anchors:
         html = _add_heading_anchors(html)
@@ -270,12 +354,17 @@ class HTMLRenderer(BaseRenderer):
         input_groups = pipeline.get_input_groups()
         # Get avatar URL (currently only supported for GitHub)
         avatar_url = get_repository_avatar_url(pipeline.metadata.repository)
+        # Get generation metadata
+        generation_info = get_generation_info()
+        generation_timestamp = get_generation_timestamp()
 
         html_content = self.template.render(
             title=title,
             pipeline=pipeline,
             input_groups=input_groups,
             avatar_url=avatar_url,
+            generation_info=generation_info,
+            generation_timestamp=generation_timestamp,
         )
 
         # Process with Tailwind if enabled
