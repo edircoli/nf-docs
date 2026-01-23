@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from nf_docs.cache import PipelineCache
+from nf_docs.config import get_config
 from nf_docs.config_parser import parse_config
 from nf_docs.git_utils import GitInfo, build_source_url, get_git_info
 from nf_docs.lsp_client import LSPClient, SymbolKind, parse_hover_content
@@ -155,8 +156,14 @@ class PipelineExtractor:
             # Merge metadata (schema takes priority)
             pipeline.metadata = self._merge_metadata(pipeline.metadata, config_metadata)
             # Filter config params to exclude those already in inputs
+            # and those matching ignore prefixes from config
             input_names = {inp.name for inp in pipeline.inputs}
-            pipeline.config_params = [p for p in config_params if p.name not in input_names]
+            config = get_config()
+            pipeline.config_params = [
+                p
+                for p in config_params
+                if p.name not in input_names and not config.should_ignore_config_param(p.name)
+            ]
         except Exception as e:
             logger.warning(f"Failed to parse config: {e}")
 
@@ -251,13 +258,15 @@ class PipelineExtractor:
         """
         Parse README content, returning everything after the first h1 heading.
 
-        Strips the title (markdown # or HTML <h1>) and any badge lines immediately following.
+        Strips the title (markdown # or HTML <h1>) and optionally any badge lines
+        immediately following (controlled by strip_readme_badges config option).
         """
+        config = get_config()
         lines = content.split("\n")
         result_lines: list[str] = []
         found_title = False
         in_html_h1 = False
-        skip_badges = True
+        skip_badges = config.strip_readme_badges  # Only skip if config is True
 
         for line in lines:
             stripped = line.strip()
@@ -286,7 +295,7 @@ class PipelineExtractor:
                 # Still looking for title
                 continue
 
-            # Skip badge lines immediately after title
+            # Skip badge lines immediately after title (if configured)
             if skip_badges:
                 # Badge patterns: [![...], ![...], [!..., or lines containing "badge"
                 if (

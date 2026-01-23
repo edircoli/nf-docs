@@ -1,0 +1,13 @@
+{
+  "name": "nf-docs-build",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Build assets for nf-docs (Tailwind CSS)",
+  "devDependencies": {
+    "tailwindcss": "^4.1.18"
+  },
+  "scripts": {
+    "build": "tailwindcss -i input.css -o ../src/nf_docs/templates/tailwind.css --content '../src/nf_docs/templates/**/*.html' --minify",
+    "watch": "tailwindcss -i input.css -o ../src/nf_docs/templates/tailwind.css --content '../src/nf_docs/templates/**/*.html' --watch"
+  }
+}

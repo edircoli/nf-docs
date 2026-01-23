@@ -21,6 +21,7 @@ from rich.progress import (
 )
 
 from nf_docs import __version__
+from nf_docs.config import get_config, get_config_path, get_example_config
 from nf_docs.extractor import ExtractionError, PipelineExtractor
 from nf_docs.lsp_client import LSPError
 from nf_docs.progress import ProgressUpdate
@@ -528,6 +529,94 @@ def clear_cache(clear_all: bool, pipeline_path: Path | None) -> None:
     else:
         console.print("[red]Please specify a pipeline path or use --all[/red]")
         raise SystemExit(1)
+
+
+@main.command()
+@click.option(
+    "--init",
+    "init_config",
+    is_flag=True,
+    help="Create an example config file at the default location",
+)
+@click.option(
+    "--show-example",
+    is_flag=True,
+    help="Print an example config file to stdout",
+)
+@click.option(
+    "--path",
+    is_flag=True,
+    help="Print the config file path",
+)
+def config(init_config: bool, show_example: bool, path: bool) -> None:
+    """
+    Show or manage nf-docs configuration.
+
+    Without options, shows the current configuration values.
+
+    Examples:
+
+        # Show current config
+        nf-docs config
+
+        # Show config file path
+        nf-docs config --path
+
+        # Print example config
+        nf-docs config --show-example
+
+        # Create config file with defaults
+        nf-docs config --init
+    """
+    config_path = get_config_path()
+
+    if path:
+        console.print(str(config_path))
+        return
+
+    if show_example:
+        click.echo(get_example_config())
+        return
+
+    if init_config:
+        if config_path.exists():
+            console.print(f"[yellow]Config file already exists at {config_path}[/yellow]")
+            console.print("Edit it directly or delete it first to recreate.")
+            return
+
+        # Create parent directories
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Write example config
+        config_path.write_text(get_example_config())
+        console.print(f"[green]Created config file at {config_path}[/green]")
+        return
+
+    # Default: show current config
+    current_config = get_config()
+
+    console.print(f"[bold]Config file:[/bold] {config_path}")
+    if config_path.exists():
+        console.print("[dim]  (file exists)[/dim]")
+    else:
+        console.print("[dim]  (using defaults - file does not exist)[/dim]")
+
+    console.print()
+    console.print("[bold]Current settings:[/bold]")
+
+    config_dict = current_config.to_dict()
+    for key, value in config_dict.items():
+        if isinstance(value, list):
+            if value:
+                console.print(f"  {key}:")
+                for item in value:
+                    console.print(f"    - {item}")
+            else:
+                console.print(f"  {key}: []")
+        elif isinstance(value, bool):
+            console.print(f"  {key}: {str(value).lower()}")
+        else:
+            console.print(f"  {key}: {value}")
 
 
 if __name__ == "__main__":

@@ -1,23 +1,55 @@
-# AGENTS.md
+# Contributing to nf-docs
 
-This file provides guidance for AI coding agents working on the nf-docs project.
+Thank you for your interest in contributing to nf-docs! This document covers everything you need
+to know to get started with development.
 
-## Project Overview
+## Development Setup
 
-nf-docs is a CLI tool that generates documentation for Nextflow pipelines by querying the Nextflow
-Language Server (LSP) and extracting information from `nextflow_schema.json`, `nextflow.config`, and
-`README.md`.
+### Prerequisites
 
-## Build & Development
+- Python 3.9+
+- Java 11+ (for the Nextflow Language Server)
+- Node.js 18+ (for building Tailwind CSS, only needed when modifying HTML templates)
 
 ### Installation
 
 ```bash
+# Clone the repository
+git clone https://github.com/ewels/nf-docs.git
+cd nf-docs
+
 # Install in development mode with all dev dependencies
 pip install -e ".[dev]"
+
+# Or with uv (recommended)
+uv pip install -e ".[dev]"
 ```
 
-### Running Tests
+### Pre-commit Hooks
+
+This project uses [prek](https://prek.j178.dev/) to run checks before each commit:
+
+```bash
+# Install prek (macOS/Linux)
+curl -fsSL https://prek.j178.dev/install.sh | sh
+
+# Set up pre-commit hooks
+prek install
+```
+
+The hooks run:
+
+- **ruff** - Linting and formatting for Python
+- **ty** - Type checking
+- **prettier** - Formatting for Markdown and YAML
+
+To run all checks manually:
+
+```bash
+prek run --all-files
+```
+
+## Running Tests
 
 ```bash
 # Run all tests
@@ -39,10 +71,9 @@ pytest tests/test_models.py::TestProcess::test_creation -v
 pytest --cov=nf_docs --cov-report=term-missing
 ```
 
-### Linting & Formatting
+## Linting & Formatting
 
-The project uses ruff for linting/formatting and ty for type checking. Pre-commit hooks run these
-automatically.
+The project uses ruff for linting/formatting and ty for type checking:
 
 ```bash
 # Check for lint errors
@@ -56,12 +87,9 @@ ruff format src/ tests/
 
 # Type checking
 ty check src/
-
-# Run all pre-commit hooks manually
-pre-commit run --all-files
 ```
 
-### Running the CLI
+## Running the CLI
 
 ```bash
 # Generate docs for a pipeline (from the pipeline directory)
@@ -75,6 +103,31 @@ nf-docs generate . -f html --no-cache
 
 # Enable debug logging
 nf-docs generate . -f html -v
+```
+
+## Project Structure
+
+```
+src/nf_docs/
+├── __init__.py      # Package version (from importlib.metadata)
+├── cli.py           # CLI entry point (rich-click)
+├── cache.py         # Caching logic with version invalidation
+├── config.py        # User configuration (~/.config/nf-docs/config.yaml)
+├── extractor.py     # Main extraction orchestration
+├── lsp_client.py    # Nextflow LSP communication
+├── git_utils.py     # Git repository utilities
+├── models.py        # Data models (dataclasses)
+├── nf_parser.py     # Nextflow DSL parsing
+├── renderers/       # Output format renderers
+│   ├── __init__.py
+│   ├── base.py
+│   ├── html.py
+│   ├── json_renderer.py
+│   ├── markdown.py
+│   └── yaml_renderer.py
+└── templates/       # Jinja2 templates
+    ├── html.html
+    └── tailwind.css # Pre-built Tailwind CSS
 ```
 
 ## Code Style Guidelines
@@ -191,33 +244,38 @@ async def test_async_operation():
     assert result is not None
 ```
 
-### File Organization
+## Building Tailwind CSS
 
-```
-src/nf_docs/
-├── __init__.py      # Package version (from importlib.metadata)
-├── cli.py           # CLI entry point (rich-click)
-├── cache.py         # Caching logic with version invalidation
-├── config.py        # User configuration (~/.config/nf-docs/config.yaml)
-├── extractor.py     # Main extraction orchestration
-├── lsp_client.py    # Nextflow LSP communication
-├── git_utils.py     # Git repository utilities
-├── models.py        # Data models (dataclasses)
-├── nf_parser.py     # Nextflow DSL parsing
-├── renderers/       # Output format renderers
-│   ├── __init__.py
-│   ├── html.py
-│   ├── json_renderer.py
-│   └── markdown.py
-└── templates/       # Jinja2 templates
-    ├── html.html
-    └── tailwind.css # Pre-built Tailwind CSS
+The HTML output uses pre-built Tailwind CSS. If you modify the HTML template
+(`src/nf_docs/templates/html.html`) or the input CSS (`build-assets/input.css`),
+you need to rebuild the CSS.
 
-build-assets/        # Build tools (not needed by end users)
-├── package.json     # Node.js dependencies for Tailwind
-├── input.css        # Tailwind input with theme config
-└── build-tailwind.sh # Script to rebuild CSS
+**The pre-commit hook will automatically rebuild the CSS** when you commit changes
+to the template or input CSS files. The CI will also verify the CSS is up to date.
+
+To manually rebuild:
+
+```bash
+cd build-assets
+
+# Install dependencies (first time only)
+npm install
+
+# Build the CSS
+npm run build
+
+# Or watch for changes during development
+npm run watch
 ```
+
+Alternatively, use the shell script:
+
+```bash
+./build-assets/build-tailwind.sh
+```
+
+The generated CSS is committed to the repository (`src/nf_docs/templates/tailwind.css`)
+so that end users don't need Node.js installed.
 
 ## Architecture Notes
 
@@ -238,27 +296,41 @@ Cache is stored in `~/.cache/nf-docs/` and keyed by:
 - Package version (invalidates on upgrade)
 - Content hash of Nextflow files
 
+### Configuration
+
+User configuration is loaded from `~/.config/nf-docs/config.yaml` (or `$XDG_CONFIG_HOME`).
+See `nf-docs config --show-example` for available options.
+
 ### HTML Output
 
 The HTML renderer uses a single Jinja2 template with:
 
-- Pre-built Tailwind CSS (no runtime processing needed)
+- Pre-built Tailwind CSS (no runtime processing)
 - Inline JavaScript for search functionality
 - Three-column responsive layout
 - Full-text search across all documentation
+- Dark mode support
 
-### Building Tailwind CSS
+## Test Pipelines
 
-If you modify the HTML template, rebuild the CSS:
+For testing, try these pipelines:
 
-```bash
-./build-assets/build-tailwind.sh
-```
+- [nextflow-io/rnaseq-nf](https://github.com/nextflow-io/rnaseq-nf) - Simple, good for initial
+  testing
+- [nf-core/fetchngs](https://github.com/nf-core/fetchngs) - Small but real
+- [nf-core/rnaseq](https://github.com/nf-core/rnaseq) - Complex, good stress test
 
-Or manually:
+## Submitting Changes
 
-```bash
-cd build-assets
-npm install  # First time only
-npm run build
-```
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Run tests (`pytest`)
+5. Run linting (`prek run --all-files`)
+6. Commit your changes (`git commit -m 'Add amazing feature'`)
+7. Push to the branch (`git push origin feature/amazing-feature`)
+8. Open a Pull Request
+
+## Questions?
+
+Feel free to open an issue for questions or discussion.
