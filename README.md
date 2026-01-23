@@ -9,8 +9,6 @@
 
 </div>
 
----
-
 ![nf-docs demo](docs/images/demo.gif)
 
 <table>
@@ -29,8 +27,6 @@
 </td>
 </tr>
 </table>
-
----
 
 ## What is nf-docs?
 
@@ -53,7 +49,7 @@ API documentation similar to Sphinx for Python or Javadoc for Java.
 
 ## Quick Start
 
-> [!ERROR]
+> [!CAUTION]
 > Actually it's not published to PyPI yet, so this won't work
 > You need to clone the repo and run `pip install .`
 >
