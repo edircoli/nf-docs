@@ -52,6 +52,7 @@
         border-radius: 0.25rem;
         font-family: ui-monospace, monospace;
         font-size: 0.875em;
+        word-break: break-word;
       }
       .prose pre {
         background-color: rgb(30 41 59); /* slate-800 */
@@ -257,6 +258,32 @@
       }
       html.dark .mobile-nav-link:hover {
         background-color: rgb(51 65 85); /* slate-700 */
+      }
+      html.dark #mobile-toc-link {
+        color: rgb(203 213 225); /* slate-300 */
+      }
+      html.dark #mobile-toc-link:hover {
+        background-color: rgb(51 65 85); /* slate-700 */
+      }
+      html.dark #mobile-toc-back {
+        color: rgb(203 213 225); /* slate-300 */
+      }
+      html.dark #mobile-toc-back:hover {
+        background-color: rgb(51 65 85); /* slate-700 */
+      }
+      html.dark #mobile-toc-nav .sticky {
+        background-color: rgb(30 41 59); /* slate-800 */
+        border-color: rgb(51 65 85); /* slate-700 */
+      }
+      html.dark .mobile-toc-link {
+        color: rgb(148 163 184); /* slate-400 */
+      }
+      html.dark .mobile-toc-link:hover {
+        background-color: rgb(51 65 85); /* slate-700 */
+        color: rgb(226 232 240); /* slate-200 */
+      }
+      html.dark .mobile-toc-group-header {
+        color: rgb(203 213 225); /* slate-300 */
       }
       html.dark #mobile-search-input {
         background-color: rgb(51 65 85); /* slate-700 */
@@ -690,9 +717,6 @@
           src="{{ avatar_url }}"
           alt="Organization avatar"
           class="w-6 h-6 rounded mr-2"
-          style="display: none;"
-          onerror="this.style.display='none'"
-          onload="this.style.display='block'"
         />
         {% endif %}
         <h1 class="text-lg font-bold text-primary">
@@ -796,22 +820,34 @@
       </div>
 
       <!-- Mobile Navigation Links -->
-      <nav class="p-4 border-b border-slate-200">
-        <!-- Search link for mobile -->
-        <a
-          href="#search-results"
-          id="mobile-search-link"
-          class="flex items-center gap-2 px-3 py-2 rounded transition-colors hover:bg-slate-100 text-slate-800"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-          </svg>
-          Search
-        </a>
-      </nav>
+      <div id="mobile-main-nav">
+        <nav class="p-4 border-b border-slate-200">
+          <!-- Search link for mobile -->
+          <a
+            href="#search-results"
+            id="mobile-search-link"
+            class="flex items-center gap-2 px-3 py-2 rounded transition-colors hover:bg-slate-100 text-slate-800"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+            Search
+          </a>
+          <hr class="my-2 border-slate-200" />
+          <!-- Table of contents link for mobile -->
+          <button
+            id="mobile-toc-link"
+            class="flex items-center gap-2 px-3 py-2 rounded transition-colors hover:bg-slate-100 text-slate-800 w-full text-left"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+            </svg>
+            Table of contents
+          </button>
+        </nav>
 
-      <!-- Mobile Navigation Links -->
-      <nav class="p-4 overflow-y-auto" style="max-height: calc(100vh - 140px);">
+        <!-- Mobile Navigation Links -->
+        <nav class="p-4 overflow-y-auto" style="max-height: calc(100vh - 180px);">
         <ul class="space-y-1">
           <li>
             <a
@@ -900,7 +936,28 @@
           </a>
         </div>
         {% endif %}
-      </nav>
+        </nav>
+      </div>
+
+      <!-- Mobile Table of Contents (hidden by default) -->
+      <div id="mobile-toc-nav" class="hidden h-full flex flex-col">
+        <!-- Floating back button -->
+        <div class="sticky top-0 z-10 p-4 border-b border-slate-200 bg-white">
+          <button
+            id="mobile-toc-back"
+            class="flex items-center gap-2 px-3 py-2 rounded transition-colors hover:bg-slate-100 text-slate-800 w-full text-left"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Back to navigation
+          </button>
+        </div>
+        <!-- ToC content -->
+        <nav id="mobile-toc-content" class="p-4 overflow-y-auto flex-1">
+          <!-- Content will be populated by JavaScript -->
+        </nav>
+      </div>
     </aside>
 
     <div class="flex min-h-screen pt-14">
@@ -1006,9 +1063,17 @@
             </div>
           </div>
 
-          <p class="mb-4 text-slate-600">
+          <p id="search-query-wrapper" class="mb-4 text-slate-600 hidden">
             Showing results for "<span id="search-query-display" class="font-semibold"></span>"
           </p>
+
+          <div id="search-empty-state" class="py-8 text-center text-slate-500">
+            <svg class="w-12 h-12 mx-auto mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+            <p class="text-lg">Enter a search term</p>
+            <p class="text-sm mt-2">Find parameters, processes, workflows, and more</p>
+          </div>
 
           <div id="search-results-content">
             <!-- Results will be populated by JavaScript -->
@@ -2256,6 +2321,8 @@
       const searchResultsContent = document.getElementById('search-results-content');
       const searchNoResults = document.getElementById('search-no-results');
       const searchQueryDisplay = document.getElementById('search-query-display');
+      const searchQueryWrapper = document.getElementById('search-query-wrapper');
+      const searchEmptyState = document.getElementById('search-empty-state');
 
       // Debounce function
       function debounce(func, wait) {
@@ -2280,9 +2347,22 @@
       // Search function
       function performSearch(query) {
         if (!query || query.length < 2) {
-          // Clear search and show previous section
+          // If we're on the search results page, stay there but show empty state
+          if (currentSection === 'search-results' || !searchResultsSection.classList.contains('hidden')) {
+            searchResultsContent.innerHTML = '';
+            searchNoResults.classList.add('hidden');
+            searchQueryWrapper.classList.add('hidden');
+            searchEmptyState.classList.remove('hidden');
+            searchClear.classList.add('hidden');
+            // Update URL to remove search param
+            const url = new URL(window.location);
+            url.searchParams.delete('search');
+            history.replaceState(null, null, url.pathname + url.hash);
+            return;
+          }
+          // Otherwise, show previous section
           searchResultsSection.classList.add('hidden');
-          if (currentSection !== 'search-results') {
+          if (currentSection && currentSection !== 'search-results') {
             document.getElementById(currentSection).classList.remove('hidden');
           } else {
             document.getElementById('overview').classList.remove('hidden');
@@ -2298,6 +2378,8 @@
         }
 
         searchClear.classList.remove('hidden');
+        searchEmptyState.classList.add('hidden');
+        searchQueryWrapper.classList.remove('hidden');
         const lowerQuery = query.toLowerCase();
         const results = {
           workflows: [],
@@ -2584,10 +2666,11 @@
         searchInput.value = '';
         mobileSearchClear.classList.add('hidden');
         searchClear.classList.add('hidden');
-        // Clear results but stay on search page
+        // Clear results but stay on search page with empty state
         searchResultsContent.innerHTML = '';
         searchNoResults.classList.add('hidden');
-        searchQueryDisplay.textContent = '';
+        searchQueryWrapper.classList.add('hidden');
+        searchEmptyState.classList.remove('hidden');
         // Update URL to remove search param
         const url = new URL(window.location);
         url.searchParams.delete('search');
@@ -2600,6 +2683,81 @@
           closeMobileMenu();
         }
       });
+
+      // ==================== Mobile Table of Contents ====================
+
+      const mobileTocLink = document.getElementById('mobile-toc-link');
+      const mobileTocBack = document.getElementById('mobile-toc-back');
+      const mobileMainNav = document.getElementById('mobile-main-nav');
+      const mobileTocNav = document.getElementById('mobile-toc-nav');
+      const mobileTocContent = document.getElementById('mobile-toc-content');
+
+      // Populate mobile ToC based on current section
+      function populateMobileToc() {
+        mobileTocContent.innerHTML = '';
+
+        // Get the current active ToC section from the right sidebar
+        const activeTocSection = document.querySelector('.toc-section:not(.hidden)');
+        
+        if (!activeTocSection || activeTocSection.children.length === 0) {
+          // No ToC content for this section
+          mobileTocContent.innerHTML = '<p class="text-slate-500 text-sm px-2">No table of contents available for this section.</p>';
+          return;
+        }
+
+        // Clone the ToC content
+        const clonedContent = activeTocSection.cloneNode(true);
+        clonedContent.classList.remove('hidden', 'toc-section');
+        clonedContent.removeAttribute('id');
+
+        // Update classes for mobile styling
+        clonedContent.querySelectorAll('.toc-link').forEach(link => {
+          link.classList.remove('toc-link');
+          link.classList.add('mobile-toc-link', 'block', 'px-3', 'py-2', 'rounded', 'text-slate-600', 'hover:bg-slate-100', 'hover:text-slate-900', 'transition-colors');
+          
+          // Add click handler
+          link.addEventListener('click', e => {
+            e.preventDefault();
+            const href = link.getAttribute('href');
+            const escapedHref = href.replace(/\./g, '\\.');
+            const target = document.querySelector(escapedHref);
+            
+            if (target) {
+              closeMobileMenu();
+              setTimeout(() => target.scrollIntoView({ behavior: 'smooth' }), 100);
+              history.pushState(null, null, href);
+            }
+          });
+        });
+
+        // Update group headers for mobile
+        clonedContent.querySelectorAll('.toc-group-header').forEach(header => {
+          header.classList.add('mobile-toc-group-header', 'font-semibold', 'text-sm', 'text-slate-700', 'mb-1', 'px-3', 'py-1');
+        });
+
+        // Update spacing
+        clonedContent.querySelectorAll('ul').forEach(ul => {
+          ul.classList.add('space-y-1', 'text-sm');
+        });
+
+        mobileTocContent.appendChild(clonedContent);
+      }
+
+      // Show mobile ToC
+      function showMobileToc() {
+        populateMobileToc();
+        mobileMainNav.classList.add('hidden');
+        mobileTocNav.classList.remove('hidden');
+      }
+
+      // Show mobile main nav
+      function showMobileMainNav() {
+        mobileTocNav.classList.add('hidden');
+        mobileMainNav.classList.remove('hidden');
+      }
+
+      mobileTocLink.addEventListener('click', showMobileToc);
+      mobileTocBack.addEventListener('click', showMobileMainNav);
 
       // ==================== Dark Mode Toggle ====================
 

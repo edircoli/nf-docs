@@ -4,6 +4,8 @@ HTML renderer for nf-docs.
 Outputs pipeline documentation as a self-contained static HTML site.
 """
 
+import base64
+import logging
 import re
 from pathlib import Path
 
@@ -14,6 +16,8 @@ from markupsafe import Markup
 from nf_docs.generation_info import get_generation_info, get_generation_timestamp
 from nf_docs.models import Pipeline
 from nf_docs.renderers.base import BaseRenderer
+
+logger = logging.getLogger(__name__)
 
 # GitHub-style alert configuration
 # Maps alert type to (icon SVG, CSS class suffix)
@@ -283,9 +287,12 @@ def md_to_html_with_anchors(text: str | None) -> Markup:
     return md_to_html(text, add_anchors=True)
 
 
-def get_repository_avatar_url(repository_url: str | None) -> str | None:
+def get_repository_avatar_data_url(repository_url: str | None) -> str | None:
     """
-    Get avatar URL for a repository's organization/user.
+    Get avatar as a base64 data URL for a repository's organization/user.
+
+    Fetches the avatar image at generation time and encodes it as a data URL
+    to make the HTML fully self-contained without external requests.
 
     Currently only supports GitHub, as it provides public avatar URLs without
     authentication. GitLab and Bitbucket require API calls with authentication
@@ -295,7 +302,7 @@ def get_repository_avatar_url(repository_url: str | None) -> str | None:
         repository_url: Repository URL (e.g., https://github.com/nf-core/rnaseq)
 
     Returns:
-        Avatar URL or None if not supported or not a recognized repository URL
+        Base64 data URL or None if not supported, not recognized, or fetch fails
     """
     if not repository_url:
         return None
@@ -306,7 +313,28 @@ def get_repository_avatar_url(repository_url: str | None) -> str | None:
         match = re.match(r"https?://github\.com/([^/]+)", repository_url)
         if match:
             org = match.group(1)
-            return f"https://github.com/{org}.png?size=48"
+            avatar_url = f"https://github.com/{org}.png?size=48"
+
+            # Fetch and encode the image
+            try:
+                import urllib.request
+
+                with urllib.request.urlopen(avatar_url, timeout=10) as response:
+                    image_data = response.read()
+                    content_type = response.headers.get("Content-Type", "image/png")
+                    # Normalize content type
+                    if "png" in content_type.lower():
+                        content_type = "image/png"
+                    elif "jpeg" in content_type.lower() or "jpg" in content_type.lower():
+                        content_type = "image/jpeg"
+                    else:
+                        content_type = "image/png"  # Default to PNG
+
+                    base64_data = base64.b64encode(image_data).decode("utf-8")
+                    return f"data:{content_type};base64,{base64_data}"
+            except Exception as e:
+                logger.debug("Failed to fetch avatar for %s: %s", org, e)
+                return None
 
     # GitLab: Would require API call to /api/v4/groups/{id} or /api/v4/users/{id}
     # Bitbucket: Would require authenticated API call to get workspace avatar
@@ -352,8 +380,8 @@ class HTMLRenderer(BaseRenderer):
         """
         title = self.get_title(pipeline)
         input_groups = pipeline.get_input_groups()
-        # Get avatar URL (currently only supported for GitHub)
-        avatar_url = get_repository_avatar_url(pipeline.metadata.repository)
+        # Get avatar as base64 data URL (currently only supported for GitHub)
+        avatar_url = get_repository_avatar_data_url(pipeline.metadata.repository)
         # Get generation metadata
         generation_info = get_generation_info()
         generation_timestamp = get_generation_timestamp()
