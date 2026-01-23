@@ -5,9 +5,10 @@ This module provides a callback-based progress reporting system that can be
 used with rich.Progress or any other progress display mechanism.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Callable, Protocol
+from typing import Protocol
 
 
 class ExtractionPhase(Enum):

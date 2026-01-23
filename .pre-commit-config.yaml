@@ -23,3 +23,12 @@ repos:
       - id: prettier
         types_or: [markdown, yaml, html]
         exclude: ^examples/
+
+  - repo: local
+    hooks:
+      - id: tailwind-css
+        name: Build Tailwind CSS
+        language: system
+        entry: ./build-assets/build-tailwind.sh
+        pass_filenames: false
+        files: (\.css$|templates/.*\.html$|tailwind)

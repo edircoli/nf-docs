@@ -6,10 +6,11 @@ set -e
 
 cd "$(dirname "$0")"
 
-# Install dependencies if needed
+# Check dependencies are installed
 if [ ! -d "node_modules" ]; then
-    echo "Installing dependencies..."
-    npm install
+    echo "Error: build-assets/node_modules not found."
+    echo "Run 'cd build-assets && npm install' first."
+    exit 1
 fi
 
 echo "Building Tailwind CSS..."
