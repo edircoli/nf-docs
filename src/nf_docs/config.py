@@ -157,8 +157,8 @@ def load_config(config_path: Path | None = None) -> NfDocsConfig:
     except yaml.YAMLError as e:
         logger.warning(f"Invalid YAML in config file {config_path}: {e}")
         return NfDocsConfig()
-    except Exception as e:
-        logger.warning(f"Failed to load config from {config_path}: {e}")
+    except OSError as e:
+        logger.warning(f"Failed to read config from {config_path}: {e}")
         return NfDocsConfig()
 
 

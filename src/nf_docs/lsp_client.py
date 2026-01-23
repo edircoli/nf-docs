@@ -309,8 +309,6 @@ class LSPClient:
                     if message_text and "/" in message_text:
                         try:
                             # Find the pattern "N / M" in the message
-                            import re
-
                             match = re.search(r"(\d+)\s*/\s*(\d+)", message_text)
                             if match:
                                 current = int(match.group(1))
@@ -378,8 +376,6 @@ class LSPClient:
         self._process.stdin.flush()
 
         # Wait for response
-        import time
-
         timeout = 30.0
         start = time.time()
         while time.time() - start < timeout:
@@ -621,7 +617,7 @@ class LSPClient:
             if self._process.stdin and not self._process.stdin.closed:
                 # Send shutdown/exit without waiting for response
                 self._send_notification("exit")
-        except Exception:
+        except (BrokenPipeError, OSError):
             pass
 
         # Terminate the process - don't wait long
@@ -658,8 +654,6 @@ class LSPClient:
 
         This must be done before querying symbols or hover for a document.
         """
-        import time
-
         path = Path(file_path).resolve()
         content = path.read_text(encoding="utf-8")
 

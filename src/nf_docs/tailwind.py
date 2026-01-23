@@ -7,6 +7,7 @@ This module provides functionality to:
 3. Inject the minified CSS into the final HTML as a self-contained file
 """
 
+import re
 import subprocess
 import tempfile
 from pathlib import Path
@@ -208,8 +209,6 @@ def inject_css_into_html(html_content: str, css_content: str) -> str:
     Returns:
         HTML with CSS injected in a <style> tag
     """
-    import re
-
     style_tag = f"<style>\n{css_content}\n</style>"
 
     # Check if there's already a <style> tag to replace

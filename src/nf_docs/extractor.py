@@ -17,9 +17,9 @@ from typing import Any
 
 from nf_docs.cache import PipelineCache
 from nf_docs.config import get_config
-from nf_docs.config_parser import parse_config
+from nf_docs.config_parser import ConfigParseError, parse_config
 from nf_docs.git_utils import GitInfo, build_source_url, get_git_info
-from nf_docs.lsp_client import LSPClient, SymbolKind, parse_hover_content
+from nf_docs.lsp_client import LSPClient, LSPError, SymbolKind, parse_hover_content
 from nf_docs.models import (
     Function,
     FunctionParam,
@@ -39,7 +39,7 @@ from nf_docs.progress import (
     ProgressUpdate,
     null_progress,
 )
-from nf_docs.schema_parser import find_schema_file, parse_schema
+from nf_docs.schema_parser import SchemaParseError, find_schema_file, parse_schema
 
 logger = logging.getLogger(__name__)
 
@@ -141,7 +141,7 @@ class PipelineExtractor:
                 schema_metadata, schema_inputs = parse_schema(schema_file)
                 pipeline.metadata = schema_metadata
                 pipeline.inputs = schema_inputs
-            except Exception as e:
+            except SchemaParseError as e:
                 logger.warning(f"Failed to parse schema: {e}")
 
         # Extract from config
@@ -164,7 +164,7 @@ class PipelineExtractor:
                 for p in config_params
                 if p.name not in input_names and not config.should_ignore_config_param(p.name)
             ]
-        except Exception as e:
+        except ConfigParseError as e:
             logger.warning(f"Failed to parse config: {e}")
 
         # Extract from README (full content after first h1, with base64 images)
@@ -249,7 +249,7 @@ class PipelineExtractor:
                     parsed_content = self._parse_readme_content(content)
                     # Convert local images to base64
                     return self._convert_images_to_base64(parsed_content, readme_path.parent)
-                except Exception as e:
+                except OSError as e:
                     logger.debug(f"Failed to read README: {e}")
 
         return ""
@@ -337,7 +337,7 @@ class PipelineExtractor:
                     data = base64.b64encode(f.read()).decode("utf-8")
                 mime_type = get_mime_type(str(image_path))
                 return f"data:{mime_type};base64,{data}"
-            except Exception as e:
+            except OSError as e:
                 logger.debug(f"Failed to encode image {image_path}: {e}")
                 return None
 
@@ -428,7 +428,7 @@ class PipelineExtractor:
                 )
                 try:
                     self._extract_file_symbols(client, nf_file, pipeline, git_info)
-                except Exception as e:
+                except (LSPError, OSError) as e:
                     logger.warning(f"Failed to extract from {nf_file}: {e}")
 
     def _extract_file_symbols(

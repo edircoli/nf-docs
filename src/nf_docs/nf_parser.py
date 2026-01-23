@@ -257,30 +257,3 @@ def parse_workflow_hover(hover_text: str) -> ParsedWorkflow | None:
                 workflow.emits.append(emit_name)
 
     return workflow
-
-
-def is_code_block(text: str) -> bool:
-    """Check if text appears to be a code block rather than documentation."""
-    # If it contains code fences, it's code
-    if "```" in text:
-        return True
-
-    # If it starts with process/workflow/def keywords, it's code
-    stripped = text.strip()
-    if re.match(r"^(process|workflow|def)\s+\w+", stripped):
-        return True
-
-    # If it contains typical code patterns
-    code_patterns = [
-        r"\binput:\s*$",
-        r"\boutput:\s*$",
-        r"\bscript:\s*$",
-        r"\btuple\s+val\(",
-        r"\bpath\s*\(",
-        r"\bval\s*\(",
-    ]
-    for pattern in code_patterns:
-        if re.search(pattern, text, re.MULTILINE):
-            return True
-
-    return False
