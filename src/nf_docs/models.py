@@ -286,6 +286,7 @@ class PipelineMetadata:
     repository: str = ""
     authors: list[str] = field(default_factory=list)
     license: str = ""
+    readme_content: str = ""  # Full README content (after first h1)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
@@ -302,6 +303,8 @@ class PipelineMetadata:
             result["authors"] = self.authors
         if self.license:
             result["license"] = self.license
+        if self.readme_content:
+            result["readme_content"] = self.readme_content
         return result
 
 

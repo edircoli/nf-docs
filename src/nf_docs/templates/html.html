@@ -358,13 +358,141 @@
       html.dark .prose.bg-slate-100 {
         background-color: rgb(51 65 85); /* slate-700 */
       }
+
+      /* ==================== GitHub-style Alerts ==================== */
+
+      .alert {
+        padding: 1rem;
+        margin: 1em 0;
+        border-radius: 0.375rem;
+        border-left-width: 4px;
+        border-left-style: solid;
+      }
+      .alert-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+      }
+      .alert-icon {
+        flex-shrink: 0;
+        fill: currentColor;
+      }
+      .alert-content {
+        margin: 0;
+      }
+      .alert-content p:first-child {
+        margin-top: 0;
+      }
+      .alert-content p:last-child {
+        margin-bottom: 0;
+      }
+
+      /* Note - Blue */
+      .alert-note {
+        background-color: rgb(239 246 255); /* blue-50 */
+        border-left-color: rgb(59 130 246); /* blue-500 */
+      }
+      .alert-note .alert-title {
+        color: rgb(29 78 216); /* blue-700 */
+      }
+
+      /* Tip - Green */
+      .alert-tip {
+        background-color: rgb(240 253 244); /* green-50 */
+        border-left-color: rgb(34 197 94); /* green-500 */
+      }
+      .alert-tip .alert-title {
+        color: rgb(21 128 61); /* green-700 */
+      }
+
+      /* Important - Purple */
+      .alert-important {
+        background-color: rgb(250 245 255); /* purple-50 */
+        border-left-color: rgb(168 85 247); /* purple-500 */
+      }
+      .alert-important .alert-title {
+        color: rgb(126 34 206); /* purple-700 */
+      }
+
+      /* Warning - Yellow/Amber */
+      .alert-warning {
+        background-color: rgb(254 252 232); /* yellow-50 */
+        border-left-color: rgb(234 179 8); /* yellow-500 */
+      }
+      .alert-warning .alert-title {
+        color: rgb(161 98 7); /* yellow-700 */
+      }
+
+      /* Caution - Red */
+      .alert-caution {
+        background-color: rgb(254 242 242); /* red-50 */
+        border-left-color: rgb(239 68 68); /* red-500 */
+      }
+      .alert-caution .alert-title {
+        color: rgb(185 28 28); /* red-700 */
+      }
+
+      /* ==================== Dark Mode Alerts ==================== */
+
+      html.dark .alert-note {
+        background-color: rgba(59, 130, 246, 0.1); /* blue with opacity */
+        border-left-color: rgb(96 165 250); /* blue-400 */
+      }
+      html.dark .alert-note .alert-title {
+        color: rgb(147 197 253); /* blue-300 */
+      }
+
+      html.dark .alert-tip {
+        background-color: rgba(34, 197, 94, 0.1); /* green with opacity */
+        border-left-color: rgb(74 222 128); /* green-400 */
+      }
+      html.dark .alert-tip .alert-title {
+        color: rgb(134 239 172); /* green-300 */
+      }
+
+      html.dark .alert-important {
+        background-color: rgba(168, 85, 247, 0.1); /* purple with opacity */
+        border-left-color: rgb(192 132 252); /* purple-400 */
+      }
+      html.dark .alert-important .alert-title {
+        color: rgb(216 180 254); /* purple-300 */
+      }
+
+      html.dark .alert-warning {
+        background-color: rgba(234, 179, 8, 0.1); /* yellow with opacity */
+        border-left-color: rgb(250 204 21); /* yellow-400 */
+      }
+      html.dark .alert-warning .alert-title {
+        color: rgb(253 224 71); /* yellow-300 */
+      }
+
+      html.dark .alert-caution {
+        background-color: rgba(239, 68, 68, 0.1); /* red with opacity */
+        border-left-color: rgb(248 113 113); /* red-400 */
+      }
+      html.dark .alert-caution .alert-title {
+        color: rgb(252 165 165); /* red-300 */
+      }
     </style>
   </head>
   <body class="font-sans leading-relaxed text-slate-800 bg-slate-50">
     <!-- Top Navigation Bar -->
     <header class="fixed top-0 left-0 right-0 h-14 bg-white border-b border-slate-200 z-50 flex items-center px-4 md:px-6">
-      <!-- Left: Pipeline name and version -->
+      <!-- Left: Organization/user avatar (GitHub only) and pipeline name -->
       <a href="#overview" id="top-nav-home" class="flex items-center hover:opacity-80 transition-opacity">
+        {% if avatar_url %}
+        <img
+          id="repo-avatar"
+          src="{{ avatar_url }}"
+          alt="Organization avatar"
+          class="w-6 h-6 rounded mr-2"
+          style="display: none;"
+          onerror="this.style.display='none'"
+          onload="this.style.display='block'"
+        />
+        {% endif %}
         <h1 class="text-lg font-bold text-primary">
           {{ pipeline.metadata.name or 'Pipeline' }}
         </h1>
@@ -550,50 +678,47 @@
           <h1 class="text-3xl font-bold mb-4 text-slate-800">{{ title }}</h1>
 
           {% if pipeline.metadata.description %}
-          <div class="prose mb-4 text-slate-600">{{ pipeline.metadata.description|markdown }}</div>
+          <div class="prose mb-6 text-slate-600">{{ pipeline.metadata.description|markdown }}</div>
           {% endif %}
 
-          <h2 class="text-2xl font-semibold mt-8 mb-4 pb-2 border-b border-slate-200">
-            Quick Stats
-          </h2>
-          <div class="overflow-x-auto"><table class="w-full border-collapse mb-4">
-            <thead>
-              <tr>
-                <th class="text-left p-3 border-b border-slate-200 bg-slate-100 font-semibold">
-                  Item
-                </th>
-                <th class="text-left p-3 border-b border-slate-200 bg-slate-100 font-semibold">
-                  Count
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr class="hover:bg-slate-50 cursor-pointer" onclick="document.querySelector('.nav-link[data-section=inputs]').click()">
-                <td class="p-3 border-b border-slate-200"><a href="#inputs" class="text-primary hover:underline">Input Parameters</a></td>
-                <td class="p-3 border-b border-slate-200">{{ pipeline.inputs|length }}</td>
-              </tr>
-              {% if pipeline.config_params %}
-              <tr class="hover:bg-slate-50 cursor-pointer" onclick="document.querySelector('.nav-link[data-section=config]').click()">
-                <td class="p-3 border-b border-slate-200"><a href="#config" class="text-primary hover:underline">Config Parameters</a></td>
-                <td class="p-3 border-b border-slate-200">{{ pipeline.config_params|length }}</td>
-              </tr>
+          {% if pipeline.metadata.homepage or pipeline.metadata.repository %}
+          <div class="flex flex-wrap gap-4 mb-6">
+            {% if pipeline.metadata.homepage %}
+            <a
+              href="{{ pipeline.metadata.homepage }}"
+              target="_blank"
+              class="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+            >
+              <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+              </svg>
+              {{ pipeline.metadata.homepage }}
+            </a>
+            {% endif %}
+            {% if pipeline.metadata.repository and pipeline.metadata.repository != pipeline.metadata.homepage %}
+            <a
+              href="{{ pipeline.metadata.repository }}"
+              target="_blank"
+              class="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+            >
+              {% if 'github.com' in pipeline.metadata.repository %}
+              <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"></path>
+              </svg>
+              {% else %}
+              <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+              </svg>
               {% endif %}
-              <tr class="hover:bg-slate-50 cursor-pointer" onclick="document.querySelector('.nav-link[data-section=workflows]').click()">
-                <td class="p-3 border-b border-slate-200"><a href="#workflows" class="text-primary hover:underline">Workflows</a></td>
-                <td class="p-3 border-b border-slate-200">{{ pipeline.workflows|length }}</td>
-              </tr>
-              <tr class="hover:bg-slate-50 cursor-pointer" onclick="document.querySelector('.nav-link[data-section=processes]').click()">
-                <td class="p-3 border-b border-slate-200"><a href="#processes" class="text-primary hover:underline">Processes</a></td>
-                <td class="p-3 border-b border-slate-200">{{ pipeline.processes|length }}</td>
-              </tr>
-              {% if pipeline.functions %}
-              <tr class="hover:bg-slate-50 cursor-pointer" onclick="document.querySelector('.nav-link[data-section=functions]').click()">
-                <td class="p-3 border-b border-slate-200"><a href="#functions" class="text-primary hover:underline">Functions</a></td>
-                <td class="p-3 border-b border-slate-200">{{ pipeline.functions|length }}</td>
-              </tr>
-              {% endif %}
-            </tbody>
-          </table></div>
+              {{ pipeline.metadata.repository }}
+            </a>
+            {% endif %}
+          </div>
+          {% endif %}
+
+          {% if pipeline.metadata.readme_content %}
+          <div id="readme-content" class="prose max-w-none text-slate-600">{{ pipeline.metadata.readme_content|markdown_with_anchors }}</div>
+          {% endif %}
 
           {% if pipeline.metadata.authors %}
           <h2 class="text-2xl font-semibold mt-8 mb-4 pb-2 border-b border-slate-200">Authors</h2>
@@ -601,31 +726,6 @@
             {% for author in pipeline.metadata.authors %}
             <li>{{ author }}</li>
             {% endfor %}
-          </ul>
-          {% endif %} {% if pipeline.metadata.homepage or pipeline.metadata.repository %}
-          <h2 class="text-2xl font-semibold mt-8 mb-4 pb-2 border-b border-slate-200">Links</h2>
-          <ul class="list-disc list-inside mb-4">
-            {% if pipeline.metadata.homepage %}
-            <li>
-              Homepage:
-              <a
-                href="{{ pipeline.metadata.homepage }}"
-                target="_blank"
-                class="text-primary hover:underline"
-                >{{ pipeline.metadata.homepage }}</a
-              >
-            </li>
-            {% endif %} {% if pipeline.metadata.repository and pipeline.metadata.repository != pipeline.metadata.homepage %}
-            <li>
-              Repository:
-              <a
-                href="{{ pipeline.metadata.repository }}"
-                target="_blank"
-                class="text-primary hover:underline"
-                >{{ pipeline.metadata.repository }}</a
-              >
-            </li>
-            {% endif %}
           </ul>
           {% endif %}
         </section>
@@ -1388,6 +1488,76 @@
 
       // Initialize TOC for overview (default section)
       updateTOC('overview');
+
+      // ==================== Overview TOC Generation ====================
+
+      // Populate overview TOC from readme headings
+      function populateOverviewTOC() {
+        const readmeContent = document.getElementById('readme-content');
+        const tocOverview = document.getElementById('toc-overview');
+
+        if (!readmeContent || !tocOverview) return;
+
+        const headings = readmeContent.querySelectorAll('h1, h2, h3, h4, h5, h6');
+        if (headings.length === 0) return;
+
+        const ul = document.createElement('ul');
+        ul.className = 'space-y-0.5 text-xs';
+
+        headings.forEach(heading => {
+          const id = heading.id;
+          const text = heading.textContent.replace('¶', '').trim();
+          const level = parseInt(heading.tagName.charAt(1));
+
+          const li = document.createElement('li');
+          const a = document.createElement('a');
+          a.href = '#' + id;
+          a.className = 'toc-link block px-2 py-0.5 rounded text-slate-600 hover:bg-slate-100 hover:text-slate-900 truncate';
+          a.dataset.section = 'overview';
+          a.title = text;
+          a.textContent = text;
+
+          // Add indentation for nested headings (h2 and below)
+          if (level > 1) {
+            a.style.paddingLeft = ((level - 1) * 0.75 + 0.5) + 'rem';
+          }
+
+          li.appendChild(a);
+          ul.appendChild(li);
+
+          // Add click handler for smooth scrolling
+          a.addEventListener('click', e => {
+            e.preventDefault();
+            const target = document.getElementById(id);
+            if (target) {
+              // Make sure overview section is visible
+              if (currentSection !== 'overview') {
+                document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
+                document.getElementById('overview').classList.remove('hidden');
+                updateTOC('overview');
+                currentSection = 'overview';
+
+                // Update left nav highlighting
+                document.querySelectorAll('.nav-link').forEach(l => {
+                  l.classList.remove('bg-primary', 'text-white');
+                  l.classList.add('text-slate-800');
+                  if (l.dataset.section === 'overview') {
+                    l.classList.add('bg-primary', 'text-white');
+                    l.classList.remove('text-slate-800');
+                  }
+                });
+              }
+              setTimeout(() => target.scrollIntoView({ behavior: 'smooth' }), 50);
+              history.pushState(null, null, '#' + id);
+            }
+          });
+        });
+
+        tocOverview.appendChild(ul);
+      }
+
+      // Call on page load
+      populateOverviewTOC();
 
       // ==================== Search Functionality ====================
 

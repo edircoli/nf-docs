@@ -92,9 +92,7 @@ class TestPipelineCache:
             ],
         )
 
-    def test_cache_miss_no_file(
-        self, cache: PipelineCache, sample_pipeline_dir: Path
-    ) -> None:
+    def test_cache_miss_no_file(self, cache: PipelineCache, sample_pipeline_dir: Path) -> None:
         """Test cache miss when no cache file exists."""
         result = cache.get(sample_pipeline_dir)
         assert result is None

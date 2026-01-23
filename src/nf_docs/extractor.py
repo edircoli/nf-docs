@@ -31,13 +31,13 @@ from nf_docs.models import (
     WorkflowInput,
     WorkflowOutput,
 )
+from nf_docs.nf_parser import parse_process_hover, parse_workflow_hover
 from nf_docs.progress import (
     ExtractionPhase,
     ProgressCallbackType,
     ProgressUpdate,
     null_progress,
 )
-from nf_docs.nf_parser import parse_process_hover, parse_workflow_hover
 from nf_docs.schema_parser import find_schema_file, parse_schema
 
 logger = logging.getLogger(__name__)
@@ -160,16 +160,16 @@ class PipelineExtractor:
         except Exception as e:
             logger.warning(f"Failed to parse config: {e}")
 
-        # Extract from README
+        # Extract from README (full content after first h1, with base64 images)
         self._progress(
             ProgressUpdate(
                 phase=ExtractionPhase.PARSING_README,
                 message="Parsing README...",
             )
         )
-        readme_description = self._extract_readme_description()
-        if readme_description and not pipeline.metadata.description:
-            pipeline.metadata.description = readme_description
+        readme_content = self._extract_readme_content()
+        if readme_content:
+            pipeline.metadata.readme_content = readme_content
 
         # Get git info for repository URL and source links
         git_info = get_git_info(self.workspace_path)
@@ -223,8 +223,12 @@ class PipelineExtractor:
             license=primary.license or secondary.license,
         )
 
-    def _extract_readme_description(self) -> str:
-        """Extract description from README.md."""
+    def _extract_readme_content(self) -> str:
+        """
+        Extract full README content after the first h1 heading.
+
+        Also converts local images to base64 data URIs for portability.
+        """
         readme_candidates = [
             self.workspace_path / "README.md",
             self.workspace_path / "readme.md",
@@ -235,57 +239,139 @@ class PipelineExtractor:
             if readme_path.exists():
                 try:
                     content = readme_path.read_text(encoding="utf-8")
-                    return self._parse_readme_description(content)
+                    parsed_content = self._parse_readme_content(content)
+                    # Convert local images to base64
+                    return self._convert_images_to_base64(parsed_content, readme_path.parent)
                 except Exception as e:
                     logger.debug(f"Failed to read README: {e}")
 
         return ""
 
-    def _parse_readme_description(self, content: str) -> str:
-        """Parse description from README content."""
+    def _parse_readme_content(self, content: str) -> str:
+        """
+        Parse README content, returning everything after the first h1 heading.
+
+        Strips the title (markdown # or HTML <h1>) and any badge lines immediately following.
+        """
         lines = content.split("\n")
-        description_lines: list[str] = []
-        in_description = False
+        result_lines: list[str] = []
+        found_title = False
+        in_html_h1 = False
         skip_badges = True
 
         for line in lines:
             stripped = line.strip()
+            stripped_lower = stripped.lower()
 
-            # Skip empty lines at start
-            if not stripped and not in_description:
+            # Skip everything before/inside the first h1
+            if not found_title:
+                # Markdown h1
+                if stripped.startswith("# "):
+                    found_title = True
+                    continue
+                # HTML <h1> opening tag
+                if "<h1" in stripped_lower:
+                    in_html_h1 = True
+                    # Check if it closes on the same line
+                    if "</h1>" in stripped_lower:
+                        found_title = True
+                        in_html_h1 = False
+                    continue
+                # Inside HTML h1, look for closing tag
+                if in_html_h1:
+                    if "</h1>" in stripped_lower:
+                        found_title = True
+                        in_html_h1 = False
+                    continue
+                # Still looking for title
                 continue
 
-            # Skip title line
-            if stripped.startswith("#") and not in_description:
-                in_description = True
-                continue
-
-            # Skip badge lines (usually contain images/links at the start)
-            if skip_badges and (
-                stripped.startswith("[![")
-                or stripped.startswith("![")
-                or stripped.startswith("[!")
-                or "badge" in stripped.lower()
-            ):
-                continue
-
-            # Only stop skipping badges when we hit actual content
-            if stripped:
+            # Skip badge lines immediately after title
+            if skip_badges:
+                # Badge patterns: [![...], ![...], [!..., or lines containing "badge"
+                if (
+                    stripped.startswith("[![")
+                    or stripped.startswith("![")
+                    or stripped.startswith("[!")
+                    or "badge" in stripped_lower
+                    or not stripped  # Skip empty lines in badge section
+                ):
+                    continue
+                # First non-badge, non-empty line - stop skipping
                 skip_badges = False
 
-            # Stop at next heading or horizontal rule
-            if stripped.startswith("#") or stripped.startswith("---"):
-                break
+            result_lines.append(line)
 
-            # Collect description lines
-            if in_description:
-                if stripped:
-                    description_lines.append(stripped)
-                elif description_lines:
-                    # Stop at empty line after content
-                    break
+        return "\n".join(result_lines)
 
-        return " ".join(description_lines)
+    def _convert_images_to_base64(self, content: str, base_path: Path) -> str:
+        """
+        Convert local image references to base64 data URIs.
+
+        Handles both markdown image syntax: ![alt](path) and HTML img tags.
+        """
+        import base64
+        import mimetypes
+
+        def get_mime_type(path: str) -> str:
+            """Get MIME type for an image file."""
+            mime_type, _ = mimetypes.guess_type(path)
+            return mime_type or "application/octet-stream"
+
+        def encode_image(image_path: Path) -> str | None:
+            """Encode an image file to base64 data URI."""
+            if not image_path.exists():
+                logger.debug(f"Image not found: {image_path}")
+                return None
+            try:
+                with open(image_path, "rb") as f:
+                    data = base64.b64encode(f.read()).decode("utf-8")
+                mime_type = get_mime_type(str(image_path))
+                return f"data:{mime_type};base64,{data}"
+            except Exception as e:
+                logger.debug(f"Failed to encode image {image_path}: {e}")
+                return None
+
+        def is_local_path(path: str) -> bool:
+            """Check if a path is local (not a URL)."""
+            return not path.startswith(("http://", "https://", "data:"))
+
+        def resolve_path(path: str) -> Path:
+            """Resolve a relative path against the base path."""
+            # Handle paths that start with ./
+            if path.startswith("./"):
+                path = path[2:]
+            return base_path / path
+
+        # Replace markdown images: ![alt](path)
+        def replace_md_image(match: re.Match) -> str:
+            alt = match.group(1)
+            path = match.group(2)
+            if is_local_path(path):
+                image_path = resolve_path(path)
+                data_uri = encode_image(image_path)
+                if data_uri:
+                    return f"![{alt}]({data_uri})"
+            return match.group(0)
+
+        content = re.sub(r"!\[([^\]]*)\]\(([^)]+)\)", replace_md_image, content)
+
+        # Replace HTML img tags: <img src="path" ...>
+        def replace_html_image(match: re.Match) -> str:
+            full_tag = match.group(0)
+            src_match = re.search(r'src=["\']([^"\']+)["\']', full_tag)
+            if src_match:
+                path = src_match.group(1)
+                if is_local_path(path):
+                    image_path = resolve_path(path)
+                    data_uri = encode_image(image_path)
+                    if data_uri:
+                        return full_tag.replace(path, data_uri)
+            return full_tag
+
+        content = re.sub(r"<img[^>]+>", replace_html_image, content, flags=re.IGNORECASE)
+
+        return content
 
     def _extract_from_lsp(self, pipeline: Pipeline, git_info: GitInfo | None = None) -> None:
         """Extract processes, workflows, and functions using the Language Server."""
@@ -596,32 +682,3 @@ class PipelineExtractor:
                         )
 
         return function
-
-        # Parse: def name(param1: Type, param2: Type) -> ReturnType
-        # or: def name(param1, param2)
-        match = re.search(r"def\s+\w+\s*\(([^)]*)\)", signature)
-        if match:
-            params_str = match.group(1)
-            if params_str.strip():
-                for param_part in params_str.split(","):
-                    param_part = param_part.strip()
-                    if ":" in param_part:
-                        name, type_str = param_part.split(":", 1)
-                        name = name.strip()
-                        params.append(
-                            FunctionParam(
-                                name=name,
-                                type=type_str.strip(),
-                                description=param_docs.get(name, ""),
-                            )
-                        )
-                    else:
-                        name = param_part.strip()
-                        params.append(
-                            FunctionParam(
-                                name=name,
-                                description=param_docs.get(name, ""),
-                            )
-                        )
-
-        return params

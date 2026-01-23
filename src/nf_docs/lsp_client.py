@@ -615,27 +615,30 @@ class LSPClient:
 
         self._running = False
 
+        # Try graceful shutdown with a short timeout, but don't block on it
         try:
-            self._send_request("shutdown")
-            self._send_notification("exit")
+            # Only attempt graceful shutdown if stdin is still open
+            if self._process.stdin and not self._process.stdin.closed:
+                # Send shutdown/exit without waiting for response
+                self._send_notification("exit")
         except Exception:
             pass
 
+        # Terminate the process - don't wait long
         try:
             self._process.terminate()
-            self._process.wait(timeout=5)
+            self._process.wait(timeout=2)
         except subprocess.TimeoutExpired:
+            # Force kill if it doesn't terminate quickly
             self._process.kill()
-            self._process.wait()
-
-        # Check for any stderr output (non-blocking, process is now dead)
-        if self._process.stderr:
             try:
-                stderr = self._process.stderr.read()
-                if stderr:
-                    logger.debug(f"LSP stderr: {stderr.decode('utf-8', errors='replace')}")
-            except Exception:
-                pass
+                self._process.wait(timeout=1)
+            except subprocess.TimeoutExpired:
+                pass  # Give up waiting
+
+        # Wait for reader thread to finish (with timeout)
+        if self._reader_thread and self._reader_thread.is_alive():
+            self._reader_thread.join(timeout=1)
 
         self._process = None
         logger.debug("Language server stopped")

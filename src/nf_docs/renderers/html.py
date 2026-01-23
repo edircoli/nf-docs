@@ -14,6 +14,89 @@ from markupsafe import Markup
 from nf_docs.models import Pipeline
 from nf_docs.renderers.base import BaseRenderer
 
+# GitHub-style alert configuration
+# Maps alert type to (icon SVG, CSS class suffix)
+ALERT_TYPES = {
+    "NOTE": (
+        '<svg class="alert-icon" viewBox="0 0 16 16" width="16" height="16">'
+        '<path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path>'
+        "</svg>",
+        "note",
+    ),
+    "TIP": (
+        '<svg class="alert-icon" viewBox="0 0 16 16" width="16" height="16">'
+        '<path d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"></path>'
+        "</svg>",
+        "tip",
+    ),
+    "IMPORTANT": (
+        '<svg class="alert-icon" viewBox="0 0 16 16" width="16" height="16">'
+        '<path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path>'
+        "</svg>",
+        "important",
+    ),
+    "WARNING": (
+        '<svg class="alert-icon" viewBox="0 0 16 16" width="16" height="16">'
+        '<path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path>'
+        "</svg>",
+        "warning",
+    ),
+    "CAUTION": (
+        '<svg class="alert-icon" viewBox="0 0 16 16" width="16" height="16">'
+        '<path d="M4.47.22A.749.749 0 0 1 5 0h6c.199 0 .389.079.53.22l4.25 4.25c.141.14.22.331.22.53v6a.749.749 0 0 1-.22.53l-4.25 4.25A.749.749 0 0 1 11 16H5a.749.749 0 0 1-.53-.22L.22 11.53A.749.749 0 0 1 0 11V5c0-.199.079-.389.22-.53Zm.84 1.28L1.5 5.31v5.38l3.81 3.81h5.38l3.81-3.81V5.31L10.69 1.5ZM8 4a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4Zm0 8a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path>'
+        "</svg>",
+        "caution",
+    ),
+}
+
+
+def _preprocess_github_alerts(text: str) -> str:
+    """
+    Convert GitHub-style alerts to HTML.
+
+    GitHub alerts use the syntax:
+    > [!NOTE]
+    > Content here
+
+    This converts them to styled div elements.
+    """
+    # Pattern to match GitHub-style alerts
+    # Matches: > [!TYPE]\n> content lines
+    alert_pattern = re.compile(
+        r"^(>\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*\n)((?:>\s?.*\n?)*)",
+        re.MULTILINE,
+    )
+
+    def replace_alert(match: re.Match[str]) -> str:
+        alert_type = match.group(2)
+        content_block = match.group(3)
+
+        # Remove the leading '> ' from each line and join
+        content_lines = []
+        for line in content_block.split("\n"):
+            # Remove leading '>' and optional space
+            if line.startswith(">"):
+                line = line[1:]
+                if line.startswith(" "):
+                    line = line[1:]
+            content_lines.append(line)
+
+        content = "\n".join(content_lines).strip()
+
+        icon, css_class = ALERT_TYPES.get(alert_type, ALERT_TYPES["NOTE"])
+        title = alert_type.capitalize()
+
+        # Return HTML that will be passed through (not further markdown processed)
+        # We use a special marker that we'll handle after markdown processing
+        return (
+            f'<div class="alert alert-{css_class}">'
+            f'<div class="alert-title">{icon}<span>{title}</span></div>'
+            f'<div class="alert-content">\n\n{content}\n\n</div>'
+            f"</div>\n\n"
+        )
+
+    return alert_pattern.sub(replace_alert, text)
+
 
 def _preprocess_markdown(text: str) -> str:
     """
@@ -22,6 +105,9 @@ def _preprocess_markdown(text: str) -> str:
     Standard markdown requires a blank line before list items.
     This adds a blank line before the first list item when preceded by text.
     """
+    # First, convert GitHub-style alerts
+    text = _preprocess_github_alerts(text)
+
     lines = text.split("\n")
     result: list[str] = []
     in_list = False
@@ -43,15 +129,106 @@ def _preprocess_markdown(text: str) -> str:
     return "\n".join(result)
 
 
-def md_to_html(text: str | None) -> Markup:
-    """Convert markdown text to HTML, safe for Jinja templates."""
+def _slugify(text: str) -> str:
+    """Convert text to a URL-friendly slug."""
+    # Convert to lowercase and replace spaces with hyphens
+    slug = text.lower().strip()
+    # Remove special characters, keep alphanumeric and hyphens
+    slug = re.sub(r"[^\w\s-]", "", slug)
+    slug = re.sub(r"[\s_]+", "-", slug)
+    slug = re.sub(r"-+", "-", slug)
+    return slug.strip("-")
+
+
+def _add_heading_anchors(html: str) -> str:
+    """
+    Add IDs and anchor links to headings in HTML.
+
+    Transforms <h1>Title</h1> to:
+    <h1 id="title" class="heading-anchor">Title<a href="#title" class="paragraph-link">¶</a></h1>
+    """
+    heading_pattern = re.compile(r"<(h[1-6])>(.+?)</\1>", re.IGNORECASE | re.DOTALL)
+
+    seen_ids: dict[str, int] = {}
+
+    def replace_heading(match: re.Match[str]) -> str:
+        tag = match.group(1).lower()
+        content = match.group(2)
+
+        # Extract text content for the slug (strip any HTML tags)
+        text_content = re.sub(r"<[^>]+>", "", content)
+        slug = _slugify(text_content)
+
+        # Handle duplicate IDs by appending a number
+        if slug in seen_ids:
+            seen_ids[slug] += 1
+            slug = f"{slug}-{seen_ids[slug]}"
+        else:
+            seen_ids[slug] = 0
+
+        return (
+            f'<{tag} id="{slug}" class="heading-anchor">'
+            f'{content}<a href="#{slug}" class="paragraph-link">¶</a>'
+            f"</{tag}>"
+        )
+
+    return heading_pattern.sub(replace_heading, html)
+
+
+def md_to_html(text: str | None, add_anchors: bool = False) -> Markup:
+    """Convert markdown text to HTML, safe for Jinja templates.
+
+    Args:
+        text: Markdown text to convert
+        add_anchors: If True, add IDs and anchor links to headings
+    """
     if not text:
         return Markup("")
     # Preprocess to fix common markdown issues
     text = _preprocess_markdown(text)
     # Convert markdown to HTML
     html = markdown.markdown(text, extensions=["tables", "fenced_code"])
+    # Optionally add heading anchors
+    if add_anchors:
+        html = _add_heading_anchors(html)
     return Markup(html)
+
+
+def md_to_html_with_anchors(text: str | None) -> Markup:
+    """Convert markdown text to HTML with heading anchors."""
+    return md_to_html(text, add_anchors=True)
+
+
+def get_repository_avatar_url(repository_url: str | None) -> str | None:
+    """
+    Get avatar URL for a repository's organization/user.
+
+    Currently only supports GitHub, as it provides public avatar URLs without
+    authentication. GitLab and Bitbucket require API calls with authentication
+    to retrieve avatar URLs.
+
+    Args:
+        repository_url: Repository URL (e.g., https://github.com/nf-core/rnaseq)
+
+    Returns:
+        Avatar URL or None if not supported or not a recognized repository URL
+    """
+    if not repository_url:
+        return None
+
+    # GitHub: Public avatar URLs available without authentication
+    # Format: https://github.com/{org}.png?size=48
+    if "github.com" in repository_url:
+        match = re.match(r"https?://github\.com/([^/]+)", repository_url)
+        if match:
+            org = match.group(1)
+            return f"https://github.com/{org}.png?size=48"
+
+    # GitLab: Would require API call to /api/v4/groups/{id} or /api/v4/users/{id}
+    # Bitbucket: Would require authenticated API call to get workspace avatar
+    # Neither is practical without authentication, so we don't support them
+
+    return None
 
 
 class HTMLRenderer(BaseRenderer):
@@ -74,8 +251,9 @@ class HTMLRenderer(BaseRenderer):
         super().__init__(title)
         self.use_tailwind = use_tailwind
         self.env = Environment(loader=PackageLoader("nf_docs", "templates"))
-        # Register markdown filter
+        # Register markdown filters
         self.env.filters["markdown"] = md_to_html
+        self.env.filters["markdown_with_anchors"] = md_to_html_with_anchors
         self.template = self.env.get_template("html.html")
 
     def render(self, pipeline: Pipeline) -> str:
@@ -90,11 +268,14 @@ class HTMLRenderer(BaseRenderer):
         """
         title = self.get_title(pipeline)
         input_groups = pipeline.get_input_groups()
+        # Get avatar URL (currently only supported for GitHub)
+        avatar_url = get_repository_avatar_url(pipeline.metadata.repository)
 
         html_content = self.template.render(
             title=title,
             pipeline=pipeline,
             input_groups=input_groups,
+            avatar_url=avatar_url,
         )
 
         # Process with Tailwind if enabled

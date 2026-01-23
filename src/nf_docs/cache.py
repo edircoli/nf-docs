@@ -234,6 +234,7 @@ class PipelineCache:
             repository=pipeline_data.get("repository", ""),
             authors=pipeline_data.get("authors", []),
             license=pipeline_data.get("license", ""),
+            readme_content=pipeline_data.get("readme_content", ""),
         )
 
         # Reconstruct inputs

@@ -48,7 +48,8 @@ class TestReadmeExtraction:
             extractor = PipelineExtractor(workspace_path=tmp_path)
             pipeline = extractor.extract()
 
-            assert "test pipeline" in pipeline.metadata.description.lower()
+            # README content goes into readme_content field (not description)
+            assert "test pipeline" in pipeline.metadata.readme_content.lower()
 
     def test_extract_readme_with_badges(self, tmp_path: Path):
         """Test extraction skips badge lines."""
@@ -64,8 +65,9 @@ class TestReadmeExtraction:
             extractor = PipelineExtractor(workspace_path=tmp_path)
             pipeline = extractor.extract()
 
-            assert "actual description" in pipeline.metadata.description.lower()
-            assert "badge" not in pipeline.metadata.description.lower()
+            # README content goes into readme_content field (not description)
+            assert "actual description" in pipeline.metadata.readme_content.lower()
+            assert "badge" not in pipeline.metadata.readme_content.lower()
 
     def test_no_readme(self, tmp_path: Path):
         """Test extraction when no README exists."""
