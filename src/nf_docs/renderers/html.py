@@ -4,7 +4,6 @@ HTML renderer for nf-docs.
 Outputs pipeline documentation as a self-contained static HTML site.
 """
 
-import importlib.resources
 import re
 from pathlib import Path
 
@@ -15,18 +14,6 @@ from markupsafe import Markup
 from nf_docs.generation_info import get_generation_info, get_generation_timestamp
 from nf_docs.models import Pipeline
 from nf_docs.renderers.base import BaseRenderer
-
-
-def _load_tailwind_css() -> str:
-    """Load the pre-built Tailwind CSS from the templates directory."""
-    try:
-        # Python 3.9+ way to read package resources
-        files = importlib.resources.files("nf_docs") / "templates" / "tailwind.css"
-        return files.read_text(encoding="utf-8")
-    except (FileNotFoundError, TypeError):
-        # Fallback for older Python or missing file
-        return ""
-
 
 # GitHub-style alert configuration
 # Maps alert type to (icon SVG, CSS class suffix)
@@ -333,24 +320,25 @@ class HTMLRenderer(BaseRenderer):
     Render pipeline documentation as a self-contained HTML page.
 
     This creates a single-page application with navigation that works
-    without any server or build step. Uses pre-built Tailwind CSS for styling.
+    without any server or build step. Optionally processes with Tailwind
+    CSS for tree-shaken, minified styling.
     """
 
-    def __init__(self, title: str | None = None):
+    def __init__(self, title: str | None = None, use_tailwind: bool = True):
         """
         Initialize the HTML renderer.
 
         Args:
             title: Optional custom title for the documentation
+            use_tailwind: Whether to process with Tailwind CSS (default: True)
         """
         super().__init__(title)
+        self.use_tailwind = use_tailwind
         self.env = Environment(loader=PackageLoader("nf_docs", "templates"))
         # Register markdown filters
         self.env.filters["markdown"] = md_to_html
         self.env.filters["markdown_with_anchors"] = md_to_html_with_anchors
         self.template = self.env.get_template("html.html")
-        # Load pre-built Tailwind CSS
-        self._tailwind_css = _load_tailwind_css()
 
     def render(self, pipeline: Pipeline) -> str:
         """
@@ -379,18 +367,37 @@ class HTMLRenderer(BaseRenderer):
             generation_timestamp=generation_timestamp,
         )
 
-        # Inject pre-built Tailwind CSS
-        html_content = self._inject_tailwind_css(html_content)
+        # Process with Tailwind if enabled
+        if self.use_tailwind:
+            try:
+                from nf_docs.tailwind import process_html_with_tailwind
+
+                html_content = process_html_with_tailwind(html_content)
+            except Exception:
+                # If Tailwind fails (not installed, etc.), fall back to CDN
+                html_content = self._inject_tailwind_cdn(html_content)
 
         return html_content
 
-    def _inject_tailwind_css(self, html_content: str) -> str:
-        """Inject pre-built Tailwind CSS into the HTML."""
-        if not self._tailwind_css:
-            return html_content
-        # Insert Tailwind CSS at the start of the <style> block
-        tailwind_style = f"<style>\n/* Tailwind CSS */\n{self._tailwind_css}\n"
-        return html_content.replace("<style>", tailwind_style, 1)
+    def _inject_tailwind_cdn(self, html_content: str) -> str:
+        """Inject Tailwind CSS CDN as fallback."""
+        cdn_script = """<script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                DEFAULT: "#0DC09D",
+                light: "#E6F9F5",
+                dark: "#0A9A7D",
+              },
+            },
+          },
+        },
+      };
+    </script>"""
+        return html_content.replace("</head>", f"{cdn_script}\n</head>")
 
     def render_to_directory(self, pipeline: Pipeline, output_dir: str | Path) -> list[Path]:
         """

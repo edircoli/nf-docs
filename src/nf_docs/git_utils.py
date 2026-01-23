@@ -122,7 +122,7 @@ def get_git_info(workspace_path: str | Path) -> GitInfo | None:
         logger.debug(f"Git info: {info}")
         return info
 
-    except (subprocess.SubprocessError, OSError) as e:
+    except Exception as e:
         logger.warning(f"Failed to get git info: {e}")
         return None
 

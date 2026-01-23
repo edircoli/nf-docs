@@ -198,7 +198,6 @@ src/nf_docs/
 ├── __init__.py      # Package version (from importlib.metadata)
 ├── cli.py           # CLI entry point (rich-click)
 ├── cache.py         # Caching logic with version invalidation
-├── config.py        # User configuration (~/.config/nf-docs/config.yaml)
 ├── extractor.py     # Main extraction orchestration
 ├── lsp_client.py    # Nextflow LSP communication
 ├── git_utils.py     # Git repository utilities
@@ -210,13 +209,7 @@ src/nf_docs/
 │   ├── json_renderer.py
 │   └── markdown.py
 └── templates/       # Jinja2 templates
-    ├── html.html
-    └── tailwind.css # Pre-built Tailwind CSS
-
-build-assets/        # Build tools (not needed by end users)
-├── package.json     # Node.js dependencies for Tailwind
-├── input.css        # Tailwind input with theme config
-└── build-tailwind.sh # Script to rebuild CSS
+    └── html.html
 ```
 
 ## Architecture Notes
@@ -242,23 +235,7 @@ Cache is stored in `~/.cache/nf-docs/` and keyed by:
 
 The HTML renderer uses a single Jinja2 template with:
 
-- Pre-built Tailwind CSS (no runtime processing needed)
+- Inline CSS (Tailwind-based)
 - Inline JavaScript for search functionality
 - Three-column responsive layout
 - Full-text search across all documentation
-
-### Building Tailwind CSS
-
-If you modify the HTML template, rebuild the CSS:
-
-```bash
-./build-assets/build-tailwind.sh
-```
-
-Or manually:
-
-```bash
-cd build-assets
-npm install  # First time only
-npm run build
-```

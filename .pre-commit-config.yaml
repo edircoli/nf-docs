@@ -15,13 +15,6 @@ repos:
         pass_filenames: false
         types: [python]
 
-      - id: tailwind-css
-        name: Build Tailwind CSS
-        language: system
-        entry: ./build-assets/build-tailwind.sh
-        files: ^src/nf_docs/templates/.*\.(html|css)$|^build-assets/input\.css$
-        pass_filenames: false
-
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v4.0.0-alpha.8
     hooks:

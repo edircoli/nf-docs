@@ -74,8 +74,11 @@ def parse_config(
 
         return _parse_flat_config(result.stdout)
 
-    except (subprocess.TimeoutExpired, FileNotFoundError) as e:
-        logger.warning(f"nextflow config not available: {e}")
+    except subprocess.TimeoutExpired:
+        logger.warning("nextflow config timed out")
+        return _parse_config_file_directly(workspace)
+    except FileNotFoundError:
+        logger.warning(f"Nextflow executable not found: {nextflow_path}")
         return _parse_config_file_directly(workspace)
 
 
@@ -219,7 +222,7 @@ def _parse_config_file_directly(workspace: Path) -> tuple[PipelineMetadata, list
 
     try:
         content = config_file.read_text(encoding="utf-8")
-    except OSError as e:
+    except Exception as e:
         logger.warning(f"Failed to read config file: {e}")
         return PipelineMetadata(), []
 

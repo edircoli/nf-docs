@@ -222,10 +222,45 @@ process BWA_MEM {
 └───────────────┘       └────────────────┘
 ```
 
-## Contributing
+## Development
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, code style guidelines, and how to
-submit changes.
+```bash
+# Install dev dependencies
+uv pip install -e ".[dev]"
+
+# Install prek (https://prek.j178.dev/)
+# macOS/Linux:
+curl -fsSL https://prek.j178.dev/install.sh | sh
+
+# Set up pre-commit hooks
+prek install
+
+# Run tests
+pytest
+
+# Run tests with coverage
+pytest --cov=nf_docs
+
+# Run all checks manually
+prek run --all-files
+```
+
+### Pre-commit hooks
+
+This project uses [prek](https://prek.j178.dev/) to run checks before each commit:
+
+- **ruff** - Linting and formatting for Python
+- **ty** - Type checking
+- **prettier** - Formatting for Markdown and YAML
+
+## Test Pipelines
+
+For testing, try these pipelines:
+
+- [nextflow-io/rnaseq-nf](https://github.com/nextflow-io/rnaseq-nf) - Simple, good for initial
+  testing
+- [nf-core/fetchngs](https://github.com/nf-core/fetchngs) - Small but real
+- [nf-core/rnaseq](https://github.com/nf-core/rnaseq) - Complex, good stress test
 
 ## License
 

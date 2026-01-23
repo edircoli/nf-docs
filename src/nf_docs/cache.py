@@ -12,7 +12,6 @@ import os
 from pathlib import Path
 from typing import Any
 
-import nf_docs
 from nf_docs.models import (
     ConfigParam,
     Function,
@@ -37,6 +36,9 @@ def get_xdg_cache_home() -> Path:
     if xdg_cache:
         return Path(xdg_cache)
     return Path.home() / ".cache"
+
+
+import nf_docs
 
 
 class PipelineCache:
@@ -103,7 +105,7 @@ class PipelineCache:
                 # Include file content
                 content = file_path.read_bytes()
                 hasher.update(content)
-            except OSError as e:
+            except Exception as e:
                 logger.debug(f"Could not hash {file_path}: {e}")
 
         return hasher.hexdigest()[:32]
@@ -137,7 +139,7 @@ class PipelineCache:
             logger.debug(f"Cache hit: loaded from {cache_path.name}")
             logger.info("Using cached extraction results")
             return pipeline
-        except (OSError, json.JSONDecodeError, KeyError) as e:
+        except Exception as e:
             logger.debug(f"Cache miss: failed to load cache: {e}")
             return None
 
@@ -160,7 +162,7 @@ class PipelineCache:
             data = self._serialize_pipeline(pipeline)
             cache_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
             logger.debug(f"Cached to {cache_path.name}")
-        except OSError as e:
+        except Exception as e:
             logger.warning(f"Failed to cache pipeline: {e}")
 
     def _cleanup_old_caches(self, workspace: Path, exclude: Path | None = None) -> None:
@@ -177,7 +179,7 @@ class PipelineCache:
             try:
                 cache_file.unlink()
                 logger.debug(f"Removed old cache: {cache_file.name}")
-            except OSError as e:
+            except Exception as e:
                 logger.debug(f"Could not remove old cache {cache_file}: {e}")
 
     def clear(self, workspace: Path | None = None) -> int:
@@ -202,7 +204,7 @@ class PipelineCache:
                 try:
                     cache_file.unlink()
                     count += 1
-                except OSError:
+                except Exception:
                     pass
         else:
             # Clear all caches
@@ -210,7 +212,7 @@ class PipelineCache:
                 try:
                     cache_file.unlink()
                     count += 1
-                except OSError:
+                except Exception:
                     pass
 
         logger.info(f"Cleared {count} cache file(s)")
