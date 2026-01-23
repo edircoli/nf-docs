@@ -11,19 +11,19 @@
 
 ![nf-docs demo](docs/images/demo.gif)
 
-<table>
+<table width="100%">
 <tr>
-<td width="33%" align="center">
-<h3>HTML</h3>
-<p>Single-file output<br/>Share anywhere, works offline<br/>Full-text search built in</p>
+<td width="33%">
+<h3 align="center">HTML</h3>
+<ul><li>Single-file output</li><li>Share anywhere, works offline</li><li>Full-text search built in</li></ul>
 </td>
-<td width="33%" align="center">
-<h3>Markdown</h3>
-<p>Multiple files by section<br/>Perfect for static site generators<br/>MkDocs, Docusaurus, etc.</p>
+<td width="33%">
+<h3 align="center">Markdown</h3>
+<ul><li>Multiple files by section</li><li>Perfect for static site generators</li><li>MkDocs, Docusaurus, etc.</li></ul>
 </td>
-<td width="33%" align="center">
-<h3>JSON / YAML</h3>
-<p>Machine-readable output<br/>Build custom integrations<br/>CI/CD friendly</p>
+<td width="33%">
+<h3 align="center">JSON / YAML</h3>
+<ul><li>Machine-readable output</li><li>Build custom integrations</li><li>CI/CD friendly</li></ul>
 </td>
 </tr>
 </table>
