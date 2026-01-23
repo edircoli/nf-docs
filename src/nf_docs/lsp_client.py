@@ -23,6 +23,7 @@ from urllib.request import urlretrieve
 
 import httpx
 
+from nf_docs.nextflow_env import get_isolated_env
 from nf_docs.progress import (
     ExtractionPhase,
     ProgressCallbackType,
@@ -214,6 +215,7 @@ class LSPClient:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             cwd=str(self.workspace_path),
+            env=get_isolated_env(),
         )
 
         self._running = True

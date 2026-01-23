@@ -15,6 +15,7 @@ from typing import Any
 from rich.text import Text
 
 from nf_docs.models import ConfigParam, PipelineMetadata
+from nf_docs.nextflow_env import get_isolated_env
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +63,7 @@ def parse_config(
             text=True,
             timeout=60,
             cwd=str(workspace),
+            env=get_isolated_env(),
         )
 
         if result.returncode != 0:
