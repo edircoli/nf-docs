@@ -390,7 +390,7 @@ class PipelineExtractor:
         )
         nf_files = list(self.workspace_path.rglob("*.nf"))
         if not nf_files:
-            logger.warning("No .nf files found in workspace")
+            logger.debug("No .nf files found in workspace")
             return
 
         logger.info(f"Found {len(nf_files)} Nextflow files")

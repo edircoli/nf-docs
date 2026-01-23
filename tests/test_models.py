@@ -251,3 +251,33 @@ class TestPipeline:
         entry = pipeline.get_entry_workflow()
         assert entry is not None
         assert entry.name == "MAIN"
+
+    def test_has_content_empty(self):
+        """Empty pipeline has no content."""
+        pipeline = Pipeline()
+        assert pipeline.has_content() is False
+
+    def test_has_content_with_inputs(self):
+        """Pipeline with inputs has content."""
+        pipeline = Pipeline(inputs=[PipelineInput(name="input", type="string")])
+        assert pipeline.has_content() is True
+
+    def test_has_content_with_processes(self):
+        """Pipeline with processes has content."""
+        pipeline = Pipeline(processes=[Process(name="TEST")])
+        assert pipeline.has_content() is True
+
+    def test_has_content_with_workflows(self):
+        """Pipeline with workflows has content."""
+        pipeline = Pipeline(workflows=[Workflow(name="MAIN")])
+        assert pipeline.has_content() is True
+
+    def test_has_content_with_functions(self):
+        """Pipeline with functions has content."""
+        pipeline = Pipeline(functions=[Function(name="helper")])
+        assert pipeline.has_content() is True
+
+    def test_has_content_with_config_params(self):
+        """Pipeline with config params has content."""
+        pipeline = Pipeline(config_params=[ConfigParam(name="max_cpus", type="integer")])
+        assert pipeline.has_content() is True

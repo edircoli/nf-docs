@@ -374,3 +374,13 @@ class Pipeline:
                 return wf
         # Return first workflow if none marked as entry
         return self.workflows[0] if self.workflows else None
+
+    def has_content(self) -> bool:
+        """Check if the pipeline has any meaningful content to document.
+
+        Returns True if there are any inputs, config params, workflows,
+        processes, or functions extracted.
+        """
+        return bool(
+            self.inputs or self.config_params or self.workflows or self.processes or self.functions
+        )

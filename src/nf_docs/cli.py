@@ -244,6 +244,15 @@ def generate(
 
             pipeline = extractor.extract()
 
+        # Check if any content was found
+        if not pipeline.has_content():
+            console.print("[yellow]No Nextflow pipeline content found in this directory.[/yellow]")
+            console.print(
+                "Ensure the directory contains Nextflow files (.nf), "
+                "nextflow_schema.json, or nextflow.config."
+            )
+            sys.exit(1)
+
         # Rendering phase (quick, use simple spinner)
         with Progress(
             SpinnerColumn(),
