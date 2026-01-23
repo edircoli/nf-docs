@@ -57,7 +57,11 @@ def _parse_metadata(schema: dict[str, Any]) -> PipelineMetadata:
 
     # Title is often the pipeline name
     if "title" in schema:
-        metadata.name = schema["title"]
+        name = schema["title"]
+        # Trim "pipeline parameters" suffix if present (commonly added by nf-core schema)
+        if name.lower().endswith(" pipeline parameters"):
+            name = name[:-20].strip()
+        metadata.name = name
 
     # Description
     if "description" in schema:
