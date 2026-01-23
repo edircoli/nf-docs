@@ -1020,6 +1020,7 @@
       "docstring": "",
       "file": "main.nf",
       "line": 63,
+      "end_line": 203,
       "inputs": [
         {
           "name": "samplesheet",
@@ -1053,6 +1054,7 @@
       "docstring": "",
       "file": "main.nf",
       "line": 211,
+      "end_line": 300,
       "inputs": [],
       "outputs": [],
       "calls": [],
@@ -1064,6 +1066,7 @@
       "docstring": "Main workflow for RNA variant calling analysis.\nThis workflow performs end-to-end RNA-seq variant calling including:\n- Quality control with FastQC\n- Read alignment with STAR\n- Duplicate marking with Picard\n- Split N CIGAR reads for RNA-seq data\n- Base quality score recalibration (BQSR)\n- Variant calling with GATK HaplotypeCaller\n- Variant filtering\n- Variant annotation with SnpEff and VEP\n- HLA typing with seq2HLA (optional)\nThe workflow supports multiple input types including FASTQ, BAM, CRAM, and VCF files.",
       "file": "workflows/rnavar.nf",
       "line": 83,
+      "end_line": 430,
       "inputs": [
         {
           "name": "input",
@@ -1267,6 +1270,7 @@
       "docstring": "",
       "file": "subworkflows/nf-core/bam_stats_samtools/main.nf",
       "line": 9,
+      "end_line": 31,
       "inputs": [
         {
           "name": "ch_bam_bai",
@@ -1303,13 +1307,61 @@
       ],
       "calls": [],
       "is_entry": false,
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/subworkflows/nf-core/bam_stats_samtools/main.nf#L9-L31"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/subworkflows/nf-core/bam_stats_samtools/main.nf#L9-L31",
+      "meta_description": "Produces comprehensive statistics from SAM/BAM/CRAM file",
+      "meta_keywords": [
+        "statistics",
+        "counts",
+        "bam",
+        "sam",
+        "cram"
+      ],
+      "meta_components": [
+        "samtools/stats",
+        "samtools/idxstats",
+        "samtools/flagstat"
+      ],
+      "meta_inputs": [
+        {
+          "name": "ch_bam_bai",
+          "description": "The input channel containing the BAM/CRAM and it's index\nStructure: [ val(meta), path(bam), path(bai) ]"
+        },
+        {
+          "name": "ch_fasta",
+          "description": "Reference genome fasta file\nStructure: [ path(fasta) ]"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "stats",
+          "description": "File containing samtools stats output\nStructure: [ val(meta), path(stats) ]"
+        },
+        {
+          "name": "flagstat",
+          "description": "File containing samtools flagstat output\nStructure: [ val(meta), path(flagstat) ]"
+        },
+        {
+          "name": "idxstats",
+          "description": "File containing samtools idxstats output\nStructure: [ val(meta), path(idxstats)]"
+        },
+        {
+          "name": "versions",
+          "description": "Files containing software versions\nStructure: [ path(versions.yml) ]"
+        }
+      ],
+      "meta_authors": [
+        "@drpatelh"
+      ],
+      "meta_maintainers": [
+        "@drpatelh"
+      ]
     },
     {
       "name": "FASTQ_ALIGN_STAR",
       "docstring": "",
       "file": "subworkflows/nf-core/fastq_align_star/main.nf",
       "line": 6,
+      "end_line": 68,
       "inputs": [
         {
           "name": "ch_reads",
@@ -1451,13 +1503,162 @@
       ],
       "calls": [],
       "is_entry": false,
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/subworkflows/nf-core/fastq_align_star/main.nf#L6-L68"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/subworkflows/nf-core/fastq_align_star/main.nf#L6-L68",
+      "meta_description": "Align reads to a reference genome using bowtie2 then sort with samtools",
+      "meta_keywords": [
+        "align",
+        "fasta",
+        "genome",
+        "reference"
+      ],
+      "meta_components": [
+        "star/align",
+        "samtools/sort",
+        "samtools/index",
+        "samtools/stats",
+        "samtools/idxstats",
+        "samtools/flagstat",
+        "bam_sort_stats_samtools"
+      ],
+      "meta_inputs": [
+        {
+          "name": "ch_reads",
+          "description": "List of input FastQ files of size 1 and 2 for single-end and paired-end data,\nrespectively.\nStructure: [ val(meta), [ path(reads) ] ]"
+        },
+        {
+          "name": "ch_index",
+          "type": "directory",
+          "description": "STAR genome index",
+          "pattern": "star"
+        },
+        {
+          "name": "ch_gtf",
+          "type": "file",
+          "description": "GTF file used to set the splice junctions with the --sjdbGTFfile flag",
+          "pattern": "*.gtf"
+        },
+        {
+          "name": "val_star_ignore_sjdbgtf",
+          "type": "boolean",
+          "description": "If true the --sjdbGTFfile flag is set",
+          "pattern": "true|false"
+        },
+        {
+          "name": "val_seq_platform",
+          "type": "string",
+          "description": "Sequencing platform to be added to the bam header using the --outSAMattrRGline flag"
+        },
+        {
+          "name": "val_seq_center",
+          "type": "string",
+          "description": "Sequencing center to be added to the bam header using the --outSAMattrRGline flag"
+        },
+        {
+          "name": "ch_fasta",
+          "type": "file",
+          "description": "Reference genome fasta file",
+          "pattern": "*.{fasta,fa,fna}"
+        },
+        {
+          "name": "ch_transcripts_fasta",
+          "type": "file",
+          "description": "Optional reference genome fasta file",
+          "pattern": "*.{fasta,fa,fna}"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "orig_bam",
+          "description": "Output BAM file containing read alignments\nStructure: [ val(meta), path(bam) ]"
+        },
+        {
+          "name": "log_final",
+          "description": "STAR final log file\nStructure: [ val(meta), path(log_final) ]"
+        },
+        {
+          "name": "log_out",
+          "description": "STAR log out file\nStructure: [ val(meta), path(log_out) ]"
+        },
+        {
+          "name": "log_progress",
+          "description": "STAR log progress file\nStructure: [ val(meta), path(log_progress) ]"
+        },
+        {
+          "name": "bam_sorted",
+          "description": "Sorted BAM file of read alignments (optional)\nStructure: [ val(meta), path(bam) ]"
+        },
+        {
+          "name": "orig_bam_transcript",
+          "description": "Output BAM file of transcriptome alignment (optional)\nStructure: [ val(meta), path(bam) ]"
+        },
+        {
+          "name": "fastq",
+          "description": "Unmapped FastQ files (optional)\nStructure: [ val(meta), path(fastq) ]"
+        },
+        {
+          "name": "tab",
+          "description": "STAR output tab file(s) (optional)\nStructure: [ val(meta), path(tab) ]"
+        },
+        {
+          "name": "bam",
+          "description": "BAM file ordered by samtools\nStructure: [ val(meta), path(bam) ]"
+        },
+        {
+          "name": "bai",
+          "description": "BAI index of the ordered BAM file\nStructure: [ val(meta), path(bai) ]"
+        },
+        {
+          "name": "stats",
+          "description": "File containing samtools stats output\nStructure: [ val(meta), path(stats) ]"
+        },
+        {
+          "name": "flagstat",
+          "description": "File containing samtools flagstat output\nStructure: [ val(meta), path(flagstat) ]"
+        },
+        {
+          "name": "idxstats",
+          "description": "File containing samtools idxstats output\nStructure: [ val(meta), path(idxstats) ]"
+        },
+        {
+          "name": "bam_transcript",
+          "description": "Transcriptome-level BAM file ordered by samtools  (optional)\nStructure: [ val(meta), path(bam) ]"
+        },
+        {
+          "name": "bai_transcript",
+          "description": "Transcriptome-level BAI index of the ordered BAM file (optional)\nStructure: [ val(meta), path(bai) ]"
+        },
+        {
+          "name": "stats_transcript",
+          "description": "Transcriptome-level file containing samtools stats output (optional)\nStructure: [ val(meta), path(stats) ]"
+        },
+        {
+          "name": "flagstat_transcript",
+          "description": "Transcriptome-level file containing samtools flagstat output (optional)\nStructure: [ val(meta), path(flagstat) ]"
+        },
+        {
+          "name": "idxstats_transcript",
+          "description": "Transcriptome-level file containing samtools idxstats output (optional)\nStructure: [ val(meta), path(idxstats) ]"
+        },
+        {
+          "name": "versions",
+          "type": "file",
+          "description": "File containing software versions",
+          "pattern": "versions.yml"
+        }
+      ],
+      "meta_authors": [
+        "@JoseEspinosa"
+      ],
+      "meta_maintainers": [
+        "@JoseEspinosa"
+      ]
     },
     {
       "name": "VCF_ANNOTATE_SNPEFF",
       "docstring": "",
       "file": "subworkflows/nf-core/vcf_annotate_snpeff/main.nf",
       "line": 8,
+      "end_line": 29,
       "inputs": [
         {
           "name": "ch_vcf",
@@ -1504,13 +1705,68 @@
       ],
       "calls": [],
       "is_entry": false,
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/subworkflows/nf-core/vcf_annotate_snpeff/main.nf#L8-L29"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/subworkflows/nf-core/vcf_annotate_snpeff/main.nf#L8-L29",
+      "meta_description": "Perform annotation with snpEff and bgzip + tabix index the resulting VCF file",
+      "meta_keywords": [
+        "vcf",
+        "annotation",
+        "snpeff"
+      ],
+      "meta_components": [
+        "snpeff",
+        "snpeff/snpeff",
+        "tabix/bgziptabix"
+      ],
+      "meta_inputs": [
+        {
+          "name": "ch_vcf",
+          "description": "vcf file\nStructure: [ val(meta), path(vcf) ]"
+        },
+        {
+          "name": "val_snpeff_db",
+          "type": "string",
+          "description": "db version to use"
+        },
+        {
+          "name": "ch_snpeff_cache",
+          "description": "path to root cache folder for snpEff (optional)\nStructure: [ path(cache) ]"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "vcf_tbi",
+          "description": "Compressed vcf file + tabix index\nStructure: [ val(meta), path(vcf), path(tbi) ]"
+        },
+        {
+          "name": "reports",
+          "description": "html reports\nStructure: [ path(html) ]"
+        },
+        {
+          "name": "summary",
+          "description": "html reports\nStructure: [ path(csv) ]"
+        },
+        {
+          "name": "genes_txt",
+          "description": "html reports\nStructure: [ path(txt) ]"
+        },
+        {
+          "name": "versions",
+          "description": "Files containing software versions\nStructure: [ path(versions.yml) ]"
+        }
+      ],
+      "meta_authors": [
+        "@maxulysse"
+      ],
+      "meta_maintainers": [
+        "@maxulysse"
+      ]
     },
     {
       "name": "VCF_ANNOTATE_ENSEMBLVEP",
       "docstring": "",
       "file": "subworkflows/nf-core/vcf_annotate_ensemblvep/main.nf",
       "line": 8,
+      "end_line": 38,
       "inputs": [
         {
           "name": "ch_vcf",
@@ -1572,13 +1828,93 @@
       ],
       "calls": [],
       "is_entry": false,
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/subworkflows/nf-core/vcf_annotate_ensemblvep/main.nf#L8-L38"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/subworkflows/nf-core/vcf_annotate_ensemblvep/main.nf#L8-L38",
+      "meta_description": "Perform annotation with ensemblvep and bgzip + tabix index the resulting VCF file",
+      "meta_keywords": [
+        "vcf",
+        "annotation",
+        "ensemblvep"
+      ],
+      "meta_components": [
+        "ensemblvep/vep",
+        "tabix/tabix"
+      ],
+      "meta_inputs": [
+        {
+          "name": "ch_vcf",
+          "description": "vcf file to annotate\nStructure: [ val(meta), path(vcf), [path(custom_file1), path(custom_file2)... (optional)] ]"
+        },
+        {
+          "name": "ch_fasta",
+          "description": "Reference genome fasta file (optional)\nStructure: [ val(meta2), path(fasta) ]"
+        },
+        {
+          "name": "val_genome",
+          "type": "string",
+          "description": "genome to use"
+        },
+        {
+          "name": "val_species",
+          "type": "string",
+          "description": "species to use"
+        },
+        {
+          "name": "val_cache_version",
+          "type": "integer",
+          "description": "cache version to use"
+        },
+        {
+          "name": "ch_cache",
+          "description": "the root cache folder for ensemblvep (optional)\nStructure: [ val(meta3), path(cache) ]"
+        },
+        {
+          "name": "ch_extra_files",
+          "description": "any extra files needed by plugins for ensemblvep (optional)\nStructure: [ path(file1), path(file2)... ]"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "vcf_tbi",
+          "description": "Compressed vcf file + tabix index\nStructure: [ val(meta), path(vcf), path(tbi) ]"
+        },
+        {
+          "name": "json",
+          "description": "json file\nStructure: [ val(meta), path(json) ]"
+        },
+        {
+          "name": "tab",
+          "description": "tab file\nStructure: [ val(meta), path(tab) ]"
+        },
+        {
+          "name": "reports",
+          "type": "file",
+          "description": "html reports",
+          "pattern": "*.html"
+        },
+        {
+          "name": "versions",
+          "type": "file",
+          "description": "File containing software versions",
+          "pattern": "versions.yml"
+        }
+      ],
+      "meta_authors": [
+        "@maxulysse",
+        "@matthdsm",
+        "@nvnieuwk"
+      ],
+      "meta_maintainers": [
+        "@maxulysse",
+        "@matthdsm",
+        "@nvnieuwk"
+      ]
     },
     {
       "name": "BAM_MARKDUPLICATES_PICARD",
       "docstring": "",
       "file": "subworkflows/nf-core/bam_markduplicates_picard/main.nf",
       "line": 9,
+      "end_line": 54,
       "inputs": [
         {
           "name": "ch_reads",
@@ -1650,13 +1986,89 @@
       ],
       "calls": [],
       "is_entry": false,
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/subworkflows/nf-core/bam_markduplicates_picard/main.nf#L9-L54"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/subworkflows/nf-core/bam_markduplicates_picard/main.nf#L9-L54",
+      "meta_description": "Picard MarkDuplicates, index BAM file and run samtools stats, flagstat and idxstats",
+      "meta_keywords": [
+        "markduplicates",
+        "bam",
+        "sam",
+        "cram"
+      ],
+      "meta_components": [
+        "picard/markduplicates",
+        "samtools/index",
+        "samtools/stats",
+        "samtools/idxstats",
+        "samtools/flagstat",
+        "bam_stats_samtools"
+      ],
+      "meta_inputs": [
+        {
+          "name": "ch_reads",
+          "description": "Sequence reads in BAM/CRAM/SAM format\nStructure: [ val(meta), path(reads) ]"
+        },
+        {
+          "name": "ch_fasta",
+          "description": "Reference genome fasta file required for CRAM input\nStructure: [ path(fasta) ]"
+        },
+        {
+          "name": "ch_fasta",
+          "description": "Index of the reference genome fasta file\nStructure: [ path(fai) ]"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "bam",
+          "description": "processed BAM/SAM file\nStructure: [ val(meta), path(bam) ]"
+        },
+        {
+          "name": "bai",
+          "description": "BAM/SAM samtools index\nStructure: [ val(meta), path(bai) ]"
+        },
+        {
+          "name": "cram",
+          "description": "processed CRAM file\nStructure: [ val(meta), path(cram) ]"
+        },
+        {
+          "name": "crai",
+          "description": "CRAM samtools index\nStructure: [ val(meta), path(crai) ]"
+        },
+        {
+          "name": "csi",
+          "description": "CSI samtools index\nStructure: [ val(meta), path(csi) ]"
+        },
+        {
+          "name": "stats",
+          "description": "File containing samtools stats output\nStructure: [ val(meta), path(stats) ]"
+        },
+        {
+          "name": "flagstat",
+          "description": "File containing samtools flagstat output\nStructure: [ val(meta), path(flagstat) ]"
+        },
+        {
+          "name": "idxstats",
+          "description": "File containing samtools idxstats output\nStructure: [ val(meta), path(idxstats) ]"
+        },
+        {
+          "name": "versions",
+          "description": "Files containing software versions\nStructure: [ path(versions.yml) ]"
+        }
+      ],
+      "meta_authors": [
+        "@dmarron",
+        "@drpatelh"
+      ],
+      "meta_maintainers": [
+        "@dmarron",
+        "@drpatelh"
+      ]
     },
     {
       "name": "BAM_SORT_STATS_SAMTOOLS",
       "docstring": "",
       "file": "subworkflows/nf-core/bam_sort_stats_samtools/main.nf",
       "line": 9,
+      "end_line": 49,
       "inputs": [
         {
           "name": "ch_bam",
@@ -1708,13 +2120,105 @@
       ],
       "calls": [],
       "is_entry": false,
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/subworkflows/nf-core/bam_sort_stats_samtools/main.nf#L9-L49"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/subworkflows/nf-core/bam_sort_stats_samtools/main.nf#L9-L49",
+      "meta_description": "Sort SAM/BAM/CRAM file",
+      "meta_keywords": [
+        "sort",
+        "bam",
+        "sam",
+        "cram"
+      ],
+      "meta_components": [
+        "samtools/sort",
+        "samtools/index",
+        "samtools/stats",
+        "samtools/idxstats",
+        "samtools/flagstat",
+        "bam_stats_samtools"
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "bam",
+          "type": "file",
+          "description": "BAM/CRAM/SAM file",
+          "pattern": "*.{bam,cram,sam}"
+        },
+        {
+          "name": "fasta",
+          "type": "file",
+          "description": "Reference genome fasta file",
+          "pattern": "*.{fasta,fa}"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "bam",
+          "type": "file",
+          "description": "Sorted BAM/CRAM/SAM file",
+          "pattern": "*.{bam,cram,sam}"
+        },
+        {
+          "name": "bai",
+          "type": "file",
+          "description": "BAM/CRAM/SAM index file",
+          "pattern": "*.{bai,crai,sai}"
+        },
+        {
+          "name": "crai",
+          "type": "file",
+          "description": "BAM/CRAM/SAM index file",
+          "pattern": "*.{bai,crai,sai}"
+        },
+        {
+          "name": "stats",
+          "type": "file",
+          "description": "File containing samtools stats output",
+          "pattern": "*.{stats}"
+        },
+        {
+          "name": "flagstat",
+          "type": "file",
+          "description": "File containing samtools flagstat output",
+          "pattern": "*.{flagstat}"
+        },
+        {
+          "name": "idxstats",
+          "type": "file",
+          "description": "File containing samtools idxstats output",
+          "pattern": "*.{idxstats}"
+        },
+        {
+          "name": "versions",
+          "type": "file",
+          "description": "File containing software versions",
+          "pattern": "versions.yml"
+        }
+      ],
+      "meta_authors": [
+        "@drpatelh",
+        "@ewels"
+      ],
+      "meta_maintainers": [
+        "@drpatelh",
+        "@ewels"
+      ]
     },
     {
       "name": "PREPARE_ALIGNMENT",
       "docstring": "",
       "file": "subworkflows/local/prepare_alignment/main.nf",
       "line": 7,
+      "end_line": 44,
       "inputs": [
         {
           "name": "cram",
@@ -1748,6 +2252,7 @@
       "docstring": "Split reads that contain N CIGAR operations for RNA-seq variant calling.\nThis subworkflow handles the GATK SplitNCigarReads step which is essential\nfor RNA-seq variant calling. It splits reads that span introns (N in CIGAR)\nand reassigns mapping qualities to meet GATK requirements.\nThe workflow processes BAM files in parallel across genomic intervals,\nthen merges and indexes the results for efficient downstream processing.",
       "file": "subworkflows/local/splitncigar/main.nf",
       "line": 25,
+      "end_line": 85,
       "inputs": [
         {
           "name": "bam",
@@ -1796,6 +2301,7 @@
       "docstring": "Apply base quality score recalibration (BQSR) to BAM files.\nThis subworkflow applies the BQSR model generated by GATK BaseRecalibrator\nto adjust base quality scores in BAM files. Recalibrated quality scores\nimprove the accuracy of variant calling by correcting systematic errors\nin the original quality scores assigned by the sequencing machine.\nOptionally generates alignment statistics using samtools stats for QC.",
       "file": "subworkflows/local/recalibrate/main.nf",
       "line": 27,
+      "end_line": 67,
       "inputs": [
         {
           "name": "skip_samtools",
@@ -1849,6 +2355,7 @@
       "docstring": "",
       "file": "subworkflows/local/download_cache_snpeff_vep/main.nf",
       "line": 14,
+      "end_line": 26,
       "inputs": [
         {
           "name": "ensemblvep_info",
@@ -1882,6 +2389,7 @@
       "docstring": "Initialize the nf-core/rnavar pipeline.\nPerforms all setup tasks required before running the main workflow:\n- Display version information if requested\n- Validate parameters against the schema\n- Check Conda channel configuration\n- Parse and validate the input samplesheet\n- Generate parameter summary for logging",
       "file": "subworkflows/local/utils_nfcore_rnavar_pipeline/main.nf",
       "line": 51,
+      "end_line": 173,
       "inputs": [
         {
           "name": "version",
@@ -1950,6 +2458,7 @@
       "docstring": "Handle pipeline completion tasks.\nExecutes cleanup and notification tasks when the pipeline finishes:\n- Send completion email with run summary\n- Generate completion summary to stdout\n- Send notifications to messaging platforms (Slack, Teams, etc.)\n- Log error messages for failed runs",
       "file": "subworkflows/local/utils_nfcore_rnavar_pipeline/main.nf",
       "line": 198,
+      "end_line": 237,
       "inputs": [
         {
           "name": "email",
@@ -2003,6 +2512,7 @@
       "docstring": "",
       "file": "subworkflows/local/annotation_cache_initialisation/main.nf",
       "line": 11,
+      "end_line": 67,
       "inputs": [
         {
           "name": "snpeff_enabled",
@@ -2076,6 +2586,7 @@
       "docstring": "",
       "file": "subworkflows/local/prepare_genome/main.nf",
       "line": 22,
+      "end_line": 254,
       "inputs": [
         {
           "name": "bcftools_annotations",
@@ -2244,6 +2755,7 @@
       "docstring": "Annotate variants using multiple annotation tools.\nThis subworkflow provides flexible variant annotation using one or more tools:\n- **SnpEff**: Functional annotation and effect prediction\n- **VEP (Ensembl Variant Effect Predictor)**: Comprehensive variant annotation\n- **BCFtools annotate**: Add custom annotations from external files\n- **Merge**: Combined SnpEff + VEP annotation\nThe tools to use are specified via the `tools` parameter as a\ncomma-separated list (e.g., \"snpeff,vep\" or \"merge\").",
       "file": "subworkflows/local/vcf_annotate_all/main.nf",
       "line": 37,
+      "end_line": 102,
       "inputs": [
         {
           "name": "vcf",
@@ -2349,6 +2861,7 @@
       "docstring": "Aggregate results from multiple analysis tools into a single report.\nMultiQC searches a given directory for analysis logs and compiles them\ninto a single HTML report. It supports output from many common\nbioinformatics tools including FastQC, STAR, Picard, GATK, and more.\nThe report provides:\n- Summary statistics across all samples\n- Interactive plots for QC metrics\n- Data tables for detailed metrics\n- Export functionality for plots and data",
       "file": "modules/nf-core/multiqc/main.nf",
       "line": 21,
+      "end_line": 75,
       "inputs": [],
       "outputs": [
         {
@@ -2371,13 +2884,56 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/multiqc/main.nf#L21-L75"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/multiqc/main.nf#L21-L75",
+      "nfcore_module_url": "https://nf-co.re/modules/multiqc/",
+      "meta_description": "Aggregate results from bioinformatics analyses across many samples into a single report",
+      "meta_keywords": [
+        "QC",
+        "bioinformatics tools",
+        "Beautiful stand-alone HTML report"
+      ],
+      "meta_tools": [
+        {
+          "name": "multiqc",
+          "description": "MultiQC searches a given directory for analysis logs and compiles a HTML report.\nIt's a general use tool, perfect for summarising the output from numerous bioinformatics tools.",
+          "homepage": "https://multiqc.info/",
+          "documentation": "https://multiqc.info/docs/",
+          "licence": [
+            "GPL-3.0-or-later"
+          ],
+          "identifier": "biotools:multiqc"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "report"
+        },
+        {
+          "name": "data"
+        },
+        {
+          "name": "plots"
+        }
+      ],
+      "meta_authors": [
+        "@abhi18av",
+        "@bunop",
+        "@drpatelh",
+        "@jfy133"
+      ],
+      "meta_maintainers": [
+        "@abhi18av",
+        "@bunop",
+        "@drpatelh",
+        "@jfy133"
+      ]
     },
     {
       "name": "UNTAR",
       "docstring": "",
       "file": "modules/nf-core/untar/main.nf",
       "line": 1,
+      "end_line": 84,
       "inputs": [
         {
           "name": "val(meta), path(archive)",
@@ -2395,13 +2951,68 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/untar/main.nf#L1-L84"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/untar/main.nf#L1-L84",
+      "nfcore_module_url": "https://nf-co.re/modules/untar/",
+      "meta_description": "Extract files from tar, tar.gz, tar.bz2, tar.xz archives",
+      "meta_keywords": [
+        "untar",
+        "uncompress",
+        "extract"
+      ],
+      "meta_tools": [
+        {
+          "name": "untar",
+          "description": "Extract tar, tar.gz, tar.bz2, tar.xz files.",
+          "documentation": "https://www.gnu.org/software/tar/manual/",
+          "licence": [
+            "GPL-3.0-or-later"
+          ]
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "archive",
+          "type": "file",
+          "description": "File to be untarred",
+          "pattern": "*.{tar,tar.gz,tar.bz2,tar.xz}",
+          "ontologies": [
+            "http://edamontology.org/format_3981",
+            "http://edamontology.org/format_3989"
+          ]
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "untar",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]",
+          "pattern": "*/"
+        }
+      ],
+      "meta_authors": [
+        "@joseespinosa",
+        "@drpatelh",
+        "@matthdsm",
+        "@jfy133"
+      ],
+      "meta_maintainers": [
+        "@joseespinosa",
+        "@drpatelh",
+        "@matthdsm",
+        "@jfy133"
+      ]
     },
     {
       "name": "MOSDEPTH",
       "docstring": "",
       "file": "modules/nf-core/mosdepth/main.nf",
       "line": 1,
+      "end_line": 77,
       "inputs": [
         {
           "name": "val(meta), path(bam), path(bai), path(bed)",
@@ -2491,13 +3102,155 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/mosdepth/main.nf#L1-L77"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/mosdepth/main.nf#L1-L77",
+      "nfcore_module_url": "https://nf-co.re/modules/mosdepth/",
+      "meta_description": "Calculates genome-wide sequencing coverage.",
+      "meta_keywords": [
+        "mosdepth",
+        "bam",
+        "cram",
+        "coverage"
+      ],
+      "meta_tools": [
+        {
+          "name": "mosdepth",
+          "description": "Fast BAM/CRAM depth calculation for WGS, exome, or targeted sequencing.",
+          "documentation": "https://github.com/brentp/mosdepth",
+          "doi": "10.1093/bioinformatics/btx699",
+          "licence": [
+            "MIT"
+          ],
+          "identifier": "biotools:mosdepth"
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "bam",
+          "type": "file",
+          "description": "Input BAM/CRAM file",
+          "pattern": "*.{bam,cram}"
+        },
+        {
+          "name": "bai",
+          "type": "file",
+          "description": "Index for BAM/CRAM file",
+          "pattern": "*.{bai,crai}"
+        },
+        {
+          "name": "bed",
+          "type": "file",
+          "description": "BED file with intersected intervals",
+          "pattern": "*.{bed}"
+        },
+        {
+          "name": "meta2",
+          "type": "map",
+          "description": "Groovy Map containing bed information\ne.g. [ id:'test' ]"
+        },
+        {
+          "name": "fasta",
+          "type": "file",
+          "description": "Reference genome FASTA file",
+          "pattern": "*.{fa,fasta}"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "global_txt",
+          "type": "file",
+          "description": "Text file with global cumulative coverage distribution",
+          "pattern": "*.{global.dist.txt}"
+        },
+        {
+          "name": "summary_txt",
+          "type": "file",
+          "description": "Text file with summary mean depths per chromosome and regions",
+          "pattern": "*.{summary.txt}"
+        },
+        {
+          "name": "regions_txt",
+          "type": "file",
+          "description": "Text file with region cumulative coverage distribution",
+          "pattern": "*.{region.dist.txt}"
+        },
+        {
+          "name": "per_base_d4",
+          "type": "file",
+          "description": "D4 file with per-base coverage",
+          "pattern": "*.{per-base.d4}"
+        },
+        {
+          "name": "per_base_bed",
+          "type": "file",
+          "description": "BED file with per-base coverage",
+          "pattern": "*.{per-base.bed.gz}"
+        },
+        {
+          "name": "per_base_csi",
+          "type": "file",
+          "description": "Index file for BED file with per-base coverage",
+          "pattern": "*.{per-base.bed.gz.csi}"
+        },
+        {
+          "name": "regions_bed",
+          "type": "file",
+          "description": "BED file with per-region coverage",
+          "pattern": "*.{regions.bed.gz}"
+        },
+        {
+          "name": "regions_csi",
+          "type": "file",
+          "description": "Index file for BED file with per-region coverage",
+          "pattern": "*.{regions.bed.gz.csi}"
+        },
+        {
+          "name": "quantized_bed",
+          "type": "file",
+          "description": "BED file with binned coverage",
+          "pattern": "*.{quantized.bed.gz}"
+        },
+        {
+          "name": "quantized_csi",
+          "type": "file",
+          "description": "Index file for BED file with binned coverage",
+          "pattern": "*.{quantized.bed.gz.csi}"
+        },
+        {
+          "name": "thresholds_bed",
+          "type": "file",
+          "description": "BED file with the number of bases in each region that are covered at or above each threshold",
+          "pattern": "*.{thresholds.bed.gz}"
+        },
+        {
+          "name": "thresholds_csi",
+          "type": "file",
+          "description": "Index file for BED file with threshold coverage",
+          "pattern": "*.{thresholds.bed.gz.csi}"
+        }
+      ],
+      "meta_authors": [
+        "@joseespinosa",
+        "@drpatelh",
+        "@ramprasadn",
+        "@matthdsm"
+      ],
+      "meta_maintainers": [
+        "@joseespinosa",
+        "@ramprasadn",
+        "@matthdsm"
+      ]
     },
     {
       "name": "SEQ2HLA",
       "docstring": "Perform HLA typing from RNA-seq data using seq2HLA.\nseq2HLA determines HLA class I and class II genotypes from RNA-seq reads\nby mapping to a reference database of HLA alleles. It provides:\n- 2-digit resolution typing (e.g., HLA-A*02)\n- 4-digit resolution typing (e.g., HLA-A*02:01)\n- Expression levels of HLA alleles\n- Ambiguity reports when alleles cannot be distinguished\nSupports both classical HLA genes (HLA-A, -B, -C, -DRB1, -DQB1, -DQA1)\nand non-classical genes.\nRequires paired-end RNA-seq reads as input.",
       "file": "modules/nf-core/seq2hla/main.nf",
       "line": 20,
+      "end_line": 94,
       "inputs": [
         {
           "name": "val(meta), path(reads)",
@@ -2593,13 +3346,139 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/seq2hla/main.nf#L20-L94"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/seq2hla/main.nf#L20-L94",
+      "nfcore_module_url": "https://nf-co.re/modules/seq2hla/",
+      "meta_description": "Precision HLA typing and expression from RNA-seq data using seq2HLA",
+      "meta_keywords": [
+        "hla",
+        "typing",
+        "rna-seq",
+        "genomics",
+        "immunogenetics"
+      ],
+      "meta_tools": [
+        {
+          "name": "seq2hla",
+          "description": "Precision HLA typing and expression from next-generation RNA sequencing data",
+          "homepage": "https://github.com/TRON-Bioinformatics/seq2HLA",
+          "documentation": "https://github.com/TRON-Bioinformatics/seq2HLA#readme",
+          "tool_dev_url": "https://github.com/TRON-Bioinformatics/seq2HLA",
+          "doi": "10.1186/s13073-015-0240-5",
+          "licence": [
+            "MIT"
+          ],
+          "identifier": "biotools:seq2HLA"
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. `[ id:'sample1', single_end:false ]`"
+        },
+        {
+          "name": "reads",
+          "type": "file",
+          "description": "Paired-end FASTQ files for RNA-seq data",
+          "pattern": "*.{fastq.gz,fq.gz}",
+          "ontologies": [
+            "http://edamontology.org/format_1930"
+          ]
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "class1_genotype_2d",
+          "type": "file",
+          "description": "HLA Class I 2-digit genotype results",
+          "pattern": "*ClassI-class.HLAgenotype2digits"
+        },
+        {
+          "name": "class2_genotype_2d",
+          "type": "file",
+          "description": "HLA Class II 2-digit genotype results",
+          "pattern": "*ClassII.HLAgenotype2digits"
+        },
+        {
+          "name": "class1_genotype_4d",
+          "type": "file",
+          "description": "HLA Class I 4-digit genotype results",
+          "pattern": "*ClassI-class.HLAgenotype4digits"
+        },
+        {
+          "name": "class2_genotype_4d",
+          "type": "file",
+          "description": "HLA Class II 4-digit genotype results",
+          "pattern": "*ClassII.HLAgenotype4digits"
+        },
+        {
+          "name": "class1_bowtielog",
+          "type": "file",
+          "description": "HLA Class I Bowtie alignment log",
+          "pattern": "*ClassI-class.bowtielog"
+        },
+        {
+          "name": "class2_bowtielog",
+          "type": "file",
+          "description": "HLA Class II Bowtie alignment log",
+          "pattern": "*ClassII.bowtielog"
+        },
+        {
+          "name": "class1_expression",
+          "type": "file",
+          "description": "HLA Class I expression results",
+          "pattern": "*ClassI-class.expression"
+        },
+        {
+          "name": "class2_expression",
+          "type": "file",
+          "description": "HLA Class II expression results",
+          "pattern": "*ClassII.expression"
+        },
+        {
+          "name": "class1_nonclass_genotype_2d",
+          "type": "file",
+          "description": "HLA Class I non-classical 2-digit genotype results",
+          "pattern": "*ClassI-nonclass.HLAgenotype2digits"
+        },
+        {
+          "name": "ambiguity",
+          "type": "file",
+          "description": "HLA typing ambiguity results",
+          "pattern": "*.ambiguity"
+        },
+        {
+          "name": "class1_nonclass_genotype_4d",
+          "type": "file",
+          "description": "HLA Class I non-classical 4-digit genotype results",
+          "pattern": "*ClassI-nonclass.HLAgenotype4digits"
+        },
+        {
+          "name": "class1_nonclass_bowtielog",
+          "type": "file",
+          "description": "HLA Class I non-classical Bowtie alignment log",
+          "pattern": "*ClassI-nonclass.bowtielog"
+        },
+        {
+          "name": "class1_nonclass_expression",
+          "type": "file",
+          "description": "HLA Class I non-classical expression results",
+          "pattern": "*ClassI-nonclass.expression"
+        }
+      ],
+      "meta_authors": [
+        "@FriederikeHanssen"
+      ],
+      "meta_maintainers": [
+        "@FriederikeHanssen"
+      ]
     },
     {
       "name": "FASTQC",
       "docstring": "Run FastQC quality control on sequencing reads.\nFastQC provides a comprehensive quality control report for high-throughput\nsequencing data. It generates an HTML report and a ZIP archive containing\ndetailed metrics including:\n- Basic statistics (total sequences, sequence length, GC content)\n- Per-base sequence quality scores\n- Per-sequence quality scores\n- Per-base sequence content\n- Sequence duplication levels\n- Overrepresented sequences\n- Adapter content",
       "file": "modules/nf-core/fastqc/main.nf",
       "line": 19,
+      "end_line": 72,
       "inputs": [
         {
           "name": "val(meta), path(reads)",
@@ -2623,13 +3502,72 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/fastqc/main.nf#L19-L72"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/fastqc/main.nf#L19-L72",
+      "nfcore_module_url": "https://nf-co.re/modules/fastqc/",
+      "meta_description": "Run FastQC on sequenced reads",
+      "meta_keywords": [
+        "quality control",
+        "qc",
+        "adapters",
+        "fastq"
+      ],
+      "meta_tools": [
+        {
+          "name": "fastqc",
+          "description": "FastQC gives general quality metrics about your reads.\nIt provides information about the quality score distribution\nacross your reads, the per base sequence content (%A/C/G/T).\n\nYou get information about adapter contamination and other\noverrepresented sequences.",
+          "homepage": "https://www.bioinformatics.babraham.ac.uk/projects/fastqc/",
+          "documentation": "https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/",
+          "licence": [
+            "GPL-2.0-only"
+          ],
+          "identifier": "biotools:fastqc"
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "reads",
+          "type": "file",
+          "description": "List of input FastQ files of size 1 and 2 for single-end and paired-end data,\nrespectively."
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "html",
+          "type": "file",
+          "description": "FastQC report",
+          "pattern": "*_{fastqc.html}"
+        },
+        {
+          "name": "zip",
+          "type": "file",
+          "description": "FastQC report archive",
+          "pattern": "*_{fastqc.zip}"
+        }
+      ],
+      "meta_authors": [
+        "@drpatelh",
+        "@grst",
+        "@ewels",
+        "@FelixKrueger"
+      ],
+      "meta_maintainers": [
+        "@drpatelh",
+        "@grst",
+        "@ewels",
+        "@FelixKrueger"
+      ]
     },
     {
       "name": "GFFREAD",
       "docstring": "",
       "file": "modules/nf-core/gffread/main.nf",
       "line": 1,
+      "end_line": 60,
       "inputs": [
         {
           "name": "val(meta), path(gff)",
@@ -2665,13 +3603,75 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/gffread/main.nf#L1-L60"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/gffread/main.nf#L1-L60",
+      "nfcore_module_url": "https://nf-co.re/modules/gffread/",
+      "meta_description": "Validate, filter, convert and perform various other operations on GFF files",
+      "meta_keywords": [
+        "gff",
+        "conversion",
+        "validation"
+      ],
+      "meta_tools": [
+        {
+          "name": "gffread",
+          "description": "GFF/GTF utility providing format conversions, region filtering, FASTA sequence extraction and more.",
+          "homepage": "http://ccb.jhu.edu/software/stringtie/gff.shtml#gffread",
+          "documentation": "http://ccb.jhu.edu/software/stringtie/gff.shtml#gffread",
+          "tool_dev_url": "https://github.com/gpertea/gffread",
+          "doi": "10.12688/f1000research.23297.1",
+          "licence": [
+            "MIT"
+          ],
+          "identifier": "biotools:gffread"
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing meta data\ne.g. [ id:'test' ]"
+        },
+        {
+          "name": "gff",
+          "type": "file",
+          "description": "A reference file in either the GFF3, GFF2 or GTF format.",
+          "pattern": "*.{gff, gtf}"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "gtf",
+          "type": "file",
+          "description": "GTF file resulting from the conversion of the GFF input file if '-T' argument is present",
+          "pattern": "*.{gtf}"
+        },
+        {
+          "name": "gffread_gff",
+          "type": "file",
+          "description": "GFF3 file resulting from the conversion of the GFF input file if '-T' argument is absent",
+          "pattern": "*.gff3"
+        },
+        {
+          "name": "gffread_fasta",
+          "type": "file",
+          "description": "Fasta file produced when either of '-w', '-x', '-y' parameters is present",
+          "pattern": "*.fasta"
+        }
+      ],
+      "meta_authors": [
+        "@edmundmiller"
+      ],
+      "meta_maintainers": [
+        "@edmundmiller",
+        "@gallvp"
+      ]
     },
     {
       "name": "GUNZIP",
       "docstring": "",
       "file": "modules/nf-core/gunzip/main.nf",
       "line": 16,
+      "end_line": 70,
       "inputs": [
         {
           "name": "val(meta), path(archive)",
@@ -2689,13 +3689,63 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/gunzip/main.nf#L16-L70"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/gunzip/main.nf#L16-L70",
+      "nfcore_module_url": "https://nf-co.re/modules/gunzip/",
+      "meta_description": "Compresses and decompresses files.",
+      "meta_keywords": [
+        "gunzip",
+        "compression",
+        "decompression"
+      ],
+      "meta_tools": [
+        {
+          "name": "gunzip",
+          "description": "gzip is a file format and a software application used for file compression and decompression.",
+          "documentation": "https://www.gnu.org/software/gzip/manual/gzip.html",
+          "licence": [
+            "GPL-3.0-or-later"
+          ]
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Optional groovy Map containing meta information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "archive",
+          "type": "file",
+          "description": "File to be compressed/uncompressed",
+          "pattern": "*.*"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "gunzip",
+          "type": "file",
+          "description": "Compressed/uncompressed file",
+          "pattern": "*.*"
+        }
+      ],
+      "meta_authors": [
+        "@joseespinosa",
+        "@drpatelh",
+        "@jfy133"
+      ],
+      "meta_maintainers": [
+        "@joseespinosa",
+        "@drpatelh",
+        "@jfy133",
+        "@gallvp"
+      ]
     },
     {
       "name": "GATK4_COMBINEGVCFS",
       "docstring": "",
       "file": "modules/nf-core/gatk4/combinegvcfs/main.nf",
       "line": 1,
+      "end_line": 60,
       "inputs": [
         {
           "name": "val(meta), path(vcf), path(vcf_idx)",
@@ -2719,13 +3769,81 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/gatk4/combinegvcfs/main.nf#L1-L60"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/gatk4/combinegvcfs/main.nf#L1-L60",
+      "nfcore_module_url": "https://nf-co.re/modules/gatk4_combinegvcfs/",
+      "meta_description": "Combine per-sample gVCF files produced by HaplotypeCaller into a multi-sample gVCF file",
+      "meta_keywords": [
+        "gvcf",
+        "gatk4",
+        "vcf",
+        "combinegvcfs",
+        "short variant discovery"
+      ],
+      "meta_tools": [
+        {
+          "name": "gatk4",
+          "description": "Genome Analysis Toolkit (GATK4). Developed in the Data Sciences Platform at the Broad Institute, the toolkit offers a wide variety of tools with a primary focus on variant discovery and genotyping. Its powerful processing engine and high-performance computing features make it capable of taking on projects of any size.",
+          "homepage": "https://gatk.broadinstitute.org/hc/en-us",
+          "documentation": "https://gatk.broadinstitute.org/hc/en-us/articles/360037593911-CombineGVCFs",
+          "tool_dev_url": "https://github.com/broadinstitute/gatk",
+          "doi": "10.1158/1538-7445.AM2017-3590",
+          "licence": [
+            "Apache-2.0"
+          ]
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test' ]"
+        },
+        {
+          "name": "vcf",
+          "type": "file",
+          "description": "Compressed VCF files",
+          "pattern": "*.vcf.gz",
+          "ontologies": [
+            "http://edamontology.org/format_3989"
+          ]
+        },
+        {
+          "name": "vcf_idx",
+          "type": "file",
+          "description": "VCF Index file",
+          "pattern": "*.vcf.gz.idx"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "combined_gvcf",
+          "type": "file",
+          "description": "Compressed Combined GVCF file",
+          "pattern": "*.combined.g.vcf.gz",
+          "ontologies": [
+            "http://edamontology.org/format_3989"
+          ]
+        }
+      ],
+      "meta_authors": [
+        "@sateeshperi",
+        "@mjcipriano",
+        "@hseabolt",
+        "@maxulysse"
+      ],
+      "meta_maintainers": [
+        "@sateeshperi",
+        "@mjcipriano",
+        "@hseabolt",
+        "@maxulysse"
+      ]
     },
     {
       "name": "GATK4_INDEXFEATUREFILE",
       "docstring": "",
       "file": "modules/nf-core/gatk4/indexfeaturefile/main.nf",
       "line": 1,
+      "end_line": 42,
       "inputs": [
         {
           "name": "val(meta), path(feature_file)",
@@ -2743,13 +3861,62 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/gatk4/indexfeaturefile/main.nf#L1-L42"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/gatk4/indexfeaturefile/main.nf#L1-L42",
+      "nfcore_module_url": "https://nf-co.re/modules/gatk4_indexfeaturefile/",
+      "meta_description": "Creates an index for a feature file, e.g. VCF or BED file.",
+      "meta_keywords": [
+        "feature",
+        "gatk4",
+        "index",
+        "indexfeaturefile"
+      ],
+      "meta_tools": [
+        {
+          "name": "gatk4",
+          "description": "Genome Analysis Toolkit (GATK4)",
+          "homepage": "https://gatk.broadinstitute.org/hc/en-us",
+          "documentation": "https://gatk.broadinstitute.org/hc/en-us/categories/360002369672s",
+          "tool_dev_url": "https://github.com/broadinstitute/gatk",
+          "doi": "10.1158/1538-7445.AM2017-3590",
+          "licence": [
+            "BSD-3-clause"
+          ]
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "feature_file",
+          "type": "file",
+          "description": "VCF/BED file",
+          "pattern": "*.{vcf,vcf.gz,bed,bed.gz}"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "index",
+          "type": "file",
+          "description": "Index for VCF/BED file",
+          "pattern": "*.{tbi,idx}"
+        }
+      ],
+      "meta_authors": [
+        "@santiagorevale"
+      ],
+      "meta_maintainers": [
+        "@santiagorevale"
+      ]
     },
     {
       "name": "GATK4_VARIANTFILTRATION",
       "docstring": "",
       "file": "modules/nf-core/gatk4/variantfiltration/main.nf",
       "line": 1,
+      "end_line": 74,
       "inputs": [
         {
           "name": "val(meta), path(vcf), path(tbi)",
@@ -2803,13 +3970,122 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/gatk4/variantfiltration/main.nf#L1-L74"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/gatk4/variantfiltration/main.nf#L1-L74",
+      "nfcore_module_url": "https://nf-co.re/modules/gatk4_variantfiltration/",
+      "meta_description": "Filter variants",
+      "meta_keywords": [
+        "filter",
+        "gatk4",
+        "variantfiltration",
+        "vcf"
+      ],
+      "meta_tools": [
+        {
+          "name": "gatk4",
+          "description": "Developed in the Data Sciences Platform at the Broad Institute, the toolkit offers a wide variety of tools\nwith a primary focus on variant discovery and genotyping. Its powerful processing engine\nand high-performance computing features make it capable of taking on projects of any size.",
+          "homepage": "https://gatk.broadinstitute.org/hc/en-us",
+          "documentation": "https://gatk.broadinstitute.org/hc/en-us/categories/360002369672s",
+          "doi": "10.1158/1538-7445.AM2017-3590",
+          "licence": [
+            "Apache-2.0"
+          ]
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test']"
+        },
+        {
+          "name": "vcf",
+          "type": "list",
+          "description": "List of VCF(.gz) files",
+          "pattern": "*.{vcf,vcf.gz}"
+        },
+        {
+          "name": "tbi",
+          "type": "list",
+          "description": "List of VCF file indexes",
+          "pattern": "*.{tbi}"
+        },
+        {
+          "name": "meta2",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'genome' ]"
+        },
+        {
+          "name": "fasta",
+          "type": "file",
+          "description": "Fasta file of reference genome",
+          "pattern": "*.fasta"
+        },
+        {
+          "name": "meta3",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'genome' ]"
+        },
+        {
+          "name": "fai",
+          "type": "file",
+          "description": "Index of fasta file",
+          "pattern": "*.fasta.fai"
+        },
+        {
+          "name": "meta4",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'genome' ]"
+        },
+        {
+          "name": "dict",
+          "type": "file",
+          "description": "Sequence dictionary of fastea file",
+          "pattern": "*.dict"
+        },
+        {
+          "name": "meta5",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'genome' ]"
+        },
+        {
+          "name": "gzi",
+          "type": "file",
+          "description": "Genome index file only needed when the genome file was compressed with the BGZF algorithm.",
+          "pattern": "*.gzi"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "vcf",
+          "type": "file",
+          "description": "Compressed VCF file",
+          "pattern": "*.vcf.gz",
+          "ontologies": [
+            "http://edamontology.org/format_3989"
+          ]
+        },
+        {
+          "name": "tbi",
+          "type": "file",
+          "description": "Index of VCF file",
+          "pattern": "*.vcf.gz.tbi"
+        }
+      ],
+      "meta_authors": [
+        "@kevinmenden",
+        "@ramprasadn"
+      ],
+      "meta_maintainers": [
+        "@kevinmenden",
+        "@ramprasadn"
+      ]
     },
     {
       "name": "GATK4_CREATESEQUENCEDICTIONARY",
       "docstring": "",
       "file": "modules/nf-core/gatk4/createsequencedictionary/main.nf",
       "line": 1,
+      "end_line": 53,
       "inputs": [
         {
           "name": "val(meta), path(fasta)",
@@ -2833,13 +4109,63 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/gatk4/createsequencedictionary/main.nf#L1-L53"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/gatk4/createsequencedictionary/main.nf#L1-L53",
+      "nfcore_module_url": "https://nf-co.re/modules/gatk4_createsequencedictionary/",
+      "meta_description": "Creates a sequence dictionary for a reference sequence",
+      "meta_keywords": [
+        "createsequencedictionary",
+        "dictionary",
+        "fasta",
+        "gatk4"
+      ],
+      "meta_tools": [
+        {
+          "name": "gatk",
+          "description": "Developed in the Data Sciences Platform at the Broad Institute, the toolkit offers a wide variety of tools\nwith a primary focus on variant discovery and genotyping. Its powerful processing engine\nand high-performance computing features make it capable of taking on projects of any size.",
+          "homepage": "https://gatk.broadinstitute.org/hc/en-us",
+          "documentation": "https://gatk.broadinstitute.org/hc/en-us/categories/360002369672s",
+          "doi": "10.1158/1538-7445.AM2017-3590",
+          "licence": [
+            "Apache-2.0"
+          ]
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'genome' ]"
+        },
+        {
+          "name": "fasta",
+          "type": "file",
+          "description": "Input fasta file",
+          "pattern": "*.{fasta,fa}"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "dict",
+          "type": "file",
+          "description": "gatk dictionary file",
+          "pattern": "*.{dict}"
+        }
+      ],
+      "meta_authors": [
+        "@maxulysse",
+        "@ramprasadn"
+      ],
+      "meta_maintainers": [
+        "@maxulysse",
+        "@ramprasadn"
+      ]
     },
     {
       "name": "GATK4_SPLITNCIGARREADS",
       "docstring": "",
       "file": "modules/nf-core/gatk4/splitncigarreads/main.nf",
       "line": 1,
+      "end_line": 62,
       "inputs": [
         {
           "name": "val(meta), path(bam), path(bai), path(intervals)",
@@ -2881,13 +4207,104 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/gatk4/splitncigarreads/main.nf#L1-L62"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/gatk4/splitncigarreads/main.nf#L1-L62",
+      "nfcore_module_url": "https://nf-co.re/modules/gatk4_splitncigarreads/",
+      "meta_description": "Splits reads that contain Ns in their cigar string",
+      "meta_keywords": [
+        "gatk4",
+        "merge",
+        "vcf"
+      ],
+      "meta_tools": [
+        {
+          "name": "gatk4",
+          "description": "Developed in the Data Sciences Platform at the Broad Institute, the toolkit offers a wide variety of tools\nwith a primary focus on variant discovery and genotyping. Its powerful processing engine\nand high-performance computing features make it capable of taking on projects of any size.",
+          "homepage": "https://gatk.broadinstitute.org/hc/en-us",
+          "documentation": "https://gatk.broadinstitute.org/hc/en-us/categories/360002369672s",
+          "doi": "10.1158/1538-7445.AM2017-3590",
+          "licence": [
+            "Apache-2.0"
+          ]
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test']"
+        },
+        {
+          "name": "bam",
+          "type": "list",
+          "description": "BAM/SAM/CRAM file containing reads",
+          "pattern": "*.{bam,sam,cram}"
+        },
+        {
+          "name": "bai",
+          "type": "list",
+          "description": "BAI/SAI/CRAI index file (optional)",
+          "pattern": "*.{bai,sai,crai}"
+        },
+        {
+          "name": "intervals",
+          "type": "file",
+          "description": "Bed file with the genomic regions included in the library (optional)"
+        },
+        {
+          "name": "meta2",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'reference' ]"
+        },
+        {
+          "name": "fasta",
+          "type": "file",
+          "description": "The reference fasta file",
+          "pattern": "*.fasta"
+        },
+        {
+          "name": "meta3",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'reference' ]"
+        },
+        {
+          "name": "fai",
+          "type": "file",
+          "description": "Index of reference fasta file",
+          "pattern": "*.fasta.fai"
+        },
+        {
+          "name": "meta4",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'reference' ]"
+        },
+        {
+          "name": "dict",
+          "type": "file",
+          "description": "GATK sequence dictionary",
+          "pattern": "*.dict"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "bam",
+          "type": "file",
+          "description": "Output file with split reads (BAM/SAM/CRAM)",
+          "pattern": "*.{bam,sam,cram}"
+        }
+      ],
+      "meta_authors": [
+        "@kevinmenden"
+      ],
+      "meta_maintainers": [
+        "@kevinmenden"
+      ]
     },
     {
       "name": "GATK4_HAPLOTYPECALLER",
       "docstring": "Call germline SNPs and indels using GATK HaplotypeCaller.\nHaplotypeCaller is GATK's flagship variant caller, performing local\nde-novo assembly of haplotypes in regions showing variation. It can\nproduce either standard VCF output or GVCF output for joint calling.\nKey features:\n- Local re-assembly for accurate indel calling\n- Population-aware calling using dbSNP\n- Support for GVCF output mode for cohort analysis\n- DRAGstr model support for improved STR calling\nFor RNA-seq data, this should be run after SplitNCigarReads processing.",
       "file": "modules/nf-core/gatk4/haplotypecaller/main.nf",
       "line": 25,
+      "end_line": 102,
       "inputs": [
         {
           "name": "val(meta), path(input), path(input_index), path(intervals), path(dragstr_model)",
@@ -2953,13 +4370,147 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/gatk4/haplotypecaller/main.nf#L25-L102"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/gatk4/haplotypecaller/main.nf#L25-L102",
+      "nfcore_module_url": "https://nf-co.re/modules/gatk4_haplotypecaller/",
+      "meta_description": "Call germline SNPs and indels via local re-assembly of haplotypes",
+      "meta_keywords": [
+        "gatk4",
+        "haplotype",
+        "haplotypecaller"
+      ],
+      "meta_tools": [
+        {
+          "name": "gatk4",
+          "description": "Developed in the Data Sciences Platform at the Broad Institute, the toolkit offers a wide variety of tools\nwith a primary focus on variant discovery and genotyping. Its powerful processing engine\nand high-performance computing features make it capable of taking on projects of any size.",
+          "homepage": "https://gatk.broadinstitute.org/hc/en-us",
+          "documentation": "https://gatk.broadinstitute.org/hc/en-us/categories/360002369672s",
+          "doi": "10.1158/1538-7445.AM2017-3590",
+          "licence": [
+            "Apache-2.0"
+          ]
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "input",
+          "type": "file",
+          "description": "BAM/CRAM file from alignment",
+          "pattern": "*.{bam,cram}"
+        },
+        {
+          "name": "input_index",
+          "type": "file",
+          "description": "BAI/CRAI file from alignment",
+          "pattern": "*.{bai,crai}"
+        },
+        {
+          "name": "intervals",
+          "type": "file",
+          "description": "Bed file with the genomic regions included in the library (optional)"
+        },
+        {
+          "name": "dragstr_model",
+          "type": "file",
+          "description": "Text file containing the DragSTR model of the used BAM/CRAM file (optional)",
+          "pattern": "*.txt"
+        },
+        {
+          "name": "meta2",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'test_reference' ]"
+        },
+        {
+          "name": "fasta",
+          "type": "file",
+          "description": "The reference fasta file",
+          "pattern": "*.fasta"
+        },
+        {
+          "name": "meta3",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'test_reference' ]"
+        },
+        {
+          "name": "fai",
+          "type": "file",
+          "description": "Index of reference fasta file",
+          "pattern": "fasta.fai"
+        },
+        {
+          "name": "meta4",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'test_reference' ]"
+        },
+        {
+          "name": "dict",
+          "type": "file",
+          "description": "GATK sequence dictionary",
+          "pattern": "*.dict"
+        },
+        {
+          "name": "meta5",
+          "type": "map",
+          "description": "Groovy Map containing dbsnp information\ne.g. [ id:'test_dbsnp' ]"
+        },
+        {
+          "name": "dbsnp",
+          "type": "file",
+          "description": "VCF file containing known sites (optional)"
+        },
+        {
+          "name": "meta6",
+          "type": "map",
+          "description": "Groovy Map containing dbsnp information\ne.g. [ id:'test_dbsnp' ]"
+        },
+        {
+          "name": "dbsnp_tbi",
+          "type": "file",
+          "description": "VCF index of dbsnp (optional)"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "vcf",
+          "type": "file",
+          "description": "Compressed VCF file",
+          "pattern": "*.vcf.gz",
+          "ontologies": [
+            "http://edamontology.org/format_3989"
+          ]
+        },
+        {
+          "name": "tbi",
+          "type": "file",
+          "description": "Index of VCF file",
+          "pattern": "*.vcf.gz.tbi"
+        },
+        {
+          "name": "bam",
+          "type": "file",
+          "description": "Assembled haplotypes and locally realigned reads",
+          "pattern": "*.realigned.bam"
+        }
+      ],
+      "meta_authors": [
+        "@suzannejin",
+        "@FriederikeHanssen"
+      ],
+      "meta_maintainers": [
+        "@suzannejin",
+        "@FriederikeHanssen"
+      ]
     },
     {
       "name": "GATK4_INTERVALLISTTOOLS",
       "docstring": "",
       "file": "modules/nf-core/gatk4/intervallisttools/main.nf",
       "line": 1,
+      "end_line": 75,
       "inputs": [
         {
           "name": "val(meta), path(intervals)",
@@ -2983,13 +4534,60 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/gatk4/intervallisttools/main.nf#L1-L75"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/gatk4/intervallisttools/main.nf#L1-L75",
+      "nfcore_module_url": "https://nf-co.re/modules/gatk4_intervallisttools/",
+      "meta_description": "Splits the interval list file into unique, equally-sized interval files and place it under a directory",
+      "meta_keywords": [
+        "bed",
+        "gatk4",
+        "interval_list",
+        "sort"
+      ],
+      "meta_tools": [
+        {
+          "name": "gatk4",
+          "description": "Developed in the Data Sciences Platform at the Broad Institute, the toolkit offers a wide variety of tools\nwith a primary focus on variant discovery and genotyping. Its powerful processing engine\nand high-performance computing features make it capable of taking on projects of any size.",
+          "homepage": "https://gatk.broadinstitute.org/hc/en-us",
+          "documentation": "https://gatk.broadinstitute.org/hc/en-us/categories/360002369672s",
+          "doi": "10.1158/1538-7445.AM2017-3590",
+          "licence": [
+            "Apache-2.0"
+          ]
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "intervals",
+          "type": "file",
+          "description": "Interval file"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "interval_list",
+          "type": "file",
+          "description": "Interval list files",
+          "pattern": "*.interval_list"
+        }
+      ],
+      "meta_authors": [
+        "@praveenraj2018"
+      ],
+      "meta_maintainers": [
+        "@praveenraj2018"
+      ]
     },
     {
       "name": "GATK4_BASERECALIBRATOR",
       "docstring": "",
       "file": "modules/nf-core/gatk4/baserecalibrator/main.nf",
       "line": 1,
+      "end_line": 64,
       "inputs": [
         {
           "name": "val(meta), path(input), path(input_index), path(intervals)",
@@ -3043,13 +4641,135 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/gatk4/baserecalibrator/main.nf#L1-L64"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/gatk4/baserecalibrator/main.nf#L1-L64",
+      "nfcore_module_url": "https://nf-co.re/modules/gatk4_baserecalibrator/",
+      "meta_description": "Generate recalibration table for Base Quality Score Recalibration (BQSR)",
+      "meta_keywords": [
+        "base quality score recalibration",
+        "table",
+        "bqsr",
+        "gatk4",
+        "sort"
+      ],
+      "meta_tools": [
+        {
+          "name": "gatk4",
+          "description": "Developed in the Data Sciences Platform at the Broad Institute, the toolkit offers a wide variety of tools\nwith a primary focus on variant discovery and genotyping. Its powerful processing engine\nand high-performance computing features make it capable of taking on projects of any size.",
+          "homepage": "https://gatk.broadinstitute.org/hc/en-us",
+          "documentation": "https://gatk.broadinstitute.org/hc/en-us/categories/360002369672s",
+          "doi": "10.1158/1538-7445.AM2017-3590",
+          "licence": [
+            "Apache-2.0"
+          ]
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "input",
+          "type": "file",
+          "description": "BAM/CRAM file from alignment",
+          "pattern": "*.{bam,cram}"
+        },
+        {
+          "name": "input_index",
+          "type": "file",
+          "description": "BAI/CRAI file from alignment",
+          "pattern": "*.{bai,crai}"
+        },
+        {
+          "name": "intervals",
+          "type": "file",
+          "description": "Bed file with the genomic regions included in the library (optional)"
+        },
+        {
+          "name": "meta2",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'genome']"
+        },
+        {
+          "name": "fasta",
+          "type": "file",
+          "description": "The reference fasta file",
+          "pattern": "*.fasta"
+        },
+        {
+          "name": "meta3",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'genome']"
+        },
+        {
+          "name": "fai",
+          "type": "file",
+          "description": "Index of reference fasta file",
+          "pattern": "*.fasta.fai"
+        },
+        {
+          "name": "meta4",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'genome']"
+        },
+        {
+          "name": "dict",
+          "type": "file",
+          "description": "GATK sequence dictionary",
+          "pattern": "*.dict"
+        },
+        {
+          "name": "meta5",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'genome']"
+        },
+        {
+          "name": "known_sites",
+          "type": "file",
+          "description": "VCF files with known sites for indels / snps",
+          "pattern": "*.vcf.gz",
+          "ontologies": [
+            "http://edamontology.org/format_3989"
+          ]
+        },
+        {
+          "name": "meta6",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'genome']"
+        },
+        {
+          "name": "known_sites_tbi",
+          "type": "file",
+          "description": "Tabix index of the known_sites",
+          "pattern": "*.vcf.gz.tbi"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "table",
+          "type": "file",
+          "description": "Recalibration table from BaseRecalibrator",
+          "pattern": "*.{table}"
+        }
+      ],
+      "meta_authors": [
+        "@yocra3",
+        "@FriederikeHanssen",
+        "@maxulysse"
+      ],
+      "meta_maintainers": [
+        "@yocra3",
+        "@FriederikeHanssen",
+        "@maxulysse"
+      ]
     },
     {
       "name": "GATK4_APPLYBQSR",
       "docstring": "",
       "file": "modules/nf-core/gatk4/applybqsr/main.nf",
       "line": 1,
+      "end_line": 72,
       "inputs": [
         {
           "name": "val(meta), path(input), path(input_index), path(bqsr_table), path(intervals)",
@@ -3067,13 +4787,92 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/gatk4/applybqsr/main.nf#L1-L72"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/gatk4/applybqsr/main.nf#L1-L72",
+      "nfcore_module_url": "https://nf-co.re/modules/gatk4_applybqsr/",
+      "meta_description": "Apply base quality score recalibration (BQSR) to a bam file",
+      "meta_keywords": [
+        "bam",
+        "base quality score recalibration",
+        "bqsr",
+        "cram",
+        "gatk4"
+      ],
+      "meta_tools": [
+        {
+          "name": "gatk4",
+          "description": "Developed in the Data Sciences Platform at the Broad Institute, the toolkit offers a wide variety of tools\nwith a primary focus on variant discovery and genotyping. Its powerful processing engine\nand high-performance computing features make it capable of taking on projects of any size.",
+          "homepage": "https://gatk.broadinstitute.org/hc/en-us",
+          "documentation": "https://gatk.broadinstitute.org/hc/en-us/categories/360002369672s",
+          "doi": "10.1158/1538-7445.AM2017-3590",
+          "licence": [
+            "Apache-2.0"
+          ]
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "input",
+          "type": "file",
+          "description": "BAM/CRAM file from alignment",
+          "pattern": "*.{bam,cram}"
+        },
+        {
+          "name": "input_index",
+          "type": "file",
+          "description": "BAI/CRAI file from alignment",
+          "pattern": "*.{bai,crai}"
+        },
+        {
+          "name": "bqsr_table",
+          "type": "file",
+          "description": "Recalibration table from gatk4_baserecalibrator"
+        },
+        {
+          "name": "intervals",
+          "type": "file",
+          "description": "Bed file with the genomic regions included in the library (optional)"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "bam",
+          "type": "file",
+          "description": "Recalibrated BAM file",
+          "pattern": "${prefix}.bam"
+        },
+        {
+          "name": "bai",
+          "type": "file",
+          "description": "Recalibrated BAM index file",
+          "pattern": "${prefix}*bai"
+        },
+        {
+          "name": "cram",
+          "type": "file",
+          "description": "Recalibrated CRAM file",
+          "pattern": "${prefix}.cram"
+        }
+      ],
+      "meta_authors": [
+        "@yocra3",
+        "@FriederikeHanssen"
+      ],
+      "meta_maintainers": [
+        "@yocra3",
+        "@FriederikeHanssen"
+      ]
     },
     {
       "name": "GATK4_BEDTOINTERVALLIST",
       "docstring": "",
       "file": "modules/nf-core/gatk4/bedtointervallist/main.nf",
       "line": 1,
+      "end_line": 57,
       "inputs": [
         {
           "name": "val(meta), path(bed)",
@@ -3103,13 +4902,74 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/gatk4/bedtointervallist/main.nf#L1-L57"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/gatk4/bedtointervallist/main.nf#L1-L57",
+      "nfcore_module_url": "https://nf-co.re/modules/gatk4_bedtointervallist/",
+      "meta_description": "Creates an interval list from a bed file and a reference dict",
+      "meta_keywords": [
+        "bed",
+        "bedtointervallist",
+        "gatk4",
+        "interval list"
+      ],
+      "meta_tools": [
+        {
+          "name": "gatk4",
+          "description": "Developed in the Data Sciences Platform at the Broad Institute, the toolkit offers a wide variety of tools\nwith a primary focus on variant discovery and genotyping. Its powerful processing engine\nand high-performance computing features make it capable of taking on projects of any size.",
+          "homepage": "https://gatk.broadinstitute.org/hc/en-us",
+          "documentation": "https://gatk.broadinstitute.org/hc/en-us/categories/360002369672s",
+          "doi": "10.1158/1538-7445.AM2017-3590",
+          "licence": [
+            "Apache-2.0"
+          ]
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test']"
+        },
+        {
+          "name": "bed",
+          "type": "file",
+          "description": "Input bed file",
+          "pattern": "*.bed"
+        },
+        {
+          "name": "meta2",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'genome' ]"
+        },
+        {
+          "name": "dict",
+          "type": "file",
+          "description": "Sequence dictionary",
+          "pattern": "*.dict"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "interval_list",
+          "type": "file",
+          "description": "gatk interval list file",
+          "pattern": "*.interval_list"
+        }
+      ],
+      "meta_authors": [
+        "@kevinmenden",
+        "@ramprasadn"
+      ],
+      "meta_maintainers": [
+        "@kevinmenden",
+        "@ramprasadn"
+      ]
     },
     {
       "name": "GATK4_MERGEVCFS",
       "docstring": "",
       "file": "modules/nf-core/gatk4/mergevcfs/main.nf",
       "line": 1,
+      "end_line": 61,
       "inputs": [
         {
           "name": "val(meta), path(vcf)",
@@ -3145,13 +5005,80 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/gatk4/mergevcfs/main.nf#L1-L61"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/gatk4/mergevcfs/main.nf#L1-L61",
+      "nfcore_module_url": "https://nf-co.re/modules/gatk4_mergevcfs/",
+      "meta_description": "Merges several vcf files",
+      "meta_keywords": [
+        "gatk4",
+        "merge",
+        "vcf"
+      ],
+      "meta_tools": [
+        {
+          "name": "gatk4",
+          "description": "Developed in the Data Sciences Platform at the Broad Institute, the toolkit offers a wide variety of tools\nwith a primary focus on variant discovery and genotyping. Its powerful processing engine\nand high-performance computing features make it capable of taking on projects of any size.",
+          "homepage": "https://gatk.broadinstitute.org/hc/en-us",
+          "documentation": "https://gatk.broadinstitute.org/hc/en-us/categories/360002369672s",
+          "doi": "10.1158/1538-7445.AM2017-3590",
+          "licence": [
+            "Apache-2.0"
+          ]
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test']"
+        },
+        {
+          "name": "vcf",
+          "type": "list",
+          "description": "Two or more VCF files",
+          "pattern": "*.{vcf,vcf.gz}"
+        },
+        {
+          "name": "meta2",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'genome']"
+        },
+        {
+          "name": "dict",
+          "type": "file",
+          "description": "Optional Sequence Dictionary as input",
+          "pattern": "*.dict"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "vcf",
+          "type": "file",
+          "description": "merged vcf file",
+          "pattern": "*.vcf.gz",
+          "ontologies": [
+            "http://edamontology.org/format_3989"
+          ]
+        },
+        {
+          "name": "tbi",
+          "type": "file",
+          "description": "index files for the merged vcf files",
+          "pattern": "*.tbi"
+        }
+      ],
+      "meta_authors": [
+        "@kevinmenden"
+      ],
+      "meta_maintainers": [
+        "@kevinmenden"
+      ]
     },
     {
       "name": "UMITOOLS_EXTRACT",
       "docstring": "",
       "file": "modules/nf-core/umitools/extract/main.nf",
       "line": 1,
+      "end_line": 74,
       "inputs": [
         {
           "name": "val(meta), path(reads)",
@@ -3181,13 +5108,63 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/umitools/extract/main.nf#L1-L74"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/umitools/extract/main.nf#L1-L74",
+      "nfcore_module_url": "https://nf-co.re/modules/umitools_extract/",
+      "meta_description": "Extracts UMI barcode from a read and add it to the read name, leaving any sample barcode in place",
+      "meta_keywords": [
+        "UMI",
+        "barcode",
+        "extract",
+        "umitools"
+      ],
+      "meta_tools": [
+        {
+          "name": "umi_tools",
+          "description": "UMI-tools contains tools for dealing with Unique Molecular Identifiers (UMIs)/Random Molecular Tags (RMTs) and single cell RNA-Seq cell barcodes",
+          "documentation": "https://umi-tools.readthedocs.io/en/latest/"
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "reads",
+          "type": "list",
+          "description": "List of input FASTQ files whose UMIs will be extracted."
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "reads",
+          "type": "file",
+          "description": "Extracted FASTQ files. | For single-end reads, pattern is \\${prefix}.umi_extract.fastq.gz. | For paired-end reads, pattern is \\${prefix}.umi_extract_{1,2}.fastq.gz.",
+          "pattern": "*.{fastq.gz}"
+        },
+        {
+          "name": "log",
+          "type": "file",
+          "description": "Logfile for umi_tools",
+          "pattern": "*.{log}"
+        }
+      ],
+      "meta_authors": [
+        "@drpatelh",
+        "@grst"
+      ],
+      "meta_maintainers": [
+        "@drpatelh",
+        "@grst"
+      ]
     },
     {
       "name": "SAMTOOLS_SORT",
       "docstring": "",
       "file": "modules/nf-core/samtools/sort/main.nf",
       "line": 1,
+      "end_line": 78,
       "inputs": [
         {
           "name": "val(meta), path(bam)",
@@ -3211,13 +5188,107 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/samtools/sort/main.nf#L1-L78"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/samtools/sort/main.nf#L1-L78",
+      "nfcore_module_url": "https://nf-co.re/modules/samtools_sort/",
+      "meta_description": "Sort SAM/BAM/CRAM file",
+      "meta_keywords": [
+        "sort",
+        "bam",
+        "sam",
+        "cram"
+      ],
+      "meta_tools": [
+        {
+          "name": "samtools",
+          "description": "SAMtools is a set of utilities for interacting with and post-processing\nshort DNA sequence read alignments in the SAM, BAM and CRAM formats, written by Heng Li.\nThese files are generated as output by short read aligners like BWA.",
+          "homepage": "http://www.htslib.org/",
+          "documentation": "http://www.htslib.org/doc/samtools.html",
+          "doi": "10.1093/bioinformatics/btp352",
+          "licence": [
+            "MIT"
+          ],
+          "identifier": "biotools:samtools"
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "bam",
+          "type": "file",
+          "description": "BAM/CRAM/SAM file(s)",
+          "pattern": "*.{bam,cram,sam}"
+        },
+        {
+          "name": "meta2",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'genome' ]"
+        },
+        {
+          "name": "fasta",
+          "type": "file",
+          "description": "Reference genome FASTA file",
+          "pattern": "*.{fa,fasta,fna}"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "bam",
+          "type": "file",
+          "description": "Sorted BAM file",
+          "pattern": "*.{bam}"
+        },
+        {
+          "name": "cram",
+          "type": "file",
+          "description": "Sorted CRAM file",
+          "pattern": "*.{cram}"
+        },
+        {
+          "name": "sam",
+          "type": "file",
+          "description": "Sorted SAM file",
+          "pattern": "*.{sam}"
+        },
+        {
+          "name": "crai",
+          "type": "file",
+          "description": "CRAM index file (optional)",
+          "pattern": "*.crai"
+        },
+        {
+          "name": "csi",
+          "type": "file",
+          "description": "BAM index file (optional)",
+          "pattern": "*.csi"
+        },
+        {
+          "name": "bai",
+          "type": "file",
+          "description": "BAM index file (optional)",
+          "pattern": "*.bai"
+        }
+      ],
+      "meta_authors": [
+        "@drpatelh",
+        "@ewels",
+        "@matthdsm"
+      ],
+      "meta_maintainers": [
+        "@drpatelh",
+        "@ewels",
+        "@matthdsm"
+      ]
     },
     {
       "name": "SAMTOOLS_MERGE",
       "docstring": "",
       "file": "modules/nf-core/samtools/merge/main.nf",
       "line": 1,
+      "end_line": 52,
       "inputs": [
         {
           "name": "val(meta), path(input_files, stageAs: \"?/*\")",
@@ -3253,13 +5324,119 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/samtools/merge/main.nf#L1-L52"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/samtools/merge/main.nf#L1-L52",
+      "nfcore_module_url": "https://nf-co.re/modules/samtools_merge/",
+      "meta_description": "Merge BAM or CRAM file",
+      "meta_keywords": [
+        "merge",
+        "bam",
+        "sam",
+        "cram"
+      ],
+      "meta_tools": [
+        {
+          "name": "samtools",
+          "description": "SAMtools is a set of utilities for interacting with and post-processing\nshort DNA sequence read alignments in the SAM, BAM and CRAM formats, written by Heng Li.\nThese files are generated as output by short read aligners like BWA.",
+          "homepage": "http://www.htslib.org/",
+          "documentation": "http://www.htslib.org/doc/samtools.html",
+          "doi": "10.1093/bioinformatics/btp352",
+          "licence": [
+            "MIT"
+          ],
+          "identifier": "biotools:samtools"
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "input_files",
+          "type": "file",
+          "description": "BAM/CRAM file",
+          "pattern": "*.{bam,cram,sam}"
+        },
+        {
+          "name": "meta2",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'genome' ]"
+        },
+        {
+          "name": "fasta",
+          "type": "file",
+          "description": "Reference file the CRAM was created with (optional)",
+          "pattern": "*.{fasta,fa}"
+        },
+        {
+          "name": "meta3",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'genome' ]"
+        },
+        {
+          "name": "fai",
+          "type": "file",
+          "description": "Index of the reference file the CRAM was created with (optional)",
+          "pattern": "*.fai"
+        },
+        {
+          "name": "meta4",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'genome' ]"
+        },
+        {
+          "name": "gzi",
+          "type": "file",
+          "description": "Index of the compressed reference file the CRAM was created with (optional)",
+          "pattern": "*.gzi"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "bam",
+          "type": "file",
+          "description": "BAM file",
+          "pattern": "*.{bam}"
+        },
+        {
+          "name": "cram",
+          "type": "file",
+          "description": "CRAM file",
+          "pattern": "*.{cram}"
+        },
+        {
+          "name": "csi",
+          "type": "file",
+          "description": "BAM index file (optional)",
+          "pattern": "*.csi"
+        },
+        {
+          "name": "crai",
+          "type": "file",
+          "description": "CRAM index file (optional)",
+          "pattern": "*.crai"
+        }
+      ],
+      "meta_authors": [
+        "@yuukiiwa",
+        "@maxulysse",
+        "@FriederikeHanssen",
+        "@ramprasadn"
+      ],
+      "meta_maintainers": [
+        "@yuukiiwa",
+        "@maxulysse",
+        "@FriederikeHanssen",
+        "@ramprasadn"
+      ]
     },
     {
       "name": "SAMTOOLS_IDXSTATS",
       "docstring": "",
       "file": "modules/nf-core/samtools/idxstats/main.nf",
       "line": 1,
+      "end_line": 48,
       "inputs": [
         {
           "name": "val(meta), path(bam), path(bai)",
@@ -3283,13 +5460,71 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/samtools/idxstats/main.nf#L1-L48"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/samtools/idxstats/main.nf#L1-L48",
+      "nfcore_module_url": "https://nf-co.re/modules/samtools_idxstats/",
+      "meta_description": "Reports alignment summary statistics for a BAM/CRAM/SAM file",
+      "meta_keywords": [
+        "stats",
+        "mapping",
+        "counts",
+        "chromosome",
+        "bam",
+        "sam",
+        "cram"
+      ],
+      "meta_tools": [
+        {
+          "name": "samtools",
+          "description": "SAMtools is a set of utilities for interacting with and post-processing\nshort DNA sequence read alignments in the SAM, BAM and CRAM formats, written by Heng Li.\nThese files are generated as output by short read aligners like BWA.",
+          "homepage": "http://www.htslib.org/",
+          "documentation": "http://www.htslib.org/doc/samtools.html",
+          "doi": "10.1093/bioinformatics/btp352",
+          "licence": [
+            "MIT"
+          ],
+          "identifier": "biotools:samtools"
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "bam",
+          "type": "file",
+          "description": "BAM/CRAM/SAM file",
+          "pattern": "*.{bam,cram,sam}"
+        },
+        {
+          "name": "bai",
+          "type": "file",
+          "description": "Index for BAM/CRAM/SAM file",
+          "pattern": "*.{bai,crai,sai}"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "idxstats",
+          "type": "file",
+          "description": "File containing samtools idxstats output",
+          "pattern": "*.{idxstats}"
+        }
+      ],
+      "meta_authors": [
+        "@drpatelh"
+      ],
+      "meta_maintainers": [
+        "@drpatelh"
+      ]
     },
     {
       "name": "SAMTOOLS_FAIDX",
       "docstring": "",
       "file": "modules/nf-core/samtools/faidx/main.nf",
       "line": 1,
+      "end_line": 50,
       "inputs": [
         {
           "name": "val(meta), path(fasta)",
@@ -3313,13 +5548,94 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/samtools/faidx/main.nf#L1-L50"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/samtools/faidx/main.nf#L1-L50",
+      "nfcore_module_url": "https://nf-co.re/modules/samtools_faidx/",
+      "meta_description": "Index FASTA file, and optionally generate a file of chromosome sizes",
+      "meta_keywords": [
+        "index",
+        "fasta",
+        "faidx",
+        "chromosome"
+      ],
+      "meta_tools": [
+        {
+          "name": "samtools",
+          "description": "SAMtools is a set of utilities for interacting with and post-processing\nshort DNA sequence read alignments in the SAM, BAM and CRAM formats, written by Heng Li.\nThese files are generated as output by short read aligners like BWA.",
+          "homepage": "http://www.htslib.org/",
+          "documentation": "http://www.htslib.org/doc/samtools.html",
+          "doi": "10.1093/bioinformatics/btp352",
+          "licence": [
+            "MIT"
+          ],
+          "identifier": "biotools:samtools"
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'test' ]"
+        },
+        {
+          "name": "fasta",
+          "type": "file",
+          "description": "FASTA file",
+          "pattern": "*.{fa,fasta}"
+        },
+        {
+          "name": "meta2",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'test' ]"
+        },
+        {
+          "name": "fai",
+          "type": "file",
+          "description": "FASTA index file",
+          "pattern": "*.{fai}"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "fa",
+          "type": "file",
+          "description": "FASTA file",
+          "pattern": "*.{fa}"
+        },
+        {
+          "name": "sizes",
+          "type": "file",
+          "description": "File containing chromosome lengths",
+          "pattern": "*.{sizes}"
+        },
+        {
+          "name": "fai",
+          "type": "file",
+          "description": "FASTA index file",
+          "pattern": "*.{fai}"
+        },
+        {
+          "name": "gzi",
+          "type": "file",
+          "description": "Optional gzip index file for compressed inputs",
+          "pattern": "*.gzi"
+        }
+      ],
+      "meta_authors": [
+        "@drpatelh",
+        "@ewels",
+        "@phue"
+      ],
+      "meta_maintainers": [
+        "@maxulysse",
+        "@phue"
+      ]
     },
     {
       "name": "SAMTOOLS_INDEX",
       "docstring": "",
       "file": "modules/nf-core/samtools/index/main.nf",
       "line": 1,
+      "end_line": 49,
       "inputs": [
         {
           "name": "val(meta), path(input)",
@@ -3355,13 +5671,77 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/samtools/index/main.nf#L1-L49"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/samtools/index/main.nf#L1-L49",
+      "nfcore_module_url": "https://nf-co.re/modules/samtools_index/",
+      "meta_description": "Index SAM/BAM/CRAM file",
+      "meta_keywords": [
+        "index",
+        "bam",
+        "sam",
+        "cram"
+      ],
+      "meta_tools": [
+        {
+          "name": "samtools",
+          "description": "SAMtools is a set of utilities for interacting with and post-processing\nshort DNA sequence read alignments in the SAM, BAM and CRAM formats, written by Heng Li.\nThese files are generated as output by short read aligners like BWA.",
+          "homepage": "http://www.htslib.org/",
+          "documentation": "http://www.htslib.org/doc/samtools.html",
+          "doi": "10.1093/bioinformatics/btp352",
+          "licence": [
+            "MIT"
+          ],
+          "identifier": "biotools:samtools"
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "input",
+          "type": "file",
+          "description": "input file"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "bai",
+          "type": "file",
+          "description": "BAM/CRAM/SAM index file",
+          "pattern": "*.{bai,crai,sai}"
+        },
+        {
+          "name": "csi",
+          "type": "file",
+          "description": "CSI index file",
+          "pattern": "*.{csi}"
+        },
+        {
+          "name": "crai",
+          "type": "file",
+          "description": "BAM/CRAM/SAM index file",
+          "pattern": "*.{bai,crai,sai}"
+        }
+      ],
+      "meta_authors": [
+        "@drpatelh",
+        "@ewels",
+        "@maxulysse"
+      ],
+      "meta_maintainers": [
+        "@drpatelh",
+        "@ewels",
+        "@maxulysse"
+      ]
     },
     {
       "name": "SAMTOOLS_FLAGSTAT",
       "docstring": "",
       "file": "modules/nf-core/samtools/flagstat/main.nf",
       "line": 1,
+      "end_line": 57,
       "inputs": [
         {
           "name": "val(meta), path(bam), path(bai)",
@@ -3385,13 +5765,70 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/samtools/flagstat/main.nf#L1-L57"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/samtools/flagstat/main.nf#L1-L57",
+      "nfcore_module_url": "https://nf-co.re/modules/samtools_flagstat/",
+      "meta_description": "Counts the number of alignments in a BAM/CRAM/SAM file for each FLAG type",
+      "meta_keywords": [
+        "stats",
+        "mapping",
+        "counts",
+        "bam",
+        "sam",
+        "cram"
+      ],
+      "meta_tools": [
+        {
+          "name": "samtools",
+          "description": "SAMtools is a set of utilities for interacting with and post-processing\nshort DNA sequence read alignments in the SAM, BAM and CRAM formats, written by Heng Li.\nThese files are generated as output by short read aligners like BWA.",
+          "homepage": "http://www.htslib.org/",
+          "documentation": "http://www.htslib.org/doc/samtools.html",
+          "doi": "10.1093/bioinformatics/btp352",
+          "licence": [
+            "MIT"
+          ],
+          "identifier": "biotools:samtools"
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "bam",
+          "type": "file",
+          "description": "BAM/CRAM/SAM file",
+          "pattern": "*.{bam,cram,sam}"
+        },
+        {
+          "name": "bai",
+          "type": "file",
+          "description": "Index for BAM/CRAM/SAM file",
+          "pattern": "*.{bai,crai,sai}"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "flagstat",
+          "type": "file",
+          "description": "File containing samtools flagstat output",
+          "pattern": "*.{flagstat}"
+        }
+      ],
+      "meta_authors": [
+        "@drpatelh"
+      ],
+      "meta_maintainers": [
+        "@drpatelh"
+      ]
     },
     {
       "name": "SAMTOOLS_STATS",
       "docstring": "",
       "file": "modules/nf-core/samtools/stats/main.nf",
       "line": 1,
+      "end_line": 38,
       "inputs": [
         {
           "name": "val(meta), path(input), path(input_index)",
@@ -3415,13 +5852,84 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/samtools/stats/main.nf#L1-L38"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/samtools/stats/main.nf#L1-L38",
+      "nfcore_module_url": "https://nf-co.re/modules/samtools_stats/",
+      "meta_description": "Produces comprehensive statistics from SAM/BAM/CRAM file",
+      "meta_keywords": [
+        "statistics",
+        "counts",
+        "bam",
+        "sam",
+        "cram"
+      ],
+      "meta_tools": [
+        {
+          "name": "samtools",
+          "description": "SAMtools is a set of utilities for interacting with and post-processing\nshort DNA sequence read alignments in the SAM, BAM and CRAM formats, written by Heng Li.\nThese files are generated as output by short read aligners like BWA.",
+          "homepage": "http://www.htslib.org/",
+          "documentation": "http://www.htslib.org/doc/samtools.html",
+          "doi": "10.1093/bioinformatics/btp352",
+          "licence": [
+            "MIT"
+          ],
+          "identifier": "biotools:samtools"
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "input",
+          "type": "file",
+          "description": "BAM/CRAM file from alignment",
+          "pattern": "*.{bam,cram}"
+        },
+        {
+          "name": "input_index",
+          "type": "file",
+          "description": "BAI/CRAI file from alignment",
+          "pattern": "*.{bai,crai}"
+        },
+        {
+          "name": "meta2",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'genome' ]"
+        },
+        {
+          "name": "fasta",
+          "type": "file",
+          "description": "Reference file the CRAM was created with (optional)",
+          "pattern": "*.{fasta,fa}"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "stats",
+          "type": "file",
+          "description": "File containing samtools stats output",
+          "pattern": "*.{stats}"
+        }
+      ],
+      "meta_authors": [
+        "@drpatelh",
+        "@FriederikeHanssen",
+        "@ramprasadn"
+      ],
+      "meta_maintainers": [
+        "@drpatelh",
+        "@FriederikeHanssen",
+        "@ramprasadn"
+      ]
     },
     {
       "name": "SAMTOOLS_CONVERT",
       "docstring": "",
       "file": "modules/nf-core/samtools/convert/main.nf",
       "line": 1,
+      "end_line": 60,
       "inputs": [
         {
           "name": "val(meta), path(input), path(index)",
@@ -3475,13 +5983,111 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/samtools/convert/main.nf#L1-L60"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/samtools/convert/main.nf#L1-L60",
+      "nfcore_module_url": "https://nf-co.re/modules/samtools_convert/",
+      "meta_description": "convert and then index CRAM -> BAM or BAM -> CRAM file",
+      "meta_keywords": [
+        "view",
+        "index",
+        "bam",
+        "cram"
+      ],
+      "meta_tools": [
+        {
+          "name": "samtools",
+          "description": "SAMtools is a set of utilities for interacting with and post-processing\nshort DNA sequence read alignments in the SAM, BAM and CRAM formats, written by Heng Li.\nThese files are generated as output by short read aligners like BWA.",
+          "homepage": "http://www.htslib.org/",
+          "documentation": "http://www.htslib.org/doc/samtools.html",
+          "doi": "10.1093/bioinformatics/btp352",
+          "licence": [
+            "MIT"
+          ],
+          "identifier": "biotools:samtools"
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "input",
+          "type": "file",
+          "description": "BAM/CRAM file",
+          "pattern": "*.{bam,cram}"
+        },
+        {
+          "name": "index",
+          "type": "file",
+          "description": "BAM/CRAM index file",
+          "pattern": "*.{bai,crai}"
+        },
+        {
+          "name": "meta2",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "fasta",
+          "type": "file",
+          "description": "Reference file to create the CRAM file",
+          "pattern": "*.{fasta,fa}"
+        },
+        {
+          "name": "meta3",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "fai",
+          "type": "file",
+          "description": "Reference index file to create the CRAM file",
+          "pattern": "*.{fai}"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "bam",
+          "type": "file",
+          "description": "filtered/converted BAM file",
+          "pattern": "*{.bam}"
+        },
+        {
+          "name": "cram",
+          "type": "file",
+          "description": "filtered/converted CRAM file",
+          "pattern": "*{cram}"
+        },
+        {
+          "name": "bai",
+          "type": "file",
+          "description": "filtered/converted BAM index",
+          "pattern": "*{.bai}"
+        },
+        {
+          "name": "crai",
+          "type": "file",
+          "description": "filtered/converted CRAM index",
+          "pattern": "*{.crai}"
+        }
+      ],
+      "meta_authors": [
+        "@FriederikeHanssen",
+        "@maxulysse"
+      ],
+      "meta_maintainers": [
+        "@FriederikeHanssen",
+        "@maxulysse",
+        "@matthdsm"
+      ]
     },
     {
       "name": "BEDTOOLS_SORT",
       "docstring": "",
       "file": "modules/nf-core/bedtools/sort/main.nf",
       "line": 1,
+      "end_line": 54,
       "inputs": [
         {
           "name": "val(meta), path(intervals)",
@@ -3499,13 +6105,68 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/bedtools/sort/main.nf#L1-L54"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/bedtools/sort/main.nf#L1-L54",
+      "nfcore_module_url": "https://nf-co.re/modules/bedtools_sort/",
+      "meta_description": "Sorts a feature file by chromosome and other criteria.",
+      "meta_keywords": [
+        "bed",
+        "sort",
+        "bedtools",
+        "chromosome"
+      ],
+      "meta_tools": [
+        {
+          "name": "bedtools",
+          "description": "A set of tools for genomic analysis tasks, specifically enabling genome arithmetic (merge, count, complement) on various file types.",
+          "documentation": "https://bedtools.readthedocs.io/en/latest/content/tools/sort.html",
+          "licence": [
+            "MIT"
+          ],
+          "identifier": "biotools:bedtools"
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "intervals",
+          "type": "file",
+          "description": "BED/BEDGRAPH",
+          "pattern": "*.{bed|bedGraph}"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "sorted",
+          "type": "file",
+          "description": "Sorted output file",
+          "pattern": "*.${extension}"
+        }
+      ],
+      "meta_authors": [
+        "@edmundmiller",
+        "@sruthipsuresh",
+        "@drpatelh",
+        "@chris-cheshire",
+        "@adamrtalbot"
+      ],
+      "meta_maintainers": [
+        "@edmundmiller",
+        "@sruthipsuresh",
+        "@drpatelh",
+        "@chris-cheshire",
+        "@adamrtalbot"
+      ]
     },
     {
       "name": "BEDTOOLS_MERGE",
       "docstring": "",
       "file": "modules/nf-core/bedtools/merge/main.nf",
       "line": 1,
+      "end_line": 47,
       "inputs": [
         {
           "name": "val(meta), path(bed)",
@@ -3529,13 +6190,64 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/bedtools/merge/main.nf#L1-L47"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/bedtools/merge/main.nf#L1-L47",
+      "nfcore_module_url": "https://nf-co.re/modules/bedtools_merge/",
+      "meta_description": "combines overlapping or “book-ended” features in an interval file into a single feature which spans all of the combined features.",
+      "meta_keywords": [
+        "bed",
+        "merge",
+        "bedtools",
+        "overlapped bed"
+      ],
+      "meta_tools": [
+        {
+          "name": "bedtools",
+          "description": "A set of tools for genomic analysis tasks, specifically enabling genome arithmetic (merge, count, complement) on various file types.",
+          "documentation": "https://bedtools.readthedocs.io/en/latest/content/tools/merge.html",
+          "licence": [
+            "MIT"
+          ],
+          "identifier": "biotools:bedtools"
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "bed",
+          "type": "file",
+          "description": "Input BED file",
+          "pattern": "*.{bed}"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "bed",
+          "type": "file",
+          "description": "Overlapped bed file with combined features",
+          "pattern": "*.{bed}"
+        }
+      ],
+      "meta_authors": [
+        "@edmundmiller",
+        "@sruthipsuresh",
+        "@drpatelh"
+      ],
+      "meta_maintainers": [
+        "@edmundmiller",
+        "@sruthipsuresh",
+        "@drpatelh"
+      ]
     },
     {
       "name": "STAR_GENOMEGENERATE",
       "docstring": "",
       "file": "modules/nf-core/star/genomegenerate/main.nf",
       "line": 1,
+      "end_line": 119,
       "inputs": [
         {
           "name": "val(meta), path(fasta)",
@@ -3565,13 +6277,72 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/star/genomegenerate/main.nf#L1-L119"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/star/genomegenerate/main.nf#L1-L119",
+      "nfcore_module_url": "https://nf-co.re/modules/star_genomegenerate/",
+      "meta_description": "Create index for STAR",
+      "meta_keywords": [
+        "index",
+        "fasta",
+        "genome",
+        "reference"
+      ],
+      "meta_tools": [
+        {
+          "name": "star",
+          "description": "STAR is a software package for mapping DNA sequences against\na large reference genome, such as the human genome.",
+          "homepage": "https://github.com/alexdobin/STAR",
+          "doi": "10.1093/bioinformatics/bts635",
+          "licence": [
+            "MIT"
+          ],
+          "identifier": "biotools:star"
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "fasta",
+          "type": "file",
+          "description": "Fasta file of the reference genome"
+        },
+        {
+          "name": "meta2",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'test' ]"
+        },
+        {
+          "name": "gtf",
+          "type": "file",
+          "description": "GTF file of the reference genome"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "index",
+          "type": "directory",
+          "description": "Folder containing the star index files",
+          "pattern": "star"
+        }
+      ],
+      "meta_authors": [
+        "@kevinmenden",
+        "@drpatelh"
+      ],
+      "meta_maintainers": [
+        "@kevinmenden",
+        "@drpatelh"
+      ]
     },
     {
       "name": "STAR_ALIGN",
       "docstring": "",
       "file": "modules/nf-core/star/align/main.nf",
       "line": 1,
+      "end_line": 111,
       "inputs": [
         {
           "name": "val(meta), path(reads, stageAs: \"input*/*\")",
@@ -3631,13 +6402,188 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/star/align/main.nf#L1-L111"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/star/align/main.nf#L1-L111",
+      "nfcore_module_url": "https://nf-co.re/modules/star_align/",
+      "meta_description": "Align reads to a reference genome using STAR",
+      "meta_keywords": [
+        "align",
+        "fasta",
+        "genome",
+        "reference"
+      ],
+      "meta_tools": [
+        {
+          "name": "star",
+          "description": "STAR is a software package for mapping DNA sequences against\na large reference genome, such as the human genome.",
+          "homepage": "https://github.com/alexdobin/STAR",
+          "doi": "10.1093/bioinformatics/bts635",
+          "licence": [
+            "MIT"
+          ],
+          "identifier": "biotools:star"
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "reads",
+          "type": "file",
+          "description": "List of input FastQ files of size 1 and 2 for single-end and paired-end data,\nrespectively."
+        },
+        {
+          "name": "meta2",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'test' ]"
+        },
+        {
+          "name": "index",
+          "type": "directory",
+          "description": "STAR genome index",
+          "pattern": "star"
+        },
+        {
+          "name": "meta3",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'test' ]"
+        },
+        {
+          "name": "gtf",
+          "type": "file",
+          "description": "Annotation GTF file",
+          "pattern": "*.{gtf}"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "log_final",
+          "type": "file",
+          "description": "STAR final log file",
+          "pattern": "*Log.final.out"
+        },
+        {
+          "name": "log_out",
+          "type": "file",
+          "description": "STAR lot out file",
+          "pattern": "*Log.out"
+        },
+        {
+          "name": "log_progress",
+          "type": "file",
+          "description": "STAR log progress file",
+          "pattern": "*Log.progress.out"
+        },
+        {
+          "name": "bam",
+          "type": "file",
+          "description": "Output BAM file containing read alignments",
+          "pattern": "*.{bam}"
+        },
+        {
+          "name": "bam_sorted",
+          "type": "file",
+          "description": "Sorted BAM file of read alignments (optional)",
+          "pattern": "*sortedByCoord.out.bam"
+        },
+        {
+          "name": "bam_sorted_aligned",
+          "type": "file",
+          "description": "Sorted BAM file of read alignments (optional)",
+          "pattern": "*.Aligned.sortedByCoord.out.bam"
+        },
+        {
+          "name": "bam_transcript",
+          "type": "file",
+          "description": "Output BAM file of transcriptome alignment (optional)",
+          "pattern": "*toTranscriptome.out.bam"
+        },
+        {
+          "name": "bam_unsorted",
+          "type": "file",
+          "description": "Unsorted BAM file of read alignments (optional)",
+          "pattern": "*Aligned.unsort.out.bam"
+        },
+        {
+          "name": "fastq",
+          "type": "file",
+          "description": "Unmapped FastQ files (optional)",
+          "pattern": "*fastq.gz",
+          "ontologies": [
+            "http://edamontology.org/format_3989"
+          ]
+        },
+        {
+          "name": "tab",
+          "type": "file",
+          "description": "STAR output tab file(s) (optional)",
+          "pattern": "*.tab",
+          "ontologies": [
+            "http://edamontology.org/format_3475"
+          ]
+        },
+        {
+          "name": "spl_junc_tab",
+          "type": "file",
+          "description": "STAR output splice junction tab file",
+          "pattern": "*.SJ.out.tab",
+          "ontologies": [
+            "http://edamontology.org/format_3475"
+          ]
+        },
+        {
+          "name": "read_per_gene_tab",
+          "type": "file",
+          "description": "STAR output read per gene tab file",
+          "pattern": "*.ReadsPerGene.out.tab",
+          "ontologies": [
+            "http://edamontology.org/format_3475"
+          ]
+        },
+        {
+          "name": "junction",
+          "type": "file",
+          "description": "STAR chimeric junction output file (optional)",
+          "pattern": "*.out.junction"
+        },
+        {
+          "name": "sam",
+          "type": "file",
+          "description": "STAR output SAM file(s) (optional)",
+          "pattern": "*.out.sam"
+        },
+        {
+          "name": "wig",
+          "type": "file",
+          "description": "STAR output wiggle format file(s) (optional)",
+          "pattern": "*.wig"
+        },
+        {
+          "name": "bedgraph",
+          "type": "file",
+          "description": "STAR output bedGraph format file(s) (optional)",
+          "pattern": "*.bg"
+        }
+      ],
+      "meta_authors": [
+        "@kevinmenden",
+        "@drpatelh",
+        "@praveenraj2018"
+      ],
+      "meta_maintainers": [
+        "@kevinmenden",
+        "@drpatelh",
+        "@praveenraj2018"
+      ]
     },
     {
       "name": "STAR_INDEXVERSION",
       "docstring": "",
       "file": "modules/nf-core/star/indexversion/main.nf",
       "line": 1,
+      "end_line": 41,
       "inputs": [],
       "outputs": [
         {
@@ -3654,13 +6600,44 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/star/indexversion/main.nf#L1-L41"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/star/indexversion/main.nf#L1-L41",
+      "nfcore_module_url": "https://nf-co.re/modules/star_indexversion/",
+      "meta_description": "Get the minimal allowed index version from STAR",
+      "meta_keywords": [
+        "index",
+        "version",
+        "rna"
+      ],
+      "meta_tools": [
+        {
+          "name": "star",
+          "description": "STAR is a software package for mapping DNA sequences against\na large reference genome, such as the human genome.",
+          "homepage": "https://github.com/alexdobin/STAR",
+          "doi": "10.1093/bioinformatics/bts635",
+          "licence": [
+            "MIT"
+          ],
+          "identifier": "biotools:star"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "index_version"
+        }
+      ],
+      "meta_authors": [
+        "@nvnieuwk"
+      ],
+      "meta_maintainers": [
+        "@nvnieuwk"
+      ]
     },
     {
       "name": "SNPEFF_SNPEFF",
       "docstring": "",
       "file": "modules/nf-core/snpeff/snpeff/main.nf",
       "line": 1,
+      "end_line": 56,
       "inputs": [
         {
           "name": "val(meta), path(vcf)",
@@ -3690,13 +6667,92 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/snpeff/snpeff/main.nf#L1-L56"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/snpeff/snpeff/main.nf#L1-L56",
+      "nfcore_module_url": "https://nf-co.re/modules/snpeff_snpeff/",
+      "meta_description": "Genetic variant annotation and functional effect prediction toolbox",
+      "meta_keywords": [
+        "annotation",
+        "effect prediction",
+        "snpeff",
+        "variant",
+        "vcf"
+      ],
+      "meta_tools": [
+        {
+          "name": "snpeff",
+          "description": "SnpEff is a variant annotation and effect prediction tool.\nIt annotates and predicts the effects of genetic variants on genes and proteins (such as amino acid changes).",
+          "homepage": "https://pcingola.github.io/SnpEff/",
+          "documentation": "https://pcingola.github.io/SnpEff/se_introduction/",
+          "licence": [
+            "MIT"
+          ],
+          "identifier": "biotools:snpeff"
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "vcf",
+          "type": "file",
+          "description": "vcf to annotate"
+        },
+        {
+          "name": "meta2",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "cache",
+          "type": "file",
+          "description": "path to snpEff cache (optional)"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "vcf",
+          "type": "file",
+          "description": "annotated vcf",
+          "pattern": "*.ann.vcf"
+        },
+        {
+          "name": "report",
+          "type": "string",
+          "description": "The process\nThe tool name\nsnpEff report csv file",
+          "pattern": "*.csv",
+          "ontologies": [
+            "http://edamontology.org/format_3752"
+          ]
+        },
+        {
+          "name": "summary_html",
+          "type": "string",
+          "description": "The process\nThe tool name\nsnpEff summary statistics in html file",
+          "pattern": "*.html"
+        },
+        {
+          "name": "genes_txt",
+          "type": "string",
+          "description": "The process\nThe tool name\ntxt (tab separated) file having counts of the number of variants affecting each transcript and gene",
+          "pattern": "*.genes.txt"
+        }
+      ],
+      "meta_authors": [
+        "@maxulysse"
+      ],
+      "meta_maintainers": [
+        "@maxulysse"
+      ]
     },
     {
       "name": "SNPEFF_DOWNLOAD",
       "docstring": "",
       "file": "modules/nf-core/snpeff/download/main.nf",
       "line": 1,
+      "end_line": 44,
       "inputs": [
         {
           "name": "val(meta), val(snpeff_db)",
@@ -3714,13 +6770,60 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/snpeff/download/main.nf#L1-L44"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/snpeff/download/main.nf#L1-L44",
+      "nfcore_module_url": "https://nf-co.re/modules/snpeff_download/",
+      "meta_description": "Genetic variant annotation and functional effect prediction toolbox",
+      "meta_keywords": [
+        "annotation",
+        "effect prediction",
+        "snpeff",
+        "variant",
+        "vcf"
+      ],
+      "meta_tools": [
+        {
+          "name": "snpeff",
+          "description": "SnpEff is a variant annotation and effect prediction tool.\nIt annotates and predicts the effects of genetic variants on genes and proteins (such as amino acid changes).",
+          "homepage": "https://pcingola.github.io/SnpEff/",
+          "documentation": "https://pcingola.github.io/SnpEff/se_introduction/",
+          "licence": [
+            "MIT"
+          ],
+          "identifier": "biotools:snpeff"
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "snpeff_db",
+          "type": "string",
+          "description": "SnpEff database name"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "cache",
+          "type": "file",
+          "description": "snpEff cache"
+        }
+      ],
+      "meta_authors": [
+        "@maxulysse"
+      ],
+      "meta_maintainers": [
+        "@maxulysse"
+      ]
     },
     {
       "name": "ENSEMBLVEP_VEP",
       "docstring": "",
       "file": "modules/nf-core/ensemblvep/vep/main.nf",
       "line": 1,
+      "end_line": 66,
       "inputs": [
         {
           "name": "val(meta), path(vcf), path(custom_extra_files)",
@@ -3768,13 +6871,112 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/ensemblvep/vep/main.nf#L1-L66"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/ensemblvep/vep/main.nf#L1-L66",
+      "nfcore_module_url": "https://nf-co.re/modules/ensemblvep_vep/",
+      "meta_description": "Ensembl Variant Effect Predictor (VEP). The output-file-format is controlled through `task.ext.args`.",
+      "meta_keywords": [
+        "annotation",
+        "vcf",
+        "json",
+        "tab"
+      ],
+      "meta_tools": [
+        {
+          "name": "ensemblvep",
+          "description": "VEP determines the effect of your variants (SNPs, insertions, deletions, CNVs\nor structural variants) on genes, transcripts, and protein sequence, as well as regulatory regions.",
+          "homepage": "https://www.ensembl.org/info/docs/tools/vep/index.html",
+          "documentation": "https://www.ensembl.org/info/docs/tools/vep/script/index.html",
+          "licence": [
+            "Apache-2.0"
+          ]
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "vcf",
+          "type": "file",
+          "description": "vcf to annotate"
+        },
+        {
+          "name": "custom_extra_files",
+          "type": "file",
+          "description": "extra sample-specific files to be used with the `--custom` flag to be configured with ext.args\n(optional)"
+        },
+        {
+          "name": "meta2",
+          "type": "map",
+          "description": "Groovy Map containing fasta reference information\ne.g. [ id:'test' ]"
+        },
+        {
+          "name": "fasta",
+          "type": "file",
+          "description": "reference FASTA file (optional)",
+          "pattern": "*.{fasta,fa}"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "vcf",
+          "type": "file",
+          "description": "annotated vcf (optional)",
+          "pattern": "*.vcf.gz",
+          "ontologies": [
+            "http://edamontology.org/format_3989"
+          ]
+        },
+        {
+          "name": "tbi",
+          "type": "file",
+          "description": "annotated vcf index (optional)",
+          "pattern": "*.vcf.gz.tbi"
+        },
+        {
+          "name": "tab",
+          "type": "file",
+          "description": "tab file with annotated variants (optional)",
+          "pattern": "*.ann.tab.gz",
+          "ontologies": [
+            "http://edamontology.org/format_3989"
+          ]
+        },
+        {
+          "name": "json",
+          "type": "file",
+          "description": "json file with annotated variants (optional)",
+          "pattern": "*.ann.json.gz",
+          "ontologies": [
+            "http://edamontology.org/format_3989"
+          ]
+        },
+        {
+          "name": "report",
+          "type": "string",
+          "description": "The process\nThe tool name\nVEP report file",
+          "pattern": "*.html"
+        }
+      ],
+      "meta_authors": [
+        "@maxulysse",
+        "@matthdsm",
+        "@nvnieuwk"
+      ],
+      "meta_maintainers": [
+        "@maxulysse",
+        "@matthdsm",
+        "@nvnieuwk"
+      ]
     },
     {
       "name": "ENSEMBLVEP_DOWNLOAD",
       "docstring": "",
       "file": "modules/nf-core/ensemblvep/download/main.nf",
       "line": 1,
+      "end_line": 37,
       "inputs": [
         {
           "name": "val(meta), val(assembly), val(species), val(cache_version)",
@@ -3792,13 +6994,68 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/ensemblvep/download/main.nf#L1-L37"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/ensemblvep/download/main.nf#L1-L37",
+      "nfcore_module_url": "https://nf-co.re/modules/ensemblvep_download/",
+      "meta_description": "Ensembl Variant Effect Predictor (VEP). The cache downloading options are controlled through `task.ext.args`.",
+      "meta_keywords": [
+        "annotation",
+        "cache",
+        "download"
+      ],
+      "meta_tools": [
+        {
+          "name": "ensemblvep",
+          "description": "VEP determines the effect of your variants (SNPs, insertions, deletions, CNVs\nor structural variants) on genes, transcripts, and protein sequence, as well as regulatory regions.",
+          "homepage": "https://www.ensembl.org/info/docs/tools/vep/index.html",
+          "documentation": "https://www.ensembl.org/info/docs/tools/vep/script/index.html",
+          "licence": [
+            "Apache-2.0"
+          ]
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "assembly",
+          "type": "string",
+          "description": "Genome assembly"
+        },
+        {
+          "name": "species",
+          "type": "string",
+          "description": "Specie"
+        },
+        {
+          "name": "cache_version",
+          "type": "string",
+          "description": "cache version"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "cache",
+          "type": "file",
+          "description": "cache",
+          "pattern": "*"
+        }
+      ],
+      "meta_authors": [
+        "@maxulysse"
+      ],
+      "meta_maintainers": [
+        "@maxulysse"
+      ]
     },
     {
       "name": "BCFTOOLS_ANNOTATE",
       "docstring": "",
       "file": "modules/nf-core/bcftools/annotate/main.nf",
       "line": 1,
+      "end_line": 87,
       "inputs": [
         {
           "name": "val(meta), path(input), path(index), path(annotations), path(annotations_index)",
@@ -3816,13 +7073,91 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/bcftools/annotate/main.nf#L1-L87"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/bcftools/annotate/main.nf#L1-L87",
+      "nfcore_module_url": "https://nf-co.re/modules/bcftools_annotate/",
+      "meta_description": "Add or remove annotations.",
+      "meta_keywords": [
+        "bcftools",
+        "annotate",
+        "vcf",
+        "remove",
+        "add"
+      ],
+      "meta_tools": [
+        {
+          "name": "annotate",
+          "description": "Add or remove annotations.",
+          "homepage": "http://samtools.github.io/bcftools/bcftools.html",
+          "documentation": "https://samtools.github.io/bcftools/bcftools.html#annotate",
+          "doi": "10.1093/bioinformatics/btp352",
+          "licence": [
+            "MIT"
+          ],
+          "identifier": "biotools:bcftools"
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "input",
+          "type": "file",
+          "description": "Query VCF or BCF file, can be either uncompressed or compressed"
+        },
+        {
+          "name": "index",
+          "type": "file",
+          "description": "Index of the query VCF or BCF file"
+        },
+        {
+          "name": "annotations",
+          "type": "file",
+          "description": "Bgzip-compressed file with annotations"
+        },
+        {
+          "name": "annotations_index",
+          "type": "file",
+          "description": "Index of the annotations file"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "vcf",
+          "type": "file",
+          "description": "Compressed annotated VCF file",
+          "pattern": "*{vcf,vcf.gz,bcf,bcf.gz}"
+        },
+        {
+          "name": "tbi",
+          "type": "file",
+          "description": "Alternative VCF file index",
+          "pattern": "*.tbi"
+        },
+        {
+          "name": "csi",
+          "type": "file",
+          "description": "Default VCF file index",
+          "pattern": "*.csi"
+        }
+      ],
+      "meta_authors": [
+        "@projectoriented",
+        "@ramprasadn"
+      ],
+      "meta_maintainers": [
+        "@projectoriented",
+        "@ramprasadn"
+      ]
     },
     {
       "name": "PICARD_MARKDUPLICATES",
       "docstring": "",
       "file": "modules/nf-core/picard/markduplicates/main.nf",
       "line": 1,
+      "end_line": 68,
       "inputs": [
         {
           "name": "val(meta), path(reads)",
@@ -3876,13 +7211,107 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/picard/markduplicates/main.nf#L1-L68"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/picard/markduplicates/main.nf#L1-L68",
+      "nfcore_module_url": "https://nf-co.re/modules/picard_markduplicates/",
+      "meta_description": "Locate and tag duplicate reads in a BAM file",
+      "meta_keywords": [
+        "markduplicates",
+        "pcr",
+        "duplicates",
+        "bam",
+        "sam",
+        "cram"
+      ],
+      "meta_tools": [
+        {
+          "name": "picard",
+          "description": "A set of command line tools (in Java) for manipulating high-throughput sequencing (HTS)\ndata and formats such as SAM/BAM/CRAM and VCF.",
+          "homepage": "https://broadinstitute.github.io/picard/",
+          "documentation": "https://broadinstitute.github.io/picard/",
+          "licence": [
+            "MIT"
+          ],
+          "identifier": "biotools:picard_tools"
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "reads",
+          "type": "file",
+          "description": "Sequence reads file, can be SAM/BAM/CRAM format",
+          "pattern": "*.{bam,cram,sam}"
+        },
+        {
+          "name": "meta2",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'genome' ]"
+        },
+        {
+          "name": "fasta",
+          "type": "file",
+          "description": "Reference genome fasta file, required for CRAM input",
+          "pattern": "*.{fasta,fa}"
+        },
+        {
+          "name": "meta3",
+          "type": "map",
+          "description": "Groovy Map containing reference information\ne.g. [ id:'genome' ]"
+        },
+        {
+          "name": "fai",
+          "type": "file",
+          "description": "Reference genome fasta index",
+          "pattern": "*.{fai}"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "bam",
+          "type": "file",
+          "description": "BAM file with duplicate reads marked/removed",
+          "pattern": "*.{bam}"
+        },
+        {
+          "name": "bai",
+          "type": "file",
+          "description": "An optional BAM index file. If desired, --CREATE_INDEX must be passed as a flag",
+          "pattern": "*.{bai}"
+        },
+        {
+          "name": "cram",
+          "type": "file",
+          "description": "Output CRAM file",
+          "pattern": "*.{cram}"
+        },
+        {
+          "name": "metrics",
+          "type": "file",
+          "description": "Duplicate metrics file generated by picard",
+          "pattern": "*.{metrics.txt}"
+        }
+      ],
+      "meta_authors": [
+        "@drpatelh",
+        "@projectoriented",
+        "@ramprasadn"
+      ],
+      "meta_maintainers": [
+        "@drpatelh",
+        "@projectoriented",
+        "@ramprasadn"
+      ]
     },
     {
       "name": "TABIX_TABIX",
       "docstring": "",
       "file": "modules/nf-core/tabix/tabix/main.nf",
       "line": 1,
+      "end_line": 35,
       "inputs": [
         {
           "name": "val(meta), path(tab)",
@@ -3900,13 +7329,65 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/tabix/tabix/main.nf#L1-L35"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/tabix/tabix/main.nf#L1-L35",
+      "nfcore_module_url": "https://nf-co.re/modules/tabix_tabix/",
+      "meta_description": "create tabix index from a sorted bgzip tab-delimited genome file",
+      "meta_keywords": [
+        "index",
+        "tabix",
+        "vcf"
+      ],
+      "meta_tools": [
+        {
+          "name": "tabix",
+          "description": "Generic indexer for TAB-delimited genome position files.",
+          "homepage": "https://www.htslib.org/doc/tabix.html",
+          "documentation": "https://www.htslib.org/doc/tabix.1.html",
+          "doi": "10.1093/bioinformatics/btq671",
+          "licence": [
+            "MIT"
+          ],
+          "identifier": "biotools:tabix"
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "tab",
+          "type": "file",
+          "description": "TAB-delimited genome position file compressed with bgzip",
+          "pattern": "*.{bed.gz,gff.gz,sam.gz,vcf.gz}"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "index",
+          "type": "file",
+          "description": "Tabix index file (either tbi or csi)",
+          "pattern": "*.{tbi,csi}"
+        }
+      ],
+      "meta_authors": [
+        "@joseespinosa",
+        "@drpatelh",
+        "@maxulysse"
+      ],
+      "meta_maintainers": [
+        "@joseespinosa",
+        "@drpatelh",
+        "@maxulysse"
+      ]
     },
     {
       "name": "TABIX_BGZIPTABIX",
       "docstring": "",
       "file": "modules/nf-core/tabix/bgziptabix/main.nf",
       "line": 1,
+      "end_line": 49,
       "inputs": [
         {
           "name": "val(meta), path(input)",
@@ -3924,13 +7405,67 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/tabix/bgziptabix/main.nf#L1-L49"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/tabix/bgziptabix/main.nf#L1-L49",
+      "nfcore_module_url": "https://nf-co.re/modules/tabix_bgziptabix/",
+      "meta_description": "bgzip a sorted tab-delimited genome file and then create tabix index",
+      "meta_keywords": [
+        "bgzip",
+        "compress",
+        "index",
+        "tabix",
+        "vcf"
+      ],
+      "meta_tools": [
+        {
+          "name": "tabix",
+          "description": "Generic indexer for TAB-delimited genome position files.",
+          "homepage": "https://www.htslib.org/doc/tabix.html",
+          "documentation": "https://www.htslib.org/doc/tabix.1.html",
+          "doi": "10.1093/bioinformatics/btq671",
+          "licence": [
+            "MIT"
+          ],
+          "identifier": "biotools:tabix"
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "input",
+          "type": "file",
+          "description": "Sorted tab-delimited genome file"
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "gz_index",
+          "type": "file",
+          "description": "bgzipped tab-delimited genome file\nTabix index file (either tbi or csi)",
+          "pattern": "*.gz, *.{tbi,csi}",
+          "ontologies": [
+            "http://edamontology.org/format_3989"
+          ]
+        }
+      ],
+      "meta_authors": [
+        "@maxulysse",
+        "@DLBPointon"
+      ],
+      "meta_maintainers": [
+        "@maxulysse",
+        "@DLBPointon"
+      ]
     },
     {
       "name": "CAT_FASTQ",
       "docstring": "",
       "file": "modules/nf-core/cat/fastq/main.nf",
       "line": 1,
+      "end_line": 68,
       "inputs": [
         {
           "name": "val(meta), path(reads, stageAs: \"input*/*\")",
@@ -3948,13 +7483,59 @@
         }
       ],
       "directives": {},
-      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/cat/fastq/main.nf#L1-L68"
+      "source_url": "https://github.com/nf-core/rnavar/blob/4d3227188ad305f91dd9f42e3d90d8d9eacbb1b2/modules/nf-core/cat/fastq/main.nf#L1-L68",
+      "nfcore_module_url": "https://nf-co.re/modules/cat_fastq/",
+      "meta_description": "Concatenates fastq files",
+      "meta_keywords": [
+        "cat",
+        "fastq",
+        "concatenate"
+      ],
+      "meta_tools": [
+        {
+          "name": "cat",
+          "description": "The cat utility reads files sequentially, writing them to the standard output.",
+          "documentation": "https://www.gnu.org/software/coreutils/manual/html_node/cat-invocation.html",
+          "licence": [
+            "GPL-3.0-or-later"
+          ]
+        }
+      ],
+      "meta_inputs": [
+        {
+          "name": "meta",
+          "type": "map",
+          "description": "Groovy Map containing sample information\ne.g. [ id:'test', single_end:false ]"
+        },
+        {
+          "name": "reads",
+          "type": "file",
+          "description": "List of input FastQ files to be concatenated."
+        }
+      ],
+      "meta_outputs": [
+        {
+          "name": "reads",
+          "type": "file",
+          "description": "Merged fastq file",
+          "pattern": "*.{merged.fastq.gz}"
+        }
+      ],
+      "meta_authors": [
+        "@joseespinosa",
+        "@drpatelh"
+      ],
+      "meta_maintainers": [
+        "@joseespinosa",
+        "@drpatelh"
+      ]
     },
     {
       "name": "REMOVE_UNKNOWN_REGIONS",
       "docstring": "",
       "file": "modules/local/remove_unknown_regions/main.nf",
       "line": 1,
+      "end_line": 32,
       "inputs": [
         {
           "name": "val(meta), path(bed)",
@@ -3985,6 +7566,7 @@
       "docstring": "Convert GTF annotation file to BED format.\nExtracts genomic features (exons, transcripts, or genes) from a GTF file\nand outputs them in BED format for use with interval-based tools.\nThe output BED file uses 0-based coordinates (BED standard) converted\nfrom the 1-based GTF coordinates.",
       "file": "modules/local/gtf2bed/main.nf",
       "line": 13,
+      "end_line": 53,
       "inputs": [
         {
           "name": "val(meta), path(gtf)",
@@ -4011,6 +7593,7 @@
       "docstring": "",
       "file": "main.nf",
       "line": 327,
+      "end_line": 356,
       "params": [
         {
           "name": "summary_params",
@@ -4027,6 +7610,7 @@
       "docstring": "Validate pipeline input parameters.\nChecks that all required parameters are provided and valid.\nCurrently validates that the specified genome exists in the config.",
       "file": "subworkflows/local/utils_nfcore_rnavar_pipeline/main.nf",
       "line": 251,
+      "end_line": 253,
       "params": [],
       "return_type": "",
       "return_description": "",
@@ -4037,6 +7621,7 @@
       "docstring": "Validate and parse input samplesheet entries.\nEnsures that multiple runs of the same sample have consistent\nsequencing type (all single-end or all paired-end).",
       "file": "subworkflows/local/utils_nfcore_rnavar_pipeline/main.nf",
       "line": 264,
+      "end_line": 274,
       "params": [
         {
           "name": "input",
@@ -4053,6 +7638,7 @@
       "docstring": "Validate samples after grouping by sample ID.\nPerforms consistency checks on grouped sample data:\n- Ensures only one BAM/CRAM file per sample\n- Prevents mixing of FASTQ and BAM/CRAM inputs\n- Validates consistent single-end/paired-end status\n- Properly interleaves paired-end FASTQ files",
       "file": "subworkflows/local/utils_nfcore_rnavar_pipeline/main.nf",
       "line": 288,
+      "end_line": 335,
       "params": [
         {
           "name": "input",
@@ -4069,6 +7655,7 @@
       "docstring": "Check if the specified genome exists in the configuration.\nThrows an error with a helpful message listing available genomes\nif the specified genome key is not found in the config.",
       "file": "subworkflows/local/utils_nfcore_rnavar_pipeline/main.nf",
       "line": 343,
+      "end_line": 348,
       "params": [],
       "return_type": "",
       "return_description": "",
@@ -4079,6 +7666,7 @@
       "docstring": "",
       "file": "subworkflows/local/utils_nfcore_rnavar_pipeline/main.nf",
       "line": 353,
+      "end_line": 365,
       "params": [],
       "return_type": "",
       "return_description": "",
@@ -4089,6 +7677,7 @@
       "docstring": "",
       "file": "subworkflows/local/utils_nfcore_rnavar_pipeline/main.nf",
       "line": 367,
+      "end_line": 377,
       "params": [],
       "return_type": "",
       "return_description": "",
@@ -4099,6 +7688,7 @@
       "docstring": "",
       "file": "subworkflows/local/utils_nfcore_rnavar_pipeline/main.nf",
       "line": 379,
+      "end_line": 416,
       "params": [
         {
           "name": "mqc_methods_yaml",
@@ -4115,6 +7705,7 @@
       "docstring": "",
       "file": "subworkflows/local/annotation_cache_initialisation/main.nf",
       "line": 70,
+      "end_line": 72,
       "params": [
         {
           "name": "cache_url",
@@ -4131,6 +7722,7 @@
       "docstring": "",
       "file": "subworkflows/local/prepare_genome/main.nf",
       "line": 263,
+      "end_line": 296,
       "params": [
         {
           "name": "index_version",
@@ -4152,6 +7744,7 @@
       "docstring": "",
       "file": "subworkflows/local/prepare_genome/main.nf",
       "line": 299,
+      "end_line": 318,
       "params": [
         {
           "name": "version",
@@ -4166,7 +7759,7 @@
   ],
   "generated_by": {
     "nf_docs_version": "0.1.0",
-    "generated_at": "2026-01-23T17:02:57.757279+00:00",
+    "generated_at": "2026-01-23T17:23:12.250099+00:00",
     "nextflow_url": "https://nextflow.io",
     "nf_docs_url": "https://github.com/ewels/nf-docs"
   }

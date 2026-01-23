@@ -11,6 +11,7 @@
       "docstring": "",
       "file": "main.nf",
       "line": 16,
+      "end_line": 18,
       "inputs": [],
       "outputs": [],
       "calls": [],
@@ -24,6 +25,7 @@
       "docstring": "",
       "file": "main.nf",
       "line": 3,
+      "end_line": 14,
       "inputs": [],
       "outputs": [
         {
@@ -40,7 +42,7 @@
   "functions": [],
   "generated_by": {
     "nf_docs_version": "0.1.0",
-    "generated_at": "2026-01-23T17:02:55.962856+00:00",
+    "generated_at": "2026-01-23T17:21:26.598096+00:00",
     "nextflow_url": "https://nextflow.io",
     "nf_docs_url": "https://github.com/ewels/nf-docs"
   }

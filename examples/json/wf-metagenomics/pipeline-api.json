@@ -497,6 +497,7 @@
       "docstring": "",
       "file": "main.nf",
       "line": 27,
+      "end_line": 243,
       "inputs": [],
       "outputs": [],
       "calls": [],
@@ -508,6 +509,7 @@
       "docstring": "",
       "file": "subworkflows/minimap_pipeline.nf",
       "line": 228,
+      "end_line": 331,
       "inputs": [
         {
           "name": "samples",
@@ -576,6 +578,7 @@
       "docstring": "",
       "file": "subworkflows/kraken_pipeline.nf",
       "line": 157,
+      "end_line": 196,
       "inputs": [
         {
           "name": "samples",
@@ -629,6 +632,7 @@
       "docstring": "",
       "file": "subworkflows/common_pipeline.nf",
       "line": 65,
+      "end_line": 102,
       "inputs": [
         {
           "name": "samples",
@@ -662,6 +666,7 @@
       "docstring": "",
       "file": "modules/local/amr.nf",
       "line": 44,
+      "end_line": 56,
       "inputs": [
         {
           "name": "input",
@@ -702,6 +707,7 @@
       "docstring": "",
       "file": "subworkflows/minimap_pipeline.nf",
       "line": 11,
+      "end_line": 86,
       "inputs": [
         {
           "name": "val(meta), path(concat_seqs), path(stats)",
@@ -726,6 +732,7 @@
       "docstring": "",
       "file": "subworkflows/minimap_pipeline.nf",
       "line": 89,
+      "end_line": 138,
       "inputs": [
         {
           "name": "val(meta), path(assignments)",
@@ -750,6 +757,7 @@
       "docstring": "",
       "file": "subworkflows/minimap_pipeline.nf",
       "line": 141,
+      "end_line": 175,
       "inputs": [
         {
           "name": "val(meta), path(\"alignment.bam\"), path(\"alignment.bai\"), path(\"bamstats\"), val(n_unmapped)",
@@ -774,6 +782,7 @@
       "docstring": "",
       "file": "subworkflows/minimap_pipeline.nf",
       "line": 181,
+      "end_line": 224,
       "inputs": [
         {
           "name": "val(meta), path(\"input.bam\"), path(\"input.bam.bai\"), path(\"bamstats\")",
@@ -798,6 +807,7 @@
       "docstring": "",
       "file": "subworkflows/kraken_pipeline.nf",
       "line": 8,
+      "end_line": 69,
       "inputs": [
         {
           "name": "val(meta), path(\"reads.fq.gz\"), path(fastq_stats)",
@@ -822,6 +832,7 @@
       "docstring": "",
       "file": "subworkflows/kraken_pipeline.nf",
       "line": 72,
+      "end_line": 126,
       "inputs": [
         {
           "name": "val(meta), path(\"kraken2.report\"), path(\"kraken2.assignments.tsv\")",
@@ -852,6 +863,7 @@
       "docstring": "",
       "file": "subworkflows/kraken_pipeline.nf",
       "line": 129,
+      "end_line": 154,
       "inputs": [
         {
           "name": "val(meta)",
@@ -876,6 +888,7 @@
       "docstring": "",
       "file": "subworkflows/common_pipeline.nf",
       "line": 1,
+      "end_line": 62,
       "inputs": [
         {
           "name": "val(meta), path(concat_seqs), path(fastcat_stats)",
@@ -912,6 +925,7 @@
       "docstring": "",
       "file": "lib/ingress.nf",
       "line": 587,
+      "end_line": 648,
       "inputs": [
         {
           "name": "val(meta), path(input_src, stageAs: \"input_src\")",
@@ -936,6 +950,7 @@
       "docstring": "",
       "file": "lib/ingress.nf",
       "line": 650,
+      "end_line": 669,
       "inputs": [
         {
           "name": "val(meta), path(\"input_dir/reads*.bam\")",
@@ -960,6 +975,7 @@
       "docstring": "",
       "file": "lib/ingress.nf",
       "line": 672,
+      "end_line": 692,
       "inputs": [
         {
           "name": "val(meta), path(\"reads.bam\"), path(\"reads.bam.bai\")",
@@ -984,6 +1000,7 @@
       "docstring": "",
       "file": "lib/ingress.nf",
       "line": 698,
+      "end_line": 711,
       "inputs": [
         {
           "name": "val(meta), path(\"input_bams/reads*.bam\")",
@@ -1008,6 +1025,7 @@
       "docstring": "",
       "file": "lib/ingress.nf",
       "line": 715,
+      "end_line": 728,
       "inputs": [
         {
           "name": "val(meta), path(\"input_bams/reads*.bam\")",
@@ -1032,6 +1050,7 @@
       "docstring": "",
       "file": "lib/ingress.nf",
       "line": 731,
+      "end_line": 743,
       "inputs": [
         {
           "name": "val(meta), path(\"reads.bam\")",
@@ -1056,6 +1075,7 @@
       "docstring": "",
       "file": "lib/ingress.nf",
       "line": 746,
+      "end_line": 789,
       "inputs": [
         {
           "name": "val(meta), path(\"reads.bam\"), path(\"reads.bam.bai\")",
@@ -1080,6 +1100,7 @@
       "docstring": "",
       "file": "lib/ingress.nf",
       "line": 792,
+      "end_line": 815,
       "inputs": [
         {
           "name": "val(meta), path(input)",
@@ -1104,6 +1125,7 @@
       "docstring": "",
       "file": "lib/ingress.nf",
       "line": 818,
+      "end_line": 838,
       "inputs": [
         {
           "name": "val(meta), path(input)",
@@ -1128,6 +1150,7 @@
       "docstring": "Python script for validating a sample sheet. The script will write messages\nto STDOUT if the sample sheet is invalid. In case there are no issues, no\nmessage is emitted. The sample sheet will be published to the output dir.",
       "file": "lib/ingress.nf",
       "line": 1219,
+      "end_line": 1235,
       "inputs": [
         {
           "name": "sample_sheet.csv",
@@ -1152,6 +1175,7 @@
       "docstring": "",
       "file": "lib/ingress.nf",
       "line": 1238,
+      "end_line": 1251,
       "inputs": [
         {
           "name": "val(meta), path(\"reads.bam\")",
@@ -1176,6 +1200,7 @@
       "docstring": "",
       "file": "lib/common.nf",
       "line": 3,
+      "end_line": 17,
       "inputs": [],
       "outputs": [
         {
@@ -1193,6 +1218,7 @@
       "docstring": "",
       "file": "lib/common.nf",
       "line": 19,
+      "end_line": 62,
       "inputs": [
         {
           "name": "file-names.txt",
@@ -1217,6 +1243,7 @@
       "docstring": "",
       "file": "modules/local/amr.nf",
       "line": 1,
+      "end_line": 21,
       "inputs": [
         {
           "name": "val(meta), path(\"input_reads.fastq.gz\"), path(\"stats/\")",
@@ -1241,6 +1268,7 @@
       "docstring": "",
       "file": "modules/local/amr.nf",
       "line": 24,
+      "end_line": 41,
       "inputs": [
         {
           "name": "val(meta)",
@@ -1265,6 +1293,7 @@
       "docstring": "",
       "file": "modules/local/igv_related.nf",
       "line": 6,
+      "end_line": 30,
       "inputs": [
         {
           "name": "bam_flagstats/*",
@@ -1289,6 +1318,7 @@
       "docstring": "",
       "file": "modules/local/common.nf",
       "line": 3,
+      "end_line": 17,
       "inputs": [
         {
           "name": "input_versions.txt",
@@ -1313,6 +1343,7 @@
       "docstring": "",
       "file": "modules/local/common.nf",
       "line": 19,
+      "end_line": 38,
       "inputs": [],
       "outputs": [
         {
@@ -1330,6 +1361,7 @@
       "docstring": "",
       "file": "modules/local/common.nf",
       "line": 41,
+      "end_line": 58,
       "inputs": [
         {
           "name": "versions.txt",
@@ -1354,6 +1386,7 @@
       "docstring": "",
       "file": "modules/local/common.nf",
       "line": 62,
+      "end_line": 79,
       "inputs": [
         {
           "name": "lineages/*",
@@ -1378,6 +1411,7 @@
       "docstring": "",
       "file": "modules/local/common.nf",
       "line": 84,
+      "end_line": 99,
       "inputs": [
         {
           "name": "val(meta), path(\"reads.fq.gz\"), path(\"ids.txt\")",
@@ -1402,6 +1436,7 @@
       "docstring": "",
       "file": "modules/local/common.nf",
       "line": 104,
+      "end_line": 121,
       "inputs": [
         {
           "name": "path(fname), val(dirname)",
@@ -1426,6 +1461,7 @@
       "docstring": "",
       "file": "modules/local/common.nf",
       "line": 124,
+      "end_line": 166,
       "inputs": [
         {
           "name": "abundance_table.tsv",
@@ -1482,6 +1518,7 @@
       "docstring": "Check if a file ends with one of the target extensions.",
       "file": "lib/ingress.nf",
       "line": 15,
+      "end_line": 17,
       "params": [
         {
           "name": "file",
@@ -1503,6 +1540,7 @@
       "docstring": "Check if a file path is flagged for exclusion.",
       "file": "lib/ingress.nf",
       "line": 27,
+      "end_line": 39,
       "params": [
         {
           "name": "p",
@@ -1524,6 +1562,7 @@
       "docstring": "Take a channel of the shape `[meta, reads, path-to-stats-dir | null]` (or\n`[meta, [reads, index], path-to-stats-dir | null]` in the case of XAM) and extract the\nrun IDs and basecall model, from the `run_ids` and `basecaller` files in the stats\ndirectory, into the metamap. If the path to the stats dir is `null`, add an empty list.",
       "file": "lib/ingress.nf",
       "line": 54,
+      "end_line": 94,
       "params": [
         {
           "name": "ch",
@@ -1545,6 +1584,7 @@
       "docstring": "Take a channel of the shape `[meta, reads, path-to-stats-dir | null]` and do the\nfollowing:\n- For `fastcat`, extract the number of reads from the `n_seqs` file.\n- For `bamstats`, extract the number of primary alignments and unmapped reads from\nthe `bamstats.flagstat.tsv` file.\nThen, add add these metrics to the meta map. If the path to the stats dir is `null`,\nset the values to 0 when adding them.\nIf not set to 'fastq', input is assumed to be 'bam'.",
       "file": "lib/ingress.nf",
       "line": 111,
+      "end_line": 144,
       "params": [
         {
           "name": "ch",
@@ -1566,6 +1606,7 @@
       "docstring": "Take a map of input arguments, find valid FASTQ inputs, and return a channel\nwith elements of `[metamap, seqs.fastq.gz | null, path-to-fastcat-stats | null]`.\nThe second item is `null` for sample sheet entries without a matching barcode\ndirectory. The last item is `null` if `fastcat` was not run (it is only run on\ndirectories containing more than one FASTQ file or when `stats: true`).\n- \"input\": path to either: (i) input FASTQ file, (ii) top-level directory containing\nFASTQ files, (iii) directory containing sub-directories which contain FASTQ\nfiles\n- \"sample\": string to name single sample\n- \"sample_sheet\": path to CSV sample sheet\n- \"analyse_unclassified\": boolean. Whether to ingress unclassified (failed to demux) reads\n- \"analyse_fail\": boolean. Whether to ingress any sequence files contained in `*_fail`\ndirectories.\n- \"stats\": boolean whether to write the `fastcat` stats\n- \"fastcat_extra_args\": string with extra arguments to pass to `fastcat`\n- \"required_sample_types\": list of zero or more required sample types expected to be present\nin the sample sheet\n- \"per_read_stats\": boolean. If true, output a bgzipped TSV containing a summary\nof each read to fastcat_stats/per-read-stats.tsv.gz.\n- \"fastq_chunk\": null or a number of reads to place into chunked FASTQ files\n- \"allow_multiple_basecall_models\": emit data of samples that had more than one\nbasecall model; if this is `false`, such samples will be emitted as `[meta, null,\nnull]`\nThe first element is a map with metadata, the second is the path to the\n`.fastq.gz` file with the (potentially concatenated) sequences and the third is\nthe path to the directory with the `fastcat` statistics. The second element is\n`null` for sample sheet entries for which no corresponding barcode directory was\nfound. The third element is `null` if `fastcat` was not run.",
       "file": "lib/ingress.nf",
       "line": 179,
+      "end_line": 247,
       "params": [
         {
           "name": "arguments",
@@ -1582,6 +1623,7 @@
       "docstring": "Take a map of input arguments, find valid (u)BAM inputs, and return a channel\nwith elements of `[metamap, reads.bam | null, path-to-bamstats-results | null]`.\nThe second item is `null` for sample sheet entries without a matching barcode\ndirectory or samples containing only uBAM files when `keep_unaligned` is `false`.\nThe last item is `null` if `bamstats` was not run (it is only run when `stats:\ntrue`).\n- \"input\": path to either: (i) input (u)BAM file, (ii) top-level directory\ncontaining (u)BAM files, (iii) directory containing sub-directories which contain\n(u)BAM files\n- \"sample\": string to name single sample\n- \"sample_sheet\": path to CSV sample sheet\n- \"analyse_unclassified\": boolean. Whether to ingress unclassified (failed to demux) reads\n- \"analyse_fail\": boolean. Whether to ingress any sequence files contained in `*_fail`\ndirectories.\n- \"stats\": boolean whether to run `bamstats`\n- \"keep_unaligned\": boolean whether to include uBAM files\n- \"return_fastq\": boolean whether to convert to FASTQ (this will always run\n`fastcat`)\n- \"fastcat_extra_args\": string with extra arguments to pass to `fastcat`\n- \"required_sample_types\": list of zero or more required sample types expected to be present\nin the sample sheet\n- \"per_read_stats\": boolean. If true, output a bgzipped TSV containing a summary\n- \"fastq_chunk\": null or a number of reads to place into chunked FASTQ files\n- \"allow_multiple_basecall_models\": boolean. If true, emit data of samples that had more than one\nbasecall model; if this is `false`, such samples will be emitted as `[meta, null,\nnull]`\nThe first element is a map with metadata, the second is the path to the\n`.bam` file with the (potentially merged) sequences and the third is\nthe path to the directory with the `bamstats` statistics. The second element is\n`null` for sample sheet entries for which no corresponding barcode directory was\nfound and for samples with only uBAM files when `keep_unaligned: false`. The third\nelement is `null` if `bamstats` was not run.",
       "file": "lib/ingress.nf",
       "line": 288,
+      "end_line": 584,
       "params": [
         {
           "name": "arguments",
@@ -1598,6 +1640,7 @@
       "docstring": "Parse input arguments for `fastq_ingress` or `xam_ingress`.\nfor details)\nthe argument-parsing to be tailored to a particular ingress function)",
       "file": "lib/ingress.nf",
       "line": 852,
+      "end_line": 869,
       "params": [
         {
           "name": "func_name",
@@ -1624,6 +1667,7 @@
       "docstring": "Find valid inputs based on the target extensions and return a branched channel with\nbranches `missing`, `files` and `dir`, which are of the shape `[metamap, input_path |\nnull]` (with `input_path` pointing to a target file or a directory containing target\nfiles, respectively). `missing` contains sample sheet entries for which no\ncorresponding barcodes were found.\nChecks whether the input is a single\ntarget file, a top-level directory with target files, or a directory containing\nsub-directories (usually barcodes) with target files.",
       "file": "lib/ingress.nf",
       "line": 886,
+      "end_line": 1113,
       "params": [
         {
           "name": "margs",
@@ -1645,6 +1689,7 @@
       "docstring": "Create a map that contains at least these keys: `[alias, barcode, type]`.\n`alias` is required, `barcode` and `type` are filled with default values if\nmissing. Additional entries are allowed.",
       "file": "lib/ingress.nf",
       "line": 1123,
+      "end_line": 1137,
       "params": [
         {
           "name": "arguments",
@@ -1661,6 +1706,7 @@
       "docstring": "Get all target files below this directory.",
       "file": "lib/ingress.nf",
       "line": 1149,
+      "end_line": 1154,
       "params": [
         {
           "name": "dir",
@@ -1692,6 +1738,7 @@
       "docstring": "Check the sample sheet and return a channel with its rows if it is valid.\nin the sample sheet",
       "file": "lib/ingress.nf",
       "line": 1165,
+      "end_line": 1207,
       "params": [
         {
           "name": "sample_sheet",
@@ -1711,7 +1758,7 @@
   ],
   "generated_by": {
     "nf_docs_version": "0.1.0",
-    "generated_at": "2026-01-23T17:03:00.176360+00:00",
+    "generated_at": "2026-01-23T17:27:31.228219+00:00",
     "nextflow_url": "https://nextflow.io",
     "nf_docs_url": "https://github.com/ewels/nf-docs"
   }
