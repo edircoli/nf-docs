@@ -75,6 +75,12 @@
       }
       .prose a.paragraph-link {
         text-decoration: none;
+        color: rgb(148 163 184); /* slate-400 - match non-prose paragraph-link */
+        opacity: 0.7;
+      }
+      .prose .heading-anchor:hover a.paragraph-link {
+        opacity: 1;
+        color: #0DC09D; /* primary */
       }
       .prose blockquote {
         border-left: 4px solid rgb(203 213 225); /* slate-300 */
@@ -332,6 +338,16 @@
       }
       html.dark .prose th {
         background-color: rgb(51 65 85); /* slate-700 */
+      }
+
+      /* Dark mode - Prose paragraph links */
+      html.dark .prose a.paragraph-link {
+        color: rgb(100 116 139); /* slate-500 */
+        opacity: 0.8;
+      }
+      html.dark .prose .heading-anchor:hover a.paragraph-link {
+        opacity: 1;
+        color: #0DC09D; /* primary */
       }
 
       /* Dark mode - Badges/tags */
@@ -606,6 +622,9 @@
       .page-footer .nextflow-logo {
         height: 1.25rem;
         width: auto;
+      }
+      .page-footer a.footer-logo-link {
+        color: inherit;
       }
       .page-footer .nf-docs-version {
         font-family: ui-monospace, monospace;
@@ -1349,7 +1368,7 @@
           <div class="footer-content">
             <div class="footer-row">
               <span>Pipeline built with</span>
-              <a href="{{ generation_info.nextflow_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1">
+              <a href="{{ generation_info.nextflow_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 footer-logo-link">
                 <!-- Nextflow Logo (using currentColor for light/dark mode compatibility) -->
                 <svg class="nextflow-logo" viewBox="0 0 1532 250" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M0 46.08C39.45 48.7 71.06 80.39 73.54 119.88H119.61C117.05 54.92 64.93 2.7 0 0V46.08Z" fill="#0DC09D"/>
