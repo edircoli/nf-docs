@@ -161,8 +161,8 @@ def main() -> None:
     "-f",
     "output_format",
     type=click.Choice(["json", "yaml", "markdown", "md", "html"], case_sensitive=False),
-    default="markdown",
-    help="Output format: json, yaml, markdown (or md), html (default: markdown)",
+    default="html",
+    help="Output format: json, yaml, markdown (or md), html (default: html)",
 )
 @click.option(
     "--output",

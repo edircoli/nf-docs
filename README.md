@@ -1,173 +1,179 @@
+<div align="center">
+
 # nf-docs
 
-Generate API documentation for Nextflow pipelines by querying the Nextflow Language Server.
+**Generate beautiful API documentation for Nextflow pipelines**
 
-`nf-docs` extracts docstrings and type information from Nextflow pipelines, producing structured
-documentation similar to Sphinx for Python or Javadoc. It combines information from multiple
-sources:
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](LICENSE)
 
-- **Language Server**: Processes, workflows, functions with their docstrings
-- **nextflow_schema.json**: Typed input parameters with descriptions
-- **nextflow.config**: Runtime configuration defaults
-- **README.md**: Pipeline overview
+</div>
+
+---
+
+![nf-docs demo](docs/images/demo.gif)
+
+<table>
+<tr>
+<td width="33%" align="center">
+<h3>HTML</h3>
+<p>Single-file output<br/>Share anywhere, works offline<br/>Full-text search built in</p>
+</td>
+<td width="33%" align="center">
+<h3>Markdown</h3>
+<p>Multiple files by section<br/>Perfect for static site generators<br/>MkDocs, Docusaurus, etc.</p>
+</td>
+<td width="33%" align="center">
+<h3>JSON / YAML</h3>
+<p>Machine-readable output<br/>Build custom integrations<br/>CI/CD friendly</p>
+</td>
+</tr>
+</table>
+
+---
+
+## What is nf-docs?
+
+`nf-docs` extracts documentation from your Nextflow pipelines by querying the
+[Nextflow Language Server](https://github.com/nextflow-io/language-server). It produces structured
+API documentation similar to Sphinx for Python or Javadoc for Java.
+
+**Information is pulled from multiple sources:**
+
+- **Language Server** - Processes, workflows, functions with their Groovydoc comments
+- **nextflow_schema.json** - Typed input parameters with descriptions and validation rules
+- **nextflow.config** - Runtime configuration defaults
+- **README.md** - Pipeline overview and description
+- **meta.yml** - nf-core module metadata (tools, keywords, authors)
+
+> **See it in action:** Browse generated documentation for real pipelines in
+> [`examples/html/`](examples/html/), including
+> [nf-core/sarek](examples/html/sarek/index.html) and
+> [nf-core/rnavar](examples/html/rnavar/index.html).
+
+## Quick Start
+
+> [!ERROR]
+> Actually it's not published to PyPI yet, so this won't work
+> You need to clone the repo and run `pip install .`
+>
+> Publication to PyPI coming soon. Probably
+
+```bash
+# Install
+pip install nf-docs
+
+# Generate HTML documentation
+nf-docs generate ./my_pipeline
+```
+
+That's it! Open `docs/index.html` in your browser.
 
 ## Installation
 
 ```bash
-# Install with uv (recommended)
-uv pip install -e .
+# With pip
+pip install nf-docs
 
-# Or with pip
-pip install -e .
+# With uv (faster)
+uv pip install nf-docs
 
-# With development dependencies
-uv pip install -e ".[dev]"
+# Development install
+pip install -e ".[dev]"
 ```
 
-### Requirements
+**Requirements:**
 
-- Python 3.9+
-- Java 11+ (for the Language Server)
-- Nextflow (optional, for config parsing)
-
-## Quick Start
-
-```bash
-# Generate Markdown documentation
-nf-docs generate /path/to/pipeline --format markdown --output docs/
-
-# Generate JSON output to stdout
-nf-docs generate . --format json
-
-# Generate a self-contained HTML site
-nf-docs generate . --format html --output site/
-
-# Inspect a pipeline without generating docs
-nf-docs inspect /path/to/pipeline
-```
+- Python 3.10+
+- Java 11+ (for the Nextflow Language Server)
+- Nextflow (optional, for parsing `nextflow.config`)
 
 ## Usage
 
-### Generate Command
+### Generate Documentation
 
 ```bash
 nf-docs generate PIPELINE_PATH [OPTIONS]
 ```
 
-**Options:**
-
-| Option              | Description                                                                  |
-| ------------------- | ---------------------------------------------------------------------------- |
-| `--format`, `-f`    | Output format: `json`, `yaml`, `markdown` (or `md`), `html` (default: markdown) |
-| `--output`, `-o`    | Output file or directory                                                     |
-| `--title`, `-t`     | Custom title for documentation                                               |
-| `--language-server` | Path to the Language Server JAR                                              |
-| `--nextflow-path`   | Path to Nextflow executable (default: nextflow)                              |
-| `--no-cache`        | Force re-extraction, ignoring cached results                                 |
-| `--verbose`, `-v`   | Enable verbose output                                                        |
+| Option              | Description                                       |
+| ------------------- | ------------------------------------------------- |
+| `--format`, `-f`    | Output format: `html`, `markdown`, `json`, `yaml` |
+| `--output`, `-o`    | Output file or directory                          |
+| `--title`, `-t`     | Custom title for documentation                    |
+| `--no-cache`        | Force fresh extraction (ignore cache)             |
+| `--verbose`, `-v`   | Enable debug output                               |
+| `--language-server` | Path to Language Server JAR                       |
 
 **Examples:**
 
 ```bash
-# Generate Markdown docs in ./docs/
-nf-docs generate . --format markdown --output docs/
+# HTML - single file, shareable, works offline
+nf-docs generate . -f html -o site/
 
-# Generate JSON API spec
-nf-docs generate . --format json > pipeline-api.json
+# Markdown - multiple files for static site generators
+nf-docs generate . -f markdown -o docs/
 
-# Generate YAML with custom title
-nf-docs generate . --format yaml --title "My Pipeline" > api.yaml
-
-# Generate HTML site
-nf-docs generate ./my-pipeline --format html -o site/
-
-# Use specific language server JAR
-nf-docs generate . --language-server /path/to/language-server-all.jar
+# JSON - pipe to file or other tools
+nf-docs generate . -f json > api.json
 ```
 
-### Inspect Command
-
-Quick inspection without full documentation generation:
+### Other Commands
 
 ```bash
-nf-docs inspect PIPELINE_PATH [--verbose]
-```
+# Quick inspection (summary only)
+nf-docs inspect /path/to/pipeline
 
-### Download Language Server
-
-Pre-download the Nextflow Language Server:
-
-```bash
-nf-docs download-lsp [--force]
+# Pre-download the Language Server
+nf-docs download-lsp
 ```
 
 ## Output Formats
 
-### JSON
+### HTML
 
-Machine-readable structured data:
+A self-contained single HTML file with everything included:
 
-```json
-{
-  "pipeline": {
-    "name": "nf-core/rnaseq",
-    "version": "3.14.0",
-    "description": "RNA-seq analysis pipeline"
-  },
-  "inputs": [
-    {
-      "name": "input",
-      "type": "string",
-      "format": "file-path",
-      "description": "Path to samplesheet",
-      "required": true
-    }
-  ],
-  "workflows": [...],
-  "processes": [...],
-  "functions": [...]
-}
-```
-
-### YAML
-
-Human-friendly structured data (same schema as JSON).
+- Three-column responsive layout
+- Full-text search across all documentation
+- Deep linking to every section and item
+- Source code links (GitHub, GitLab, Bitbucket)
+- nf-core module documentation links
+- Dark mode support
+- Mobile-friendly design
 
 ### Markdown
 
-Creates a documentation directory:
+Generates a directory of Markdown files, perfect for integration with documentation platforms:
 
 ```
 docs/
-├── index.md          # Pipeline overview
-├── inputs.md         # Input parameters
-├── config.md         # Config parameters (if any)
-├── workflows.md      # Workflow documentation
-├── processes.md      # Process documentation
-└── functions.md      # Functions (if any)
+├── index.md        # Pipeline overview
+├── inputs.md       # Input parameters from schema
+├── config.md       # Config parameters
+├── workflows.md    # Workflow documentation
+├── processes.md    # Process documentation
+└── functions.md    # Function documentation
 ```
 
-### HTML
+### JSON / YAML
 
-Self-contained static site with:
+Structured data for programmatic use, CI/CD pipelines, or building custom tooling.
 
-- Three-column layout (navigation, content, table of contents)
-- Full-text search across all documentation
-- Deep linking to all sections and items
-- Links to source code on GitHub/GitLab/Bitbucket (when in a git repository)
-- Responsive design for mobile devices
+## Writing Documentation
 
-## Docstring Format
-
-`nf-docs` supports Javadoc-style comments (same as the Nextflow Language Server):
+`nf-docs` extracts Groovydoc-style comments from your Nextflow code:
 
 ```nextflow
 /**
  * Align reads to a reference genome using BWA MEM.
  *
- * @param reads Tuple of sample ID and fastq files
+ * This process handles both single-end and paired-end reads,
+ * automatically detecting the input format.
+ *
+ * @param reads Tuple of sample ID and FASTQ files
  * @param index BWA index files
- * @return Tuple of sample ID and BAM file
+ * @return Tuple of sample ID and aligned BAM file
  */
 process BWA_MEM {
     input:
@@ -178,90 +184,35 @@ process BWA_MEM {
     tuple val(sample_id), path("*.bam"), emit: bam
 
     script:
-    ...
+    // ...
 }
 ```
 
-## Schema Support
-
-`nf-docs` parses `nextflow_schema.json` files following the
-[nf-schema specification](https://nextflow-io.github.io/nf-schema/latest/nextflow_schema/):
+For input parameters, use
+[nf-schema](https://nextflow-io.github.io/nf-schema/latest/nextflow_schema/)'s
+`nextflow_schema.json`:
 
 ```json
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$defs": {
     "input_output_options": {
-      "title": "Input/output options",
       "properties": {
         "input": {
           "type": "string",
           "format": "file-path",
-          "description": "Path to samplesheet",
-          "help_text": "The samplesheet should contain..."
+          "description": "Path to the sample sheet",
+          "help_text": "The sample sheet should be a CSV file with columns..."
         }
-      },
-      "required": ["input"]
+      }
     }
   }
 }
 ```
 
-## Architecture
-
-```
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│ Language Server │────▶│ Internal Schema  │────▶│ Output Renderer │
-│ (symbols/hover) │     │ (unified model)  │     │ (md/html/json)  │
-└─────────────────┘     └──────────────────┘     └─────────────────┘
-        ▲                        ▲
-        │                        │
-┌───────┴───────┐       ┌───────┴────────┐
-│ .nf files     │       │ nextflow_schema│
-│ nextflow.config│       │ README.md      │
-└───────────────┘       └────────────────┘
-```
-
 ## Development
 
-```bash
-# Install dev dependencies
-uv pip install -e ".[dev]"
-
-# Install prek (https://prek.j178.dev/)
-# macOS/Linux:
-curl -fsSL https://prek.j178.dev/install.sh | sh
-
-# Set up pre-commit hooks
-prek install
-
-# Run tests
-pytest
-
-# Run tests with coverage
-pytest --cov=nf_docs
-
-# Run all checks manually
-prek run --all-files
-```
-
-### Pre-commit hooks
-
-This project uses [prek](https://prek.j178.dev/) to run checks before each commit:
-
-- **ruff** - Linting and formatting for Python
-- **ty** - Type checking
-- **prettier** - Formatting for Markdown and YAML
-
-## Test Pipelines
-
-For testing, try these pipelines:
-
-- [nextflow-io/rnaseq-nf](https://github.com/nextflow-io/rnaseq-nf) - Simple, good for initial
-  testing
-- [nf-core/fetchngs](https://github.com/nf-core/fetchngs) - Small but real
-- [nf-core/rnaseq](https://github.com/nf-core/rnaseq) - Complex, good stress test
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, testing, and contribution guidelines.
 
 ## License
 
-Apache 2.0 License - see [LICENSE](LICENSE) for details.
+Apache 2.0 - see [LICENSE](LICENSE) for details.

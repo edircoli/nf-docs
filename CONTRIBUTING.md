@@ -7,7 +7,7 @@ to know to get started with development.
 
 ### Prerequisites
 
-- Python 3.9+
+- Python 3.10+
 - Java 11+ (for the Nextflow Language Server)
 - Node.js 18+ (for building Tailwind CSS, only needed when modifying HTML templates)
 
@@ -135,7 +135,7 @@ src/nf_docs/
 ### General Principles
 
 - **Line length**: 100 characters max (enforced by ruff)
-- **Python version**: 3.9+ (use `from __future__ import annotations` if needed)
+- **Python version**: 3.10+ (native union types like `X | None` are supported)
 - **Type hints**: Required for all function signatures
 - **Docstrings**: Required for all public modules, classes, and functions
 
