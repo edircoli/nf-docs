@@ -2583,7 +2583,15 @@
         mobileSearchInput.value = '';
         searchInput.value = '';
         mobileSearchClear.classList.add('hidden');
-        clearSearch();
+        searchClear.classList.add('hidden');
+        // Clear results but stay on search page
+        searchResultsContent.innerHTML = '';
+        searchNoResults.classList.add('hidden');
+        searchQueryDisplay.textContent = '';
+        // Update URL to remove search param
+        const url = new URL(window.location);
+        url.searchParams.delete('search');
+        history.replaceState(null, null, url.pathname + url.hash);
       });
 
       // Close mobile menu on escape key
