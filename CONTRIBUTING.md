@@ -1,7 +1,7 @@
 # Contributing to nf-docs
 
-Thank you for your interest in contributing to nf-docs! This document covers everything you need
-to know to get started with development.
+Thank you for your interest in contributing to nf-docs! This document covers everything you need to
+know to get started with development.
 
 ## Development Setup
 
@@ -247,11 +247,11 @@ async def test_async_operation():
 ## Building Tailwind CSS
 
 The HTML output uses pre-built Tailwind CSS. If you modify the HTML template
-(`src/nf_docs/templates/html.html`) or the input CSS (`build-assets/input.css`),
-you need to rebuild the CSS.
+(`src/nf_docs/templates/html.html`) or the input CSS (`build-assets/input.css`), you need to rebuild
+the CSS.
 
-**The pre-commit hook will automatically rebuild the CSS** when you commit changes
-to the template or input CSS files. The CI will also verify the CSS is up to date.
+**The pre-commit hook will automatically rebuild the CSS** when you commit changes to the template
+or input CSS files. The CI will also verify the CSS is up to date.
 
 To manually rebuild:
 
@@ -274,8 +274,8 @@ Alternatively, use the shell script:
 ./build-assets/build-tailwind.sh
 ```
 
-The generated CSS is committed to the repository (`src/nf_docs/templates/tailwind.css`)
-so that end users don't need Node.js installed.
+The generated CSS is committed to the repository (`src/nf_docs/templates/tailwind.css`) so that end
+users don't need Node.js installed.
 
 ## Architecture Notes
 
@@ -298,8 +298,8 @@ Cache is stored in `~/.cache/nf-docs/` and keyed by:
 
 ### Configuration
 
-User configuration is loaded from `~/.config/nf-docs/config.yaml` (or `$XDG_CONFIG_HOME`).
-See `nf-docs config --show-example` for available options.
+User configuration is loaded from `~/.config/nf-docs/config.yaml` (or `$XDG_CONFIG_HOME`). See
+`nf-docs config --show-example` for available options.
 
 ### HTML Output
 

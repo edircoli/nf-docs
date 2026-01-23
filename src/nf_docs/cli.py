@@ -17,6 +17,7 @@ from rich.progress import (
     MofNCompleteColumn,
     Progress,
     SpinnerColumn,
+    TaskID,
     TextColumn,
 )
 
@@ -39,7 +40,7 @@ class ExtractionProgressDisplay:
     def __init__(self, console: Console):
         self.console = console
         self._progress: Progress | None = None
-        self._task_id: int | None = None
+        self._task_id: TaskID | None = None
         self._in_bar_mode: bool = False
 
     def __enter__(self) -> "ExtractionProgressDisplay":

@@ -43,15 +43,13 @@ API documentation similar to Sphinx for Python or Javadoc for Java.
 - **meta.yml** - nf-core module metadata (tools, keywords, authors)
 
 > **See it in action:** Browse generated documentation for real pipelines in
-> [`examples/html/`](examples/html/), including
-> [nf-core/sarek](examples/html/sarek/index.html) and
+> [`examples/html/`](examples/html/), including [nf-core/sarek](examples/html/sarek/index.html) and
 > [nf-core/rnavar](examples/html/rnavar/index.html).
 
 ## Quick Start
 
-> [!CAUTION]
-> Actually it's not published to PyPI yet, so this won't work
-> You need to clone the repo and run `pip install .`
+> [!CAUTION] Actually it's not published to PyPI yet, so this won't work You need to clone the repo
+> and run `pip install .`
 >
 > Publication to PyPI coming soon. Probably
 
