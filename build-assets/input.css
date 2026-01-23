@@ -1,7 +1,10 @@
 @import "tailwindcss";
 
+/* Scan the HTML template for utility classes */
+@source "../src/nf_docs/templates/**/*.html";
+
 @theme {
-  --color-primary-DEFAULT: #0DC09D;
+  --color-primary: #0DC09D;
   --color-primary-light: #E6F9F5;
   --color-primary-dark: #0A9A7D;
 }
