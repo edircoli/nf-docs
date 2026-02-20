@@ -59,8 +59,8 @@ nf-docs = "nf_docs.cli:main"
 nf-docs-tailwind = "nf_docs.tailwind:main"
 
 [project.urls]
-Homepage = "https://github.com/ewels/nf-docs"
-Documentation = "https://github.com/ewels/nf-docs#readme"
+Homepage = "https://ewels.github.io/nf-docs/"
+Documentation = "https://ewels.github.io/nf-docs/"
 Repository = "https://github.com/ewels/nf-docs"
 Issues = "https://github.com/ewels/nf-docs/issues"
 

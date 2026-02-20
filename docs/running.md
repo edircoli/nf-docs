@@ -34,7 +34,24 @@ nf-docs inspect /path/to/pipeline
 
 # Pre-download the Language Server JAR
 nf-docs download-lsp
+
+# Clear the extraction cache for a specific pipeline
+nf-docs clear-cache /path/to/pipeline
+
+# Clear the entire extraction cache
+nf-docs clear-cache --all
 ```
+
+## Caching
+
+nf-docs caches extraction results to avoid re-running the Language Server on every invocation.
+Cached data is stored in `~/.cache/nf-docs/` (respects `$XDG_CACHE_HOME`).
+
+The cache is keyed by pipeline path, a SHA-256 hash of all pipeline source files, and the nf-docs
+version, so it is automatically invalidated whenever files change or nf-docs is upgraded.
+
+Use `--no-cache` to skip the cache for a single run, or `nf-docs clear-cache` to remove entries
+manually.
 
 ## Output formats
 

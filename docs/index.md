@@ -30,11 +30,17 @@ Python or Javadoc for Java.
 
     One file per section — integrates with static site generators like MkDocs or Zensical.
 
--   :material-code-json:{ .lg .middle } __JSON / YAML__
+-   :material-code-json:{ .lg .middle } __JSON__
 
     ---
 
     Machine-readable structured data for CI/CD pipelines and custom integrations.
+
+-   :material-code-yaml:{ .lg .middle } __YAML__
+
+    ---
+
+    Human and machine-readable structured data for CI/CD pipelines and custom integrations.
 
 </div>
 
