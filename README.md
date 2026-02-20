@@ -7,40 +7,43 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](LICENSE)
 
-</div>
-
 ![nf-docs demo](docs/images/demo.gif)
+
+Choose from 3 different output formats:
+
+</div>
 
 <table width="100%">
 <tr>
 <td width="33%">
 <h3 align="center">HTML</h3>
-<ul><li>Single-file output</li><li>Share anywhere, works offline</li><li>Full-text search built in</li></ul>
+<ul><li>Single-file output</li><li>Share anywhere, even offline</li><li>Full-text search built in</li></ul><hr>
 </td>
 <td width="33%">
 <h3 align="center">Markdown</h3>
-<ul><li>Multiple files by section</li><li>Perfect for static site generators</li><li>MkDocs, Docusaurus, etc.</li></ul>
+<ul><li>Multiple files by section</li><li>Perfect for static site generators</li></ul><hr>
 </td>
 <td width="33%">
 <h3 align="center">JSON / YAML</h3>
-<ul><li>Machine-readable output</li><li>Build custom integrations</li><li>CI/CD friendly</li></ul>
+<ul><li>Machine-readable output</li><li>Build custom integrations</li><li>CI/CD friendly</li></ul><hr>
 </td>
 </tr>
 </table>
 
 ## What is nf-docs?
 
-`nf-docs` extracts documentation from your Nextflow pipelines by querying the
+Information is pulled from multiple sources to construct the docs (each only if available):
+
+- **README.md** - Pipeline overview and description
+- **nextflow.config** - Runtime configuration defaults
+- **nextflow_schema.json** - Typed input parameters with descriptions and validation rules
+- **Language Server** - Processes, workflows, functions with their Groovydoc comments
+- **meta.yml** - nf-core module metadata (tools, keywords, authors)
+
+The documentation for workflows, processes and functions is relatively unique. `nf-docs` extracts
+this from your Nextflow pipelines by querying the
 [Nextflow Language Server](https://github.com/nextflow-io/language-server). It produces structured
 API documentation similar to Sphinx for Python or Javadoc for Java.
-
-**Information is pulled from multiple sources:**
-
-- **Language Server** - Processes, workflows, functions with their Groovydoc comments
-- **nextflow_schema.json** - Typed input parameters with descriptions and validation rules
-- **nextflow.config** - Runtime configuration defaults
-- **README.md** - Pipeline overview and description
-- **meta.yml** - nf-core module metadata (tools, keywords, authors)
 
 > **See it in action:** Browse generated documentation for real pipelines in
 > [`examples/html/`](examples/html/), including [nf-core/sarek](examples/html/sarek/index.html) and
@@ -48,10 +51,13 @@ API documentation similar to Sphinx for Python or Javadoc for Java.
 
 ## Quick Start
 
-> [!CAUTION] Actually it's not published to PyPI yet, so this won't work You need to clone the repo
-> and run `pip install .`
->
-> Publication to PyPI coming soon. Probably
+With [`uv`](https://docs.astral.sh/uv/):
+
+```bash
+uvx nf-docs generate ./my_pipeline
+```
+
+With `pip`:
 
 ```bash
 # Install
@@ -70,7 +76,7 @@ That's it! Open `docs/index.html` in your browser.
 pip install nf-docs
 
 # With uv (faster)
-uv pip install nf-docs
+uv tool install nf-docs
 
 # Development install
 pip install -e ".[dev]"
