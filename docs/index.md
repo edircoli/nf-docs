@@ -28,7 +28,7 @@ Python or Javadoc for Java.
 
     ---
 
-    One file per section — integrates with static site generators like MkDocs or Zensical.
+    One file per section — integrates with static site generators like Astro, MkDocs, Zensical and Docusaurus.
 
 -   :material-code-json:{ .lg .middle } __JSON__
 
@@ -36,11 +36,11 @@ Python or Javadoc for Java.
 
     Machine-readable structured data for CI/CD pipelines and custom integrations.
 
--   :material-code-yaml:{ .lg .middle } __YAML__
+-   :material-format-indent-increase:{ .lg .middle } __YAML__
 
     ---
 
-    Human and machine-readable structured data for CI/CD pipelines and custom integrations.
+    Human and machine-readable structured data for CI/CD and custom integrations.
 
 </div>
 
