@@ -9,6 +9,8 @@
 
 ![nf-docs demo](docs/images/demo.gif)
 
+**[Full documentation →](https://ewels.github.io/nf-docs)**
+
 Choose from 3 different output formats:
 
 </div>
@@ -32,6 +34,12 @@ Choose from 3 different output formats:
 
 ## What is nf-docs?
 
+<!-- prettier-ignore-start -->
+> [!INFO]
+> This is not an official Nextflow project. It's a fun side-project by
+> [Phil Ewels](https://github.com/ewels). Please use at your own risk :)
+<!-- prettier-ignore-end -->
+
 Information is pulled from multiple sources to construct the docs (each only if available):
 
 - **README.md** - Pipeline overview and description
@@ -45,9 +53,9 @@ this from your Nextflow pipelines by querying the
 [Nextflow Language Server](https://github.com/nextflow-io/language-server). It produces structured
 API documentation similar to Sphinx for Python or Javadoc for Java.
 
-> **See it in action:** Browse generated documentation for real pipelines in
-> [`examples/html/`](examples/html/), including [nf-core/sarek](examples/html/sarek/index.html) and
-> [nf-core/rnavar](examples/html/rnavar/index.html).
+## Examples and docs
+
+See https://ewels.github.io/nf-docs
 
 ## Quick Start
 
@@ -68,146 +76,6 @@ nf-docs generate ./my_pipeline
 ```
 
 That's it! Open `docs/index.html` in your browser.
-
-## Installation
-
-```bash
-# With pip
-pip install nf-docs
-
-# With uv (faster)
-uv tool install nf-docs
-
-# Development install
-pip install -e ".[dev]"
-```
-
-**Requirements:**
-
-- Python 3.10+
-- Java 11+ (for the Nextflow Language Server)
-- Nextflow (optional, for parsing `nextflow.config`)
-
-## Usage
-
-### Generate Documentation
-
-```bash
-nf-docs generate PIPELINE_PATH [OPTIONS]
-```
-
-| Option              | Description                                       |
-| ------------------- | ------------------------------------------------- |
-| `--format`, `-f`    | Output format: `html`, `markdown`, `json`, `yaml` |
-| `--output`, `-o`    | Output file or directory                          |
-| `--title`, `-t`     | Custom title for documentation                    |
-| `--no-cache`        | Force fresh extraction (ignore cache)             |
-| `--verbose`, `-v`   | Enable debug output                               |
-| `--language-server` | Path to Language Server JAR                       |
-
-**Examples:**
-
-```bash
-# HTML - single file, shareable, works offline
-nf-docs generate . -f html -o site/
-
-# Markdown - multiple files for static site generators
-nf-docs generate . -f markdown -o docs/
-
-# JSON - pipe to file or other tools
-nf-docs generate . -f json > api.json
-```
-
-### Other Commands
-
-```bash
-# Quick inspection (summary only)
-nf-docs inspect /path/to/pipeline
-
-# Pre-download the Language Server
-nf-docs download-lsp
-```
-
-## Output Formats
-
-### HTML
-
-A self-contained single HTML file with everything included:
-
-- Three-column responsive layout
-- Full-text search across all documentation
-- Deep linking to every section and item
-- Source code links (GitHub, GitLab, Bitbucket)
-- nf-core module documentation links
-- Dark mode support
-- Mobile-friendly design
-
-### Markdown
-
-Generates a directory of Markdown files, perfect for integration with documentation platforms:
-
-```
-docs/
-├── index.md        # Pipeline overview
-├── inputs.md       # Input parameters from schema
-├── config.md       # Config parameters
-├── workflows.md    # Workflow documentation
-├── processes.md    # Process documentation
-└── functions.md    # Function documentation
-```
-
-### JSON / YAML
-
-Structured data for programmatic use, CI/CD pipelines, or building custom tooling.
-
-## Writing Documentation
-
-`nf-docs` extracts Groovydoc-style comments from your Nextflow code:
-
-```nextflow
-/**
- * Align reads to a reference genome using BWA MEM.
- *
- * This process handles both single-end and paired-end reads,
- * automatically detecting the input format.
- *
- * @param reads Tuple of sample ID and FASTQ files
- * @param index BWA index files
- * @return Tuple of sample ID and aligned BAM file
- */
-process BWA_MEM {
-    input:
-    tuple val(sample_id), path(reads)
-    path index
-
-    output:
-    tuple val(sample_id), path("*.bam"), emit: bam
-
-    script:
-    // ...
-}
-```
-
-For input parameters, use
-[nf-schema](https://nextflow-io.github.io/nf-schema/latest/nextflow_schema/)'s
-`nextflow_schema.json`:
-
-```json
-{
-  "$defs": {
-    "input_output_options": {
-      "properties": {
-        "input": {
-          "type": "string",
-          "format": "file-path",
-          "description": "Path to the sample sheet",
-          "help_text": "The sample sheet should be a CSV file with columns..."
-        }
-      }
-    }
-  }
-}
-```
 
 ## Development
 

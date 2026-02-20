@@ -244,6 +244,23 @@ async def test_async_operation():
     assert result is not None
 ```
 
+## Building the Docs Site
+
+The docs site uses [Zensical](https://zensical.org/). To preview locally:
+
+```bash
+pip install zensical
+zensical serve
+```
+
+To build:
+
+```bash
+zensical build --clean
+```
+
+The site is deployed automatically to GitHub Pages on push to `main`.
+
 ## Building Tailwind CSS
 
 The HTML output uses pre-built Tailwind CSS. If you modify the HTML template

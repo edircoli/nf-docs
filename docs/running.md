@@ -1,0 +1,67 @@
+# Running nf-docs
+
+## Generate docs
+
+```bash
+nf-docs generate PIPELINE_PATH [OPTIONS]
+```
+
+| Option              | Description                                                 |
+| ------------------- | ----------------------------------------------------------- |
+| `--format`, `-f`    | Output format: `html` (default), `markdown`, `json`, `yaml` |
+| `--output`, `-o`    | Output file or directory (default: `docs/`)                 |
+| `--title`, `-t`     | Custom title                                                |
+| `--no-cache`        | Force fresh extraction                                      |
+| `--verbose`, `-v`   | Debug output                                                |
+| `--language-server` | Path to Language Server JAR                                 |
+
+```bash
+# HTML — single shareable file
+nf-docs generate . -f html -o site/
+
+# Markdown — for static site generators
+nf-docs generate . -f markdown -o docs/
+
+# JSON — pipe to file or other tools
+nf-docs generate . -f json > api.json
+```
+
+### Other commands
+
+```bash
+# Print a summary without generating full docs
+nf-docs inspect /path/to/pipeline
+
+# Pre-download the Language Server JAR
+nf-docs download-lsp
+```
+
+## Output formats
+
+### HTML
+
+A single self-contained file with everything inlined:
+
+- Three-column responsive layout with full-text search
+- Deep linking to every section and item
+- Source code links (GitHub, GitLab, Bitbucket)
+- nf-core module documentation links
+- Dark mode · mobile-friendly
+
+### Markdown
+
+A directory of files, one per section:
+
+```
+docs/
+├── index.md        # Pipeline overview
+├── inputs.md       # Input parameters
+├── config.md       # Config parameters
+├── workflows.md    # Workflows
+├── processes.md    # Processes
+└── functions.md    # Functions
+```
+
+### JSON / YAML
+
+Structured data for programmatic use, CI/CD pipelines, or custom tooling.
