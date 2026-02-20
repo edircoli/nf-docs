@@ -7,7 +7,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](LICENSE)
 
-![nf-docs demo](docs/images/demo.gif)
+![nf-docs demo](https://raw.githubusercontent.com/ewels/nf-docs/main/docs/images/demo.gif)
 
 **[Full documentation →](https://ewels.github.io/nf-docs)**
 
