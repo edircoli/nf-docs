@@ -1,5 +1,5 @@
 """
-Concise table renderer for nf-docs.
+Table renderer for nf-docs.
 
 Outputs pipeline documentation as compact Markdown tables inspired by
 terraform-docs.  Each section is a ``## Heading`` followed by one or more
@@ -39,7 +39,7 @@ def inject_into_content(existing: str, new_content: str) -> str | None:
     return f"{before}\n{new_content}\n{after}"
 
 
-class ConciseRenderer(BaseRenderer):
+class TableRenderer(BaseRenderer):
     """
     Render pipeline documentation as compact Markdown tables.
 
@@ -53,13 +53,13 @@ class ConciseRenderer(BaseRenderer):
 
     def render(self, pipeline: Pipeline) -> str:
         """
-        Render the full pipeline as a single concise Markdown string.
+        Render the full pipeline as a single Markdown string of tables.
 
         Args:
             pipeline: The Pipeline model to render.
 
         Returns:
-            Concise Markdown string with all sections.
+            Markdown string with all sections rendered as tables.
         """
         sections: list[str] = []
 
@@ -85,7 +85,7 @@ class ConciseRenderer(BaseRenderer):
         return content
 
     def render_to_directory(self, pipeline: Pipeline, output_dir: str | Path) -> list[Path]:
-        """Write concise documentation to a single file inside *output_dir*.
+        """Write table documentation to a single file inside *output_dir*.
 
         If the README.md already exists and contains ``<!-- BEGIN_NF_DOCS -->`` /
         ``<!-- END_NF_DOCS -->`` markers, the generated content is injected between

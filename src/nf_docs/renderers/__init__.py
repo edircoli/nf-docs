@@ -6,19 +6,19 @@ This package contains renderers for different output formats:
 - YAML: Structured data, human-friendly
 - Markdown: Documentation files
 - HTML: Self-contained static site
- Concise: Compact Markdown tables (terraform-docs style)
+ Table: Compact Markdown tables (terraform-docs style)
 """
 
 from nf_docs.renderers.base import BaseRenderer
-from nf_docs.renderers.concise import ConciseRenderer
 from nf_docs.renderers.html import HTMLRenderer
 from nf_docs.renderers.json import JSONRenderer
 from nf_docs.renderers.markdown import MarkdownRenderer
+from nf_docs.renderers.table import TableRenderer
 from nf_docs.renderers.yaml import YAMLRenderer
 
 __all__ = [
     "BaseRenderer",
-    "ConciseRenderer",
+    "TableRenderer",
     "JSONRenderer",
     "YAMLRenderer",
     "MarkdownRenderer",
@@ -46,7 +46,7 @@ def get_renderer(format: str) -> type[BaseRenderer]:
         "markdown": MarkdownRenderer,
         "md": MarkdownRenderer,
         "html": HTMLRenderer,
-        "concise": ConciseRenderer,
+        "table": TableRenderer,
     }
 
     format_lower = format.lower()

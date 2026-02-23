@@ -16,14 +16,14 @@ from nf_docs.models import (
     Workflow,
 )
 from nf_docs.renderers import (
-    ConciseRenderer,
     HTMLRenderer,
     JSONRenderer,
     MarkdownRenderer,
+    TableRenderer,
     YAMLRenderer,
     get_renderer,
 )
-from nf_docs.renderers.concise import (
+from nf_docs.renderers.table import (
     BEGIN_MARKER,
     END_MARKER,
     inject_into_content,
@@ -111,9 +111,9 @@ class TestGetRenderer:
         with pytest.raises(ValueError, match="Unsupported format"):
             get_renderer("invalid")
 
-    def test_get_concise_renderer(self):
-        renderer_class = get_renderer("concise")
-        assert renderer_class == ConciseRenderer
+    def test_get_table_renderer(self):
+        renderer_class = get_renderer("table")
+        assert renderer_class == TableRenderer
 
 
 class TestJSONRenderer:
@@ -274,9 +274,9 @@ class TestHTMLRenderer:
         assert files[0].exists()
 
 
-class TestConciseRenderer:
+class TestTableRenderer:
     def test_render(self, sample_pipeline: Pipeline):
-        renderer = ConciseRenderer()
+        renderer = TableRenderer()
         output = renderer.render(sample_pipeline)
 
         # Should contain key sections
@@ -285,7 +285,7 @@ class TestConciseRenderer:
         assert "A test pipeline" in output
 
     def test_render_inputs_table(self, sample_pipeline: Pipeline):
-        renderer = ConciseRenderer()
+        renderer = TableRenderer()
         output = renderer.render(sample_pipeline)
 
         # Check inputs table structure
@@ -297,14 +297,14 @@ class TestConciseRenderer:
         assert "| no |" in output  # outdir is not required
 
     def test_render_inputs_grouped(self, sample_pipeline: Pipeline):
-        renderer = ConciseRenderer()
+        renderer = TableRenderer()
         output = renderer.render(sample_pipeline)
 
         # Both inputs share a group
         assert "### Input/output" in output
 
     def test_render_processes_table(self, sample_pipeline: Pipeline):
-        renderer = ConciseRenderer()
+        renderer = TableRenderer()
         output = renderer.render(sample_pipeline)
 
         # Check processes section
@@ -314,7 +314,7 @@ class TestConciseRenderer:
         assert "First process" in output
 
     def test_render_process_io(self, sample_pipeline: Pipeline):
-        renderer = ConciseRenderer()
+        renderer = TableRenderer()
         output = renderer.render(sample_pipeline)
 
         # PROCESS_A has inputs and outputs
@@ -323,7 +323,7 @@ class TestConciseRenderer:
         assert "### `PROCESS_A` Outputs" in output
 
     def test_render_workflows_table(self, sample_pipeline: Pipeline):
-        renderer = ConciseRenderer()
+        renderer = TableRenderer()
         output = renderer.render(sample_pipeline)
 
         # Check workflows section
@@ -333,14 +333,14 @@ class TestConciseRenderer:
         assert "| yes |" in output  # entry workflow
 
     def test_render_workflow_calls(self, sample_pipeline: Pipeline):
-        renderer = ConciseRenderer()
+        renderer = TableRenderer()
         output = renderer.render(sample_pipeline)
 
         # MAIN workflow calls PROCESS_A and PROCESS_B
         assert "`MAIN` calls:** `PROCESS_A`, `PROCESS_B`" in output
 
     def test_render_to_directory(self, sample_pipeline: Pipeline, tmp_path: Path):
-        renderer = ConciseRenderer()
+        renderer = TableRenderer()
         files = renderer.render_to_directory(sample_pipeline, tmp_path)
 
         # Should create single file
@@ -354,13 +354,13 @@ class TestConciseRenderer:
         assert "## Inputs" in content
 
     def test_custom_title(self, sample_pipeline: Pipeline):
-        renderer = ConciseRenderer(title="My Custom Title")
+        renderer = TableRenderer(title="My Custom Title")
         output = renderer.render(sample_pipeline)
 
         assert "# My Custom Title" in output
 
     def test_cell_sanitization(self):
-        renderer = ConciseRenderer()
+        renderer = TableRenderer()
         assert renderer._cell(None) == "n/a"
         assert renderer._cell("") == "n/a"
         assert renderer._cell("hello\nworld") == "hello world"
@@ -393,9 +393,9 @@ class TestRendererWithEmptyPipeline:
         # Should still produce valid HTML (lowercase doctype is valid HTML5)
         assert "<!doctype html>" in output.lower()
 
-    def test_concise_empty(self):
+    def test_table_empty(self):
         pipeline = Pipeline()
-        renderer = ConciseRenderer()
+        renderer = TableRenderer()
         output = renderer.render(pipeline)
 
         # Should still produce valid markdown with just a title
@@ -481,7 +481,7 @@ class TestMarkerInjection:
             f"Keep this footer.\n"
         )
 
-        renderer = ConciseRenderer()
+        renderer = TableRenderer()
         files = renderer.render_to_directory(sample_pipeline, tmp_path)
 
         content = readme.read_text()
@@ -497,7 +497,7 @@ class TestMarkerInjection:
     def test_render_to_directory_wraps_with_markers_new_file(
         self, sample_pipeline: Pipeline, tmp_path: Path
     ):
-        renderer = ConciseRenderer()
+        renderer = TableRenderer()
         files = renderer.render_to_directory(sample_pipeline, tmp_path)
 
         content = (tmp_path / "README.md").read_text()
@@ -512,7 +512,7 @@ class TestMarkerInjection:
         readme = tmp_path / "README.md"
         readme.write_text("# Old content without markers\n")
 
-        renderer = ConciseRenderer()
+        renderer = TableRenderer()
         files = renderer.render_to_directory(sample_pipeline, tmp_path)
 
         content = readme.read_text()
