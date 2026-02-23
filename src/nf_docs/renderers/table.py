@@ -4,9 +4,11 @@ Table renderer for nf-docs.
 Outputs pipeline documentation as compact Markdown tables inspired by
 terraform-docs.  Each section is a ``## Heading`` followed by one or more
 dense Markdown tables — no prose, no per-item sub-sections, just scannable
-reference data.  Supports marker-based injection into existing README files.
+reference data.  Supports marker-based injection into existing README files
+with optional ``{{ section }}`` template tags for selective rendering.
 """
 
+import re
 from pathlib import Path
 
 from nf_docs.generation_info import get_markdown_footer
@@ -15,6 +17,10 @@ from nf_docs.renderers.base import BaseRenderer
 
 BEGIN_MARKER = "<!-- BEGIN_NF_DOCS -->"
 END_MARKER = "<!-- END_NF_DOCS -->"
+
+AVAILABLE_SECTIONS = frozenset({"header", "inputs", "config", "workflows", "processes", "functions"})
+
+_TAG_PATTERN = re.compile(r"\{\{\s*(\w+)\s*\}\}")
 
 
 def inject_into_content(existing: str, new_content: str) -> str | None:
@@ -37,6 +43,28 @@ def inject_into_content(existing: str, new_content: str) -> str | None:
     before = existing[: begin_idx + len(BEGIN_MARKER)]
     after = existing[end_idx:]
     return f"{before}\n{new_content}\n{after}"
+
+
+def extract_template(existing: str) -> str | None:
+    """
+    Extract the template content between markers, if template tags are present.
+
+    Args:
+        existing: The full text of the file that may contain markers.
+
+    Returns:
+        The template string if ``{{ section }}`` tags are found between markers,
+        or ``None`` if no markers or no template tags.
+    """
+    begin_idx = existing.find(BEGIN_MARKER)
+    end_idx = existing.find(END_MARKER)
+    if begin_idx == -1 or end_idx == -1 or end_idx <= begin_idx:
+        return None
+
+    template = existing[begin_idx + len(BEGIN_MARKER) : end_idx]
+    if _TAG_PATTERN.search(template):
+        return template
+    return None
 
 
 class TableRenderer(BaseRenderer):
@@ -84,32 +112,71 @@ class TableRenderer(BaseRenderer):
         content += "\n\n" + get_markdown_footer()
         return content
 
-    def render_to_directory(self, pipeline: Pipeline, output_dir: str | Path) -> list[Path]:
-        """Write table documentation to a single file inside *output_dir*.
+    def render_from_template(self, pipeline: Pipeline, template: str) -> str:
+        """
+        Render pipeline using a template with ``{{ section }}`` placeholders.
 
-        If the README.md already exists and contains ``<!-- BEGIN_NF_DOCS -->`` /
-        ``<!-- END_NF_DOCS -->`` markers, the generated content is injected between
-        them, leaving the rest of the file untouched.  Otherwise a new file is
-        created with the markers wrapping the content.
+        Each recognised tag (e.g. ``{{ inputs }}``, ``{{ workflows }}``) is
+        replaced with the rendered content for that section.  Text surrounding
+        the tags is preserved, allowing users to add custom headings or notes.
+        Unrecognised tags are left as-is.
 
         Args:
             pipeline: The Pipeline model to render.
-            output_dir: Target directory (created if absent).
+            template: A string containing ``{{ section }}`` placeholders.
 
+        Returns:
+            Markdown string with placeholders replaced by rendered sections.
+        """
+        section_renderers: dict[str, str] = {
+            "header": self._render_header(pipeline),
+            "inputs": self._render_inputs(pipeline) if pipeline.inputs else "",
+            "config": self._render_config(pipeline) if pipeline.config_params else "",
+            "workflows": self._render_workflows(pipeline) if pipeline.workflows else "",
+            "processes": self._render_processes(pipeline) if pipeline.processes else "",
+            "functions": self._render_functions(pipeline) if pipeline.functions else "",
+        }
+
+        def _replace_tag(match: re.Match[str]) -> str:
+            tag = match.group(1).lower()
+            if tag in section_renderers:
+                return section_renderers[tag]
+            return match.group(0)  # Leave unrecognised tags as-is
+
+        content = _TAG_PATTERN.sub(_replace_tag, template)
+        # Collapse runs of 3+ blank lines into 2
+        content = re.sub(r"\n{3,}", "\n\n", content).strip()
+        content += "\n\n" + get_markdown_footer()
+        return content
+
+    def render_to_directory(self, pipeline: Pipeline, output_dir: str | Path) -> list[Path]:
+        """Write table documentation to a single file inside *output_dir*.
+        If the README.md already exists and contains ``<!-- BEGIN_NF_DOCS -->`` /
+        ``<!-- END_NF_DOCS -->`` markers, the generated content is injected between
+        them.  When the markers contain ``{{ section }}`` template tags, only the
+        requested sections are rendered.
+        Args:
+            pipeline: The Pipeline model to render.
+            output_dir: Target directory (created if absent).
         Returns:
             List containing the single created/updated file path.
         """
         output_path = Path(output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
         out_file = output_path / "README.md"
-        content = self.render(pipeline)
         if out_file.exists():
             existing = out_file.read_text(encoding="utf-8")
+            template = extract_template(existing)
+            if template is not None:
+                content = self.render_from_template(pipeline, template)
+            else:
+                content = self.render(pipeline)
             injected = inject_into_content(existing, content)
             if injected is not None:
                 out_file.write_text(injected, encoding="utf-8")
                 return [out_file]
         # No existing file or no markers — write with markers
+        content = self.render(pipeline)
         wrapped = f"{BEGIN_MARKER}\n{content}\n{END_MARKER}\n"
         out_file.write_text(wrapped, encoding="utf-8")
         return [out_file]

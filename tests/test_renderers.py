@@ -24,8 +24,10 @@ from nf_docs.renderers import (
     get_renderer,
 )
 from nf_docs.renderers.table import (
+    AVAILABLE_SECTIONS,
     BEGIN_MARKER,
     END_MARKER,
+    extract_template,
     inject_into_content,
 )
 
@@ -521,3 +523,142 @@ class TestMarkerInjection:
         assert END_MARKER in content
         assert "## Inputs" in content
         assert len(files) == 1
+
+
+class TestTemplateRendering:
+    """Tests for template-based selective section rendering."""
+
+    def test_extract_template_with_tags(self):
+        existing = (
+            f"# Intro\n"
+            f"{BEGIN_MARKER}\n"
+            f"{{{{ inputs }}}}\n"
+            f"{{{{ config }}}}\n"
+            f"{END_MARKER}\n"
+            f"Footer\n"
+        )
+        result = extract_template(existing)
+
+        assert result is not None
+        assert "{{ inputs }}" in result
+        assert "{{ config }}" in result
+
+    def test_extract_template_no_tags_returns_none(self):
+        existing = (
+            f"{BEGIN_MARKER}\n"
+            f"just some plain text\n"
+            f"{END_MARKER}\n"
+        )
+        result = extract_template(existing)
+
+        assert result is None
+
+    def test_extract_template_no_markers_returns_none(self):
+        result = extract_template("# No markers here")
+
+        assert result is None
+
+    def test_extract_template_empty_markers_returns_none(self):
+        existing = f"{BEGIN_MARKER}\n{END_MARKER}"
+        result = extract_template(existing)
+
+        assert result is None
+
+    def test_available_sections_complete(self):
+        assert AVAILABLE_SECTIONS == {"header", "inputs", "config", "workflows", "processes", "functions"}
+
+    def test_render_from_template_selective(self, sample_pipeline: Pipeline):
+        renderer = TableRenderer()
+        template = "\n{{ inputs }}\n"
+        result = renderer.render_from_template(sample_pipeline, template)
+
+        assert "## Inputs" in result
+        assert "## Workflows" not in result
+        assert "## Processes" not in result
+        assert "## Functions" not in result
+        assert "## Configuration" not in result
+
+    def test_render_from_template_multiple_sections(self, sample_pipeline: Pipeline):
+        renderer = TableRenderer()
+        template = "\n{{ inputs }}\n\n{{ processes }}\n"
+        result = renderer.render_from_template(sample_pipeline, template)
+
+        assert "## Inputs" in result
+        assert "## Processes" in result
+        assert "## Workflows" not in result
+        assert "## Functions" not in result
+
+    def test_render_from_template_preserves_custom_text(self, sample_pipeline: Pipeline):
+        renderer = TableRenderer()
+        template = "\n## My Custom Section\n\nSome text.\n\n{{ inputs }}\n"
+        result = renderer.render_from_template(sample_pipeline, template)
+
+        assert "## My Custom Section" in result
+        assert "Some text." in result
+        assert "## Inputs" in result
+
+    def test_render_from_template_unrecognised_tag_preserved(self, sample_pipeline: Pipeline):
+        renderer = TableRenderer()
+        template = "\n{{ inputs }}\n\n{{ unknown_tag }}\n"
+        result = renderer.render_from_template(sample_pipeline, template)
+
+        assert "## Inputs" in result
+        assert "{{ unknown_tag }}" in result
+
+    def test_render_from_template_case_insensitive(self, sample_pipeline: Pipeline):
+        renderer = TableRenderer()
+        template = "\n{{ INPUTS }}\n"
+        result = renderer.render_from_template(sample_pipeline, template)
+
+        assert "## Inputs" in result
+
+    def test_render_from_template_whitespace_in_tag(self, sample_pipeline: Pipeline):
+        renderer = TableRenderer()
+        template = "\n{{  inputs  }}\n"
+        result = renderer.render_from_template(sample_pipeline, template)
+
+        assert "## Inputs" in result
+
+    def test_render_to_directory_uses_template(
+        self, sample_pipeline: Pipeline, tmp_path: Path
+    ):
+        readme = tmp_path / "README.md"
+        readme.write_text(
+            f"# My Pipeline\n"
+            f"{BEGIN_MARKER}\n"
+            f"{{{{ inputs }}}}\n"
+            f"{END_MARKER}\n"
+            f"Other content.\n"
+        )
+
+        renderer = TableRenderer()
+        renderer.render_to_directory(sample_pipeline, tmp_path)
+
+        content = readme.read_text()
+        assert "# My Pipeline" in content
+        assert "Other content." in content
+        assert "## Inputs" in content
+        assert "## Workflows" not in content
+        assert "## Processes" not in content
+        assert BEGIN_MARKER in content
+        assert END_MARKER in content
+
+    def test_render_to_directory_empty_markers_renders_all(
+        self, sample_pipeline: Pipeline, tmp_path: Path
+    ):
+        """Empty markers (no template tags) should render everything."""
+        readme = tmp_path / "README.md"
+        readme.write_text(
+            f"# My Pipeline\n"
+            f"{BEGIN_MARKER}\n"
+            f"{END_MARKER}\n"
+            f"Footer.\n"
+        )
+
+        renderer = TableRenderer()
+        renderer.render_to_directory(sample_pipeline, tmp_path)
+
+        content = readme.read_text()
+        assert "## Inputs" in content
+        assert "## Processes" in content
+        assert "Footer." in content
