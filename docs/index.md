@@ -30,6 +30,13 @@ Python or Javadoc for Java.
 
     One file per section — integrates with static site generators like Astro, MkDocs, Zensical and Docusaurus.
 
+
+-   :material-table:{ .lg .middle } __Table__
+
+    ---
+
+    Compact terraform-docs-style Markdown tables with marker injection and selective section rendering.
+
 -   :material-code-json:{ .lg .middle } __JSON__
 
     ---
