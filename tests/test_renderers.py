@@ -16,11 +16,17 @@ from nf_docs.models import (
     Workflow,
 )
 from nf_docs.renderers import (
+    ConciseRenderer,
     HTMLRenderer,
     JSONRenderer,
     MarkdownRenderer,
     YAMLRenderer,
     get_renderer,
+)
+from nf_docs.renderers.concise import (
+    BEGIN_MARKER,
+    END_MARKER,
+    inject_into_content,
 )
 
 
@@ -104,6 +110,10 @@ class TestGetRenderer:
     def test_invalid_format(self):
         with pytest.raises(ValueError, match="Unsupported format"):
             get_renderer("invalid")
+
+    def test_get_concise_renderer(self):
+        renderer_class = get_renderer("concise")
+        assert renderer_class == ConciseRenderer
 
 
 class TestJSONRenderer:
@@ -264,6 +274,99 @@ class TestHTMLRenderer:
         assert files[0].exists()
 
 
+class TestConciseRenderer:
+    def test_render(self, sample_pipeline: Pipeline):
+        renderer = ConciseRenderer()
+        output = renderer.render(sample_pipeline)
+
+        # Should contain key sections
+        assert "# test-pipeline" in output
+        assert "Version:** 1.0.0" in output
+        assert "A test pipeline" in output
+
+    def test_render_inputs_table(self, sample_pipeline: Pipeline):
+        renderer = ConciseRenderer()
+        output = renderer.render(sample_pipeline)
+
+        # Check inputs table structure
+        assert "## Inputs" in output
+        assert "| Name | Description | Type | Default | Required |" in output
+        assert "`--input`" in output
+        assert "`--outdir`" in output
+        assert "| yes |" in output  # input is required
+        assert "| no |" in output  # outdir is not required
+
+    def test_render_inputs_grouped(self, sample_pipeline: Pipeline):
+        renderer = ConciseRenderer()
+        output = renderer.render(sample_pipeline)
+
+        # Both inputs share a group
+        assert "### Input/output" in output
+
+    def test_render_processes_table(self, sample_pipeline: Pipeline):
+        renderer = ConciseRenderer()
+        output = renderer.render(sample_pipeline)
+
+        # Check processes section
+        assert "## Processes" in output
+        assert "`PROCESS_A`" in output
+        assert "`PROCESS_B`" in output
+        assert "First process" in output
+
+    def test_render_process_io(self, sample_pipeline: Pipeline):
+        renderer = ConciseRenderer()
+        output = renderer.render(sample_pipeline)
+
+        # PROCESS_A has inputs and outputs
+        assert "### `PROCESS_A` Inputs" in output
+        assert "`input_file`" in output
+        assert "### `PROCESS_A` Outputs" in output
+
+    def test_render_workflows_table(self, sample_pipeline: Pipeline):
+        renderer = ConciseRenderer()
+        output = renderer.render(sample_pipeline)
+
+        # Check workflows section
+        assert "## Workflows" in output
+        assert "| Name | Description | Entry |" in output
+        assert "`MAIN`" in output
+        assert "| yes |" in output  # entry workflow
+
+    def test_render_workflow_calls(self, sample_pipeline: Pipeline):
+        renderer = ConciseRenderer()
+        output = renderer.render(sample_pipeline)
+
+        # MAIN workflow calls PROCESS_A and PROCESS_B
+        assert "`MAIN` calls:** `PROCESS_A`, `PROCESS_B`" in output
+
+    def test_render_to_directory(self, sample_pipeline: Pipeline, tmp_path: Path):
+        renderer = ConciseRenderer()
+        files = renderer.render_to_directory(sample_pipeline, tmp_path)
+
+        # Should create single file
+        assert len(files) == 1
+        assert files[0].name == "README.md"
+        assert files[0].exists()
+
+        # Verify content
+        content = files[0].read_text()
+        assert "# test-pipeline" in content
+        assert "## Inputs" in content
+
+    def test_custom_title(self, sample_pipeline: Pipeline):
+        renderer = ConciseRenderer(title="My Custom Title")
+        output = renderer.render(sample_pipeline)
+
+        assert "# My Custom Title" in output
+
+    def test_cell_sanitization(self):
+        renderer = ConciseRenderer()
+        assert renderer._cell(None) == "n/a"
+        assert renderer._cell("") == "n/a"
+        assert renderer._cell("hello\nworld") == "hello world"
+        assert renderer._cell("foo|bar") == "foo\\|bar"
+
+
 class TestRendererWithEmptyPipeline:
     def test_json_empty(self):
         pipeline = Pipeline()
@@ -289,3 +392,132 @@ class TestRendererWithEmptyPipeline:
 
         # Should still produce valid HTML (lowercase doctype is valid HTML5)
         assert "<!doctype html>" in output.lower()
+
+    def test_concise_empty(self):
+        pipeline = Pipeline()
+        renderer = ConciseRenderer()
+        output = renderer.render(pipeline)
+
+        # Should still produce valid markdown with just a title
+        assert "#" in output
+        # Should not include empty sections
+        assert "## Inputs" not in output
+        assert "## Processes" not in output
+
+
+class TestMarkerInjection:
+    """Tests for marker-based injection into existing files."""
+
+    def test_inject_replaces_between_markers(self):
+        existing = (
+            "# My Project\n"
+            "Some intro text.\n"
+            f"{BEGIN_MARKER}\n"
+            "old generated content\n"
+            f"{END_MARKER}\n"
+            "Footer text.\n"
+        )
+        result = inject_into_content(existing, "new generated content")
+
+        assert result is not None
+        assert "# My Project" in result
+        assert "Some intro text." in result
+        assert "new generated content" in result
+        assert "Footer text." in result
+        assert "old generated content" not in result
+
+    def test_inject_no_markers_returns_none(self):
+        result = inject_into_content("# My Project\nNo markers here.\n", "new")
+
+        assert result is None
+
+    def test_inject_only_begin_marker_returns_none(self):
+        existing = f"# My Project\n{BEGIN_MARKER}\nsome content\n"
+        result = inject_into_content(existing, "new")
+
+        assert result is None
+
+    def test_inject_only_end_marker_returns_none(self):
+        existing = f"# My Project\nsome content\n{END_MARKER}\n"
+        result = inject_into_content(existing, "new")
+
+        assert result is None
+
+    def test_inject_end_before_begin_returns_none(self):
+        existing = f"{END_MARKER}\nsome content\n{BEGIN_MARKER}\n"
+        result = inject_into_content(existing, "new")
+
+        assert result is None
+
+    def test_inject_preserves_surrounding_content(self):
+        before = "line1\nline2\nline3"
+        after = "line4\nline5\nline6"
+        existing = f"{before}\n{BEGIN_MARKER}\nold\n{END_MARKER}\n{after}"
+        result = inject_into_content(existing, "replaced")
+
+        assert result is not None
+        assert result.startswith(before)
+        assert result.endswith(after)
+        assert "replaced" in result
+
+    def test_inject_markers_preserved_in_output(self):
+        existing = f"{BEGIN_MARKER}\nold\n{END_MARKER}"
+        result = inject_into_content(existing, "new")
+
+        assert result is not None
+        assert BEGIN_MARKER in result
+        assert END_MARKER in result
+
+    def test_render_to_directory_injects_into_existing_file(
+        self, sample_pipeline: Pipeline, tmp_path: Path
+    ):
+        readme = tmp_path / "README.md"
+        readme.write_text(
+            f"# Existing Header\n"
+            f"Keep this intro.\n"
+            f"{BEGIN_MARKER}\n"
+            f"old docs\n"
+            f"{END_MARKER}\n"
+            f"Keep this footer.\n"
+        )
+
+        renderer = ConciseRenderer()
+        files = renderer.render_to_directory(sample_pipeline, tmp_path)
+
+        content = readme.read_text()
+        assert "# Existing Header" in content
+        assert "Keep this intro." in content
+        assert "Keep this footer." in content
+        assert "old docs" not in content
+        assert BEGIN_MARKER in content
+        assert END_MARKER in content
+        assert "## Inputs" in content
+        assert len(files) == 1
+
+    def test_render_to_directory_wraps_with_markers_new_file(
+        self, sample_pipeline: Pipeline, tmp_path: Path
+    ):
+        renderer = ConciseRenderer()
+        files = renderer.render_to_directory(sample_pipeline, tmp_path)
+
+        content = (tmp_path / "README.md").read_text()
+        assert content.startswith(BEGIN_MARKER)
+        assert END_MARKER in content
+        assert "## Inputs" in content
+        assert len(files) == 1
+
+    def test_render_to_directory_overwrites_file_without_markers(
+        self, sample_pipeline: Pipeline, tmp_path: Path
+    ):
+        readme = tmp_path / "README.md"
+        readme.write_text("# Old content without markers\n")
+
+        renderer = ConciseRenderer()
+        files = renderer.render_to_directory(sample_pipeline, tmp_path)
+
+        content = readme.read_text()
+        assert "# Old content without markers" not in content
+        assert content.startswith(BEGIN_MARKER)
+        assert END_MARKER in content
+        assert "## Inputs" in content
+        assert len(files) == 1
