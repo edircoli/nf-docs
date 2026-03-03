@@ -37,17 +37,11 @@ Python or Javadoc for Java.
 
     Compact terraform-docs-style Markdown tables with marker injection and selective section rendering.
 
--   :material-code-json:{ .lg .middle } __JSON__
+-   :material-code-json:{ .lg .middle } __JSON & YAML__
 
     ---
 
     Machine-readable structured data for CI/CD pipelines and custom integrations.
-
--   :material-format-indent-increase:{ .lg .middle } __YAML__
-
-    ---
-
-    Human and machine-readable structured data for CI/CD and custom integrations.
 
 </div>
 
