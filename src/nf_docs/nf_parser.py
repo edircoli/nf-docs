@@ -5,12 +5,16 @@ Parses Nextflow process/workflow definitions from LSP hover content
 to extract inputs, outputs, and other metadata.
 """
 
+import logging
 import re
 from dataclasses import dataclass, field
+from pathlib import Path
 
 # Traditional Nextflow input qualifiers that should not be treated as typed variable names.
 # Used to prevent false matches like "each: sample" being parsed as typed input "each" of type "sample".
 _TRADITIONAL_QUALIFIERS = frozenset({"val", "path", "file", "env", "stdin", "tuple", "each"})
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -297,6 +301,46 @@ def _parse_single_output(line: str) -> ParsedOutput | None:
     return None
 
 
+def _parse_tuple_components(inner: str) -> list[str]:
+    """Parse the components inside a ``tuple(...)`` expression.
+
+    Handles mixed content where some elements are qualified
+    (``file("...")``, ``val(x)``, ``path("...")``) and others are bare
+    names (``meta``, ``bam``).  Bare names are wrapped as ``val(name)``.
+
+    Args:
+        inner: The content inside the outer ``tuple()`` parentheses,
+            e.g. ``'meta, file("*_svpileup.txt")'``.
+
+    Returns:
+        List of formatted component strings like ``["val(meta)", "file(\\"*_svpileup.txt\\")"]``.
+    """
+    parts: list[str] = []
+    # Match qualified components and their positions
+    qualifier_re = re.compile(r"(val|path|file|env)\s*\(([^)]+)\)")
+    last_end = 0
+
+    for m in qualifier_re.finditer(inner):
+        # Any text between the last match end and this match start may contain bare names
+        gap = inner[last_end : m.start()]
+        for bare in re.findall(r"\b(\w+)\b", gap):
+            parts.append(f"val({bare})")
+        parts.append(f"{m.group(1)}({m.group(2)})")
+        last_end = m.end()
+
+    # Handle any trailing bare names after the last qualified component
+    gap = inner[last_end:]
+    for bare in re.findall(r"\b(\w+)\b", gap):
+        parts.append(f"val({bare})")
+
+    # Fallback: if nothing was parsed, split by comma and wrap as val()
+    if not parts:
+        names = [n.strip() for n in inner.split(",")]
+        parts = [f"val({n})" for n in names if n]
+
+    return parts
+
+
 def _parse_named_output(emit_name: str, rhs: str) -> ParsedOutput:
     """Parse the right-hand side of a named output assignment.
 
@@ -319,17 +363,8 @@ def _parse_named_output(emit_name: str, rhs: str) -> ParsedOutput:
     tuple_match = re.match(r"tuple\s*\((.+)\)\s*$", rhs)
     if tuple_match:
         inner = tuple_match.group(1)
-        # Extract typed components: file("..."), val(...), path("...")
-        components = re.findall(r"(val|path|file|env)\s*\(([^)]+)\)", inner)
-        if components:
-            parts = []
-            for comp_type, comp_name in components:
-                parts.append(f"{comp_type}({comp_name})")
-            name = ", ".join(parts)
-        else:
-            # Plain names: tuple(meta, bam)
-            names = [n.strip() for n in inner.split(",")]
-            name = ", ".join(f"val({n})" for n in names)
+        parts = _parse_tuple_components(inner)
+        name = ", ".join(parts)
         return ParsedOutput(name=name, type="tuple", emit=emit_name)
 
     # Handle simple: file("*.bam"), path("versions.yml"), val(x)
@@ -419,3 +454,90 @@ def is_code_block(text: str) -> bool:
             return True
 
     return False
+
+
+def enrich_outputs_from_source(
+    outputs: list[ParsedOutput],
+    source_path: Path,
+    process_name: str,
+) -> list[ParsedOutput]:
+    """Enrich bare-name outputs with full declarations parsed from the ``.nf`` source.
+
+    When the Nextflow LSP returns bare emit names for typed process outputs
+    (e.g. ``txt``, ``bam`` instead of ``txt = tuple(meta, file("*.txt"))``),
+    this function reads the actual source file and parses the named-assignment
+    output declarations to provide full type and component information.
+
+    If a bare output's emit name matches a named assignment in the source, the
+    bare output is replaced with the richer parsed version.  Outputs that are
+    already fully qualified (have a non-empty ``type``) are left untouched.
+
+    Args:
+        outputs: The outputs parsed from the LSP hover (may contain bare names).
+        source_path: Absolute path to the ``.nf`` source file.
+        process_name: Name of the process to locate in the source.
+
+    Returns:
+        A new list of ``ParsedOutput`` objects, enriched where possible.
+    """
+    # Only enrich if there are bare outputs (type is empty)
+    bare_outputs = [o for o in outputs if not o.type]
+    if not bare_outputs:
+        return outputs
+
+    try:
+        source = source_path.read_text(encoding="utf-8")
+    except OSError as e:
+        logger.debug(f"Could not read source file {source_path} for output enrichment: {e}")
+        return outputs
+
+    # Find the process block in source
+    proc_pattern = re.compile(rf"process\s+{re.escape(process_name)}\s*\{{", re.MULTILINE)
+    proc_match = proc_pattern.search(source)
+    if not proc_match:
+        logger.debug(f"Could not find process {process_name} in {source_path}")
+        return outputs
+
+    # Extract the process body (find matching closing brace)
+    proc_start = proc_match.start()
+    brace_depth = 0
+    proc_body = ""
+    for i in range(proc_match.end() - 1, len(source)):
+        if source[i] == "{":
+            brace_depth += 1
+        elif source[i] == "}":
+            brace_depth -= 1
+            if brace_depth == 0:
+                proc_body = source[proc_start : i + 1]
+                break
+
+    if not proc_body:
+        return outputs
+
+    # Extract the output section from the source process body
+    output_match = re.search(
+        r"output:\s*(.*?)(?:topic:|script:|shell:|exec:|when:|\})",
+        proc_body,
+        re.DOTALL,
+    )
+    if not output_match:
+        return outputs
+
+    # Parse the source output declarations
+    source_outputs = _parse_output_declarations(output_match.group(1))
+
+    # Build a lookup by emit name
+    source_by_emit: dict[str, ParsedOutput] = {}
+    for out in source_outputs:
+        if out.emit:
+            source_by_emit[out.emit] = out
+
+    # Replace bare outputs with enriched versions
+    enriched = []
+    for out in outputs:
+        if not out.type and out.emit in source_by_emit:
+            enriched.append(source_by_emit[out.emit])
+        else:
+            enriched.append(out)
+
+    return enriched

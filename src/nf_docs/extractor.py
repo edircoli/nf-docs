@@ -38,7 +38,7 @@ from nf_docs.models import (
     WorkflowInput,
     WorkflowOutput,
 )
-from nf_docs.nf_parser import parse_process_hover, parse_workflow_hover
+from nf_docs.nf_parser import enrich_outputs_from_source, parse_process_hover, parse_workflow_hover
 from nf_docs.progress import (
     ExtractionPhase,
     ProgressCallbackType,
@@ -586,7 +586,14 @@ class PipelineExtractor:
         # Determine what kind of symbol this is based on parsed type or LSP kind
         if symbol_type == "process" or kind == SymbolKind.METHOD:
             process = self._create_process_from_signature(
-                name, signature, docstring, relative_path, line + 1, end_line + 1, source_url
+                name,
+                signature,
+                docstring,
+                relative_path,
+                line + 1,
+                end_line + 1,
+                source_url,
+                source_path=file_path,
             )
             if process and not any(p.name == process.name for p in pipeline.processes):
                 # Apply meta.yml data if available (for modules)
@@ -638,11 +645,12 @@ class PipelineExtractor:
         line: int,
         end_line: int = 0,
         source_url: str = "",
+        source_path: Path | None = None,
     ) -> Process | None:
         """Create a Process by parsing the LSP signature."""
         process = Process(
             name=name,
-            docstring=docstring,  # Actual Groovydoc documentation
+            docstring=docstring,
             file=file_path,
             line=line,
             end_line=end_line,
@@ -660,11 +668,17 @@ class PipelineExtractor:
         # }
         parsed = parse_process_hover(f"```nextflow\n{signature}\n```")
         if parsed:
+            # Enrich bare-name outputs from the source file when the LSP
+            # only returns emit names (common with typed Nextflow syntax)
+            outputs = parsed.outputs
+            if source_path and any(not o.type for o in outputs):
+                outputs = enrich_outputs_from_source(outputs, source_path, name)
+
             for inp in parsed.inputs:
                 process.inputs.append(
                     ProcessInput(name=inp.name, type=inp.type, qualifier=inp.qualifier)
                 )
-            for out in parsed.outputs:
+            for out in outputs:
                 process.outputs.append(ProcessOutput(name=out.name, type=out.type, emit=out.emit))
 
         return process
