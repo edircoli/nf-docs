@@ -83,10 +83,6 @@ docs/
 └── functions.md    # Functions
 ```
 
-### JSON / YAML
-
-Structured data for programmatic use, CI/CD pipelines, or custom tooling.
-
 ### Table
 
 A single `README.md` with compact Markdown tables — inspired by
@@ -94,7 +90,7 @@ A single `README.md` with compact Markdown tables — inspired by
 
 Supports **marker-based injection** into existing README files:
 
-```markdown
+```md
 # My Pipeline
 
 Some intro text.
@@ -112,7 +108,7 @@ leaving the rest of the file untouched.
 
 Control which sections appear by adding `{{ section }}` placeholders between the markers:
 
-```markdown
+```md
 <!-- BEGIN_NF_DOCS -->
 
 {{ inputs }}
@@ -126,3 +122,9 @@ Available tags: `{{ header }}`, `{{ inputs }}`, `{{ config }}`, `{{ workflows }}
 `{{ processes }}`, `{{ functions }}`.
 
 If no tags are present, all sections are rendered (the default).
+
+### JSON / YAML
+
+Structured data for programmatic use, CI/CD pipelines, or custom tooling.
+
+See the [examples](examples.md) to get a feel for the structure.
