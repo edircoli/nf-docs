@@ -8,6 +8,10 @@ to extract inputs, outputs, and other metadata.
 import re
 from dataclasses import dataclass, field
 
+# Traditional Nextflow input qualifiers that should not be treated as typed variable names.
+# Used to prevent false matches like "each: sample" being parsed as typed input "each" of type "sample".
+_TRADITIONAL_QUALIFIERS = frozenset({"val", "path", "file", "env", "stdin", "tuple", "each"})
+
 
 @dataclass
 class ParsedInput:
@@ -84,13 +88,17 @@ def parse_process_hover(hover_text: str) -> ParsedProcess | None:
     process = ParsedProcess(name=name_match.group(1))
 
     # Extract input section
-    input_match = re.search(r"input:\s*(.*?)(?:output:|script:|shell:|exec:|\})", code, re.DOTALL)
+    input_match = re.search(
+        r"input:\s*(.*?)(?:output:|topic:|script:|shell:|exec:|\})", code, re.DOTALL
+    )
     if input_match:
         input_block = input_match.group(1)
         process.inputs = _parse_input_declarations(input_block)
 
     # Extract output section
-    output_match = re.search(r"output:\s*(.*?)(?:script:|shell:|exec:|when:|\})", code, re.DOTALL)
+    output_match = re.search(
+        r"output:\s*(.*?)(?:topic:|script:|shell:|exec:|when:|\})", code, re.DOTALL
+    )
     if output_match:
         output_block = output_match.group(1)
         process.outputs = _parse_output_declarations(output_block)
@@ -118,10 +126,48 @@ def _parse_input_declarations(block: str) -> list[ParsedInput]:
 
 
 def _parse_single_input(line: str) -> ParsedInput | None:
-    """Parse a single input declaration line."""
+    """Parse a single input declaration line.
+
+    Handles both traditional DSL2 syntax and typed syntax:
+      - Traditional: ``tuple val(meta), path(reads)``
+      - Typed tuple: ``(meta, bam): Tuple<Map, Path>``
+      - Typed simple: ``x: Integer``, ``bam: Path``
+    """
     line = line.strip()
     if not line:
         return None
+
+    # Handle typed destructured tuple: (meta, bam): Tuple<Map, Path>
+    typed_tuple_match = re.match(r"\(([^)]+)\)\s*:\s*Tuple\s*<([^>]+)>", line)
+    if typed_tuple_match:
+        names_str = typed_tuple_match.group(1)
+        types_str = typed_tuple_match.group(2)
+        names = [n.strip() for n in names_str.split(",")]
+        types = [t.strip() for t in types_str.split(",")]
+        # Build descriptive components pairing names with their types
+        parts = []
+        for i, name in enumerate(names):
+            if i < len(types):
+                type_name = types[i]
+                # Map Nextflow types to traditional qualifiers for display
+                qualifier = _typed_to_qualifier(type_name)
+                parts.append(f"{qualifier}({name})")
+            else:
+                parts.append(f"val({name})")
+        return ParsedInput(
+            name=", ".join(parts),
+            type="tuple",
+            qualifier=f"Tuple<{types_str}>",
+        )
+
+    # Handle typed simple input: x: Integer, bam: Path
+    # Exclude traditional Nextflow qualifiers that could false-match (e.g. "each: sample")
+    typed_simple_match = re.match(r"(\w+)\s*:\s*(\w+)$", line)
+    if typed_simple_match and typed_simple_match.group(1) not in _TRADITIONAL_QUALIFIERS:
+        name = typed_simple_match.group(1)
+        type_name = typed_simple_match.group(2)
+        qualifier = _typed_to_qualifier(type_name)
+        return ParsedInput(name=name, type=qualifier, qualifier=type_name)
 
     # Handle tuple inputs: tuple val(meta), path(reads)
     if line.startswith("tuple"):
@@ -154,6 +200,22 @@ def _parse_single_input(line: str) -> ParsedInput | None:
     return None
 
 
+def _typed_to_qualifier(type_name: str) -> str:
+    """Map a Nextflow type annotation to a traditional qualifier name.
+
+    Args:
+        type_name: The type annotation (e.g. ``Path``, ``Map``, ``Integer``).
+
+    Returns:
+        The corresponding traditional qualifier (``val``, ``path``, etc.).
+    """
+    path_types = {"Path", "File"}
+    if type_name in path_types:
+        return "path"
+    # Everything else maps to val (Map, Integer, String, Boolean, etc.)
+    return "val"
+
+
 def _parse_output_declarations(block: str) -> list[ParsedOutput]:
     """Parse output declarations from an output block."""
     outputs = []
@@ -174,10 +236,29 @@ def _parse_output_declarations(block: str) -> list[ParsedOutput]:
 
 
 def _parse_single_output(line: str) -> ParsedOutput | None:
-    """Parse a single output declaration line."""
+    """Parse a single output declaration line.
+
+    Handles both traditional DSL2 syntax and typed/named assignment syntax:
+      - Traditional: ``tuple val(meta), path("*.html"), emit: html``
+      - Named assignment: ``txt = tuple(meta, file("*_svpileup.txt"))``
+      - Named simple: ``bam = file("*.bam")``
+      - Topic publish: ``>> 'topic_name'``
+    """
     line = line.strip()
     if not line:
         return None
+
+    # Skip topic publish lines: >> 'topic_name'
+    if line.startswith(">>"):
+        return None
+
+    # Handle named assignment outputs: name = tuple(meta, file("*_svpileup.txt"))
+    # or: name = file("*.bam"), name = val(something)
+    named_match = re.match(r"(\w+)\s*=\s*(.+)", line)
+    if named_match:
+        emit_name = named_match.group(1)
+        rhs = named_match.group(2).strip()
+        return _parse_named_output(emit_name, rhs)
 
     # Extract emit name if present
     emit_match = re.search(r"emit:\s*(\w+)", line)
@@ -206,6 +287,52 @@ def _parse_single_output(line: str) -> ParsedOutput | None:
         return ParsedOutput(name=name, type=output_type, emit=emit_name, optional=optional)
 
     return None
+
+
+def _parse_named_output(emit_name: str, rhs: str) -> ParsedOutput:
+    """Parse the right-hand side of a named output assignment.
+
+    Handles patterns like:
+      - ``tuple(meta, file("*_svpileup.txt"))``
+      - ``file("*.bam")``
+      - ``val(something)``
+      - ``path("versions.yml")``
+
+    Args:
+        emit_name: The variable name (used as the emit name).
+        rhs: The right-hand side expression after ``=``.
+
+    Returns:
+        A ParsedOutput with the emit name and parsed type/components.
+    """
+    rhs = rhs.strip()
+
+    # Handle tuple(...): tuple(meta, file("*_svpileup.txt"))
+    tuple_match = re.match(r"tuple\s*\((.+)\)\s*$", rhs)
+    if tuple_match:
+        inner = tuple_match.group(1)
+        # Extract typed components: file("..."), val(...), path("...")
+        components = re.findall(r"(val|path|file|env)\s*\(([^)]+)\)", inner)
+        if components:
+            parts = []
+            for comp_type, comp_name in components:
+                parts.append(f"{comp_type}({comp_name})")
+            name = ", ".join(parts)
+        else:
+            # Plain names: tuple(meta, bam)
+            names = [n.strip() for n in inner.split(",")]
+            name = ", ".join(f"val({n})" for n in names)
+        return ParsedOutput(name=name, type="tuple", emit=emit_name)
+
+    # Handle simple: file("*.bam"), path("versions.yml"), val(x)
+    simple_match = re.match(r"(val|path|file|env|stdout)\s*\(([^)]*)\)", rhs)
+    if simple_match:
+        output_type = simple_match.group(1)
+        name = simple_match.group(2).strip().strip("'\"") if simple_match.group(2) else output_type
+        return ParsedOutput(name=name, type=output_type, emit=emit_name)
+
+    # Fallback: treat entire rhs as the name
+    return ParsedOutput(name=rhs, type="val", emit=emit_name)
 
 
 def parse_workflow_hover(hover_text: str) -> ParsedWorkflow | None:
