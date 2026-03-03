@@ -203,8 +203,10 @@ def _parse_single_input(line: str) -> ParsedInput | None:
 def _typed_to_qualifier(type_name: str) -> str:
     """Map a Nextflow type annotation to a traditional qualifier name.
 
+    The Nextflow LSP may represent unknown or unresolved types as ``?``.
+
     Args:
-        type_name: The type annotation (e.g. ``Path``, ``Map``, ``Integer``).
+        type_name: The type annotation (e.g. ``Path``, ``Map``, ``Integer``, ``?``).
 
     Returns:
         The corresponding traditional qualifier (``val``, ``path``, etc.).
@@ -212,7 +214,7 @@ def _typed_to_qualifier(type_name: str) -> str:
     path_types = {"Path", "File"}
     if type_name in path_types:
         return "path"
-    # Everything else maps to val (Map, Integer, String, Boolean, etc.)
+    # Everything else maps to val (Map, Integer, String, Boolean, ?, etc.)
     return "val"
 
 
@@ -285,6 +287,12 @@ def _parse_single_output(line: str) -> ParsedOutput | None:
             simple_match.group(2).strip().strip("'\"()") if simple_match.group(2) else output_type
         )
         return ParsedOutput(name=name, type=output_type, emit=emit_name, optional=optional)
+
+    # Handle bare emit names from typed outputs (LSP returns just the name, e.g. "txt", "bam")
+    bare_name_match = re.match(r"(\w+)$", line)
+    if bare_name_match:
+        name = bare_name_match.group(1)
+        return ParsedOutput(name=name, type="", emit=name)
 
     return None
 

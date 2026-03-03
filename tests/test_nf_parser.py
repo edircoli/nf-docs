@@ -120,6 +120,22 @@ class TestParseSingleInput:
         assert result.name == "data"
         assert result.qualifier == "File"
 
+    def test_typed_tuple_with_question_mark_type(self):
+        """Typed tuple with ? (unresolved) type from LSP: (meta, bam): Tuple<?, Path>"""
+        result = _parse_single_input("(meta, bam): Tuple<?, Path>")
+        assert result is not None
+        assert result.type == "tuple"
+        assert result.name == "val(meta), path(bam)"
+        assert result.qualifier == "Tuple<?, Path>"
+
+    def test_typed_tuple_three_with_question_mark(self):
+        """Typed 3-tuple with ? type: (meta, bam, txt): Tuple<?, Path, Path>"""
+        result = _parse_single_input("(meta, bam, txt): Tuple<?, Path, Path>")
+        assert result is not None
+        assert result.type == "tuple"
+        assert result.name == "val(meta), path(bam), path(txt)"
+        assert result.qualifier == "Tuple<?, Path, Path>"
+
     def test_each_qualifier_not_mismatched_as_typed(self):
         """Traditional 'each' qualifier must not be parsed as typed input."""
         # 'each' followed by a colon-like pattern should not match typed simple
@@ -230,6 +246,28 @@ class TestParseSingleOutput:
         assert result.type == "val"
         assert result.name == "total"
         assert result.emit == "count"
+
+    def test_bare_emit_name(self):
+        """Bare identifier output from typed syntax LSP hover (e.g. just 'txt')."""
+        result = _parse_single_output("txt")
+        assert result is not None
+        assert result.name == "txt"
+        assert result.emit == "txt"
+        assert result.type == ""
+
+    def test_bare_emit_name_bam(self):
+        """Bare identifier output: bam."""
+        result = _parse_single_output("bam")
+        assert result is not None
+        assert result.name == "bam"
+        assert result.emit == "bam"
+
+    def test_bare_emit_name_bedpe(self):
+        """Bare identifier output: bedpe."""
+        result = _parse_single_output("bedpe")
+        assert result is not None
+        assert result.name == "bedpe"
+        assert result.emit == "bedpe"
 
     def test_topic_publish_skipped(self):
         """Topic publish lines should be skipped."""
@@ -436,6 +474,51 @@ process WITH_TOPIC {
         result = parse_process_hover(hover)
         assert result is not None
         # Only the file output, not the topic line
+        assert len(result.outputs) == 1
+        assert result.outputs[0].emit == "txt"
+
+    def test_typed_process_with_bare_outputs(self):
+        """Real LSP hover for a typed process with bare emit names as outputs."""
+        hover = """```nextflow
+process SV_PILEUP {
+  input:
+  (meta, bam): Tuple<?, Path>
+
+  output:
+  txt
+  bam
+}
+```"""
+        result = parse_process_hover(hover)
+        assert result is not None
+        assert result.name == "SV_PILEUP"
+        # Input: typed tuple with ? type
+        assert len(result.inputs) == 1
+        assert result.inputs[0].type == "tuple"
+        assert result.inputs[0].name == "val(meta), path(bam)"
+        assert result.inputs[0].qualifier == "Tuple<?, Path>"
+        # Outputs: bare emit names
+        assert len(result.outputs) == 2
+        assert result.outputs[0].name == "txt"
+        assert result.outputs[0].emit == "txt"
+        assert result.outputs[1].name == "bam"
+        assert result.outputs[1].emit == "bam"
+
+    def test_typed_process_three_inputs_bare_output(self):
+        """Real LSP hover for typed process with 3-element tuple and bare output."""
+        hover = """```nextflow
+process AGGREGATE_SV_PILEUP {
+  input:
+  (meta, bam, txt): Tuple<?, Path, Path>
+
+  output:
+  txt
+}
+```"""
+        result = parse_process_hover(hover)
+        assert result is not None
+        assert len(result.inputs) == 1
+        assert result.inputs[0].name == "val(meta), path(bam), path(txt)"
         assert len(result.outputs) == 1
         assert result.outputs[0].emit == "txt"
 
