@@ -38,7 +38,13 @@ from nf_docs.models import (
     WorkflowInput,
     WorkflowOutput,
 )
-from nf_docs.nf_parser import enrich_outputs_from_source, parse_process_hover, parse_workflow_hover
+from nf_docs.nf_parser import (
+    RETURN_KEY_PREFIX,
+    RETURN_KEY_UNNAMED,
+    enrich_outputs_from_source,
+    parse_process_hover,
+    parse_workflow_hover,
+)
 from nf_docs.progress import (
     ExtractionPhase,
     ProgressCallbackType,
@@ -659,11 +665,19 @@ class PipelineExtractor:
         if param_docs is None:
             param_docs = {}
 
+        # Read the source file once — shared by Groovydoc parsing and output enrichment.
+        source_text: str | None = None
+        if source_path:
+            try:
+                source_text = source_path.read_text(encoding="utf-8")
+            except OSError as e:
+                logger.debug(f"Could not read source file {source_path}: {e}")
+
         # If the LSP returned no param docs, try to parse them from the source file.
         # The LSP may return the free-text docstring but strip @param/@return tags,
         # or (for typed processes) return no docstring at all.
-        if source_path and not param_docs:
-            source_docstring, source_params = _parse_groovydoc_from_source(source_path, name)
+        if source_text is not None and not param_docs:
+            source_docstring, source_params = _parse_groovydoc_from_source(source_text, name)
             if source_params:
                 param_docs = source_params
             if not docstring and source_docstring:
@@ -684,8 +698,8 @@ class PipelineExtractor:
             # Enrich bare-name outputs from the source file when the LSP
             # only returns emit names (common with typed Nextflow syntax)
             outputs = parsed.outputs
-            if source_path and any(not o.type for o in outputs):
-                outputs = enrich_outputs_from_source(outputs, source_path, name)
+            if source_text is not None and any(not o.type for o in outputs):
+                outputs = enrich_outputs_from_source(outputs, source_text, name)
 
             for inp in parsed.inputs:
                 # Look up @param description by matching input component names
@@ -700,9 +714,9 @@ class PipelineExtractor:
                 )
             for out in outputs:
                 # Look up @return description by emit name
-                description = param_docs.get(f"_return_{out.emit}", "")
+                description = param_docs.get(f"{RETURN_KEY_PREFIX}{out.emit}", "")
                 if not description:
-                    description = param_docs.get("_return", "")
+                    description = param_docs.get(RETURN_KEY_UNNAMED, "")
                 process.outputs.append(
                     ProcessOutput(
                         name=out.name,
@@ -773,7 +787,7 @@ class PipelineExtractor:
             line=line,
             end_line=end_line,
             source_url=source_url,
-            return_description=param_docs.get("_return", ""),
+            return_description=param_docs.get(RETURN_KEY_UNNAMED, ""),
         )
 
         # Parse function signature: def name(param1: Type, param2: Type) -> ReturnType
@@ -842,14 +856,14 @@ def _find_param_description(input_name: str, param_docs: dict[str, str]) -> str:
 
 
 def _parse_groovydoc_from_source(
-    source_path: Path,
+    source: str,
     process_name: str,
 ) -> tuple[str, dict[str, str]]:
-    """Parse a Groovydoc comment from a ``.nf`` source file.
+    """Parse a Groovydoc comment from ``.nf`` source text.
 
     When the Nextflow LSP does not return a docstring (common with typed
-    processes), this function reads the source file and extracts the
-    ``/** ... */`` comment block preceding the process definition.
+    processes), this function extracts the ``/** ... */`` comment block
+    preceding the process definition.
 
     Supports two documentation styles:
 
@@ -869,7 +883,7 @@ def _parse_groovydoc_from_source(
          */
 
     Args:
-        source_path: Absolute path to the ``.nf`` source file.
+        source: The ``.nf`` source file contents.
         process_name: Name of the process to locate.
 
     Returns:
@@ -877,11 +891,6 @@ def _parse_groovydoc_from_source(
         description and *param_docs* maps param/return names to descriptions.
         Returns ``("", {})`` if no Groovydoc is found.
     """
-    try:
-        source = source_path.read_text(encoding="utf-8")
-    except OSError as e:
-        logger.debug(f"Could not read source file {source_path} for Groovydoc: {e}")
-        return "", {}
 
     # Find the process declaration, then look backwards for the nearest /** ... */
     proc_pattern = re.compile(
@@ -945,7 +954,7 @@ def _parse_groovydoc_comment(comment_body: str) -> tuple[str, dict[str, str]]:
         return_named = re.match(r"@returns?\s+(\w+)\s+(.*)", line)
         if return_named:
             current_section = "return"
-            current_param = f"_return_{return_named.group(1)}"
+            current_param = f"{RETURN_KEY_PREFIX}{return_named.group(1)}"
             params[current_param] = return_named.group(2).strip()
             continue
 
@@ -953,8 +962,8 @@ def _parse_groovydoc_comment(comment_body: str) -> tuple[str, dict[str, str]]:
         return_unnamed = re.match(r"@returns?\s*(.*)", line)
         if return_unnamed:
             current_section = "return"
-            current_param = "_return"
-            params["_return"] = return_unnamed.group(1).strip()
+            current_param = RETURN_KEY_UNNAMED
+            params[RETURN_KEY_UNNAMED] = return_unnamed.group(1).strip()
             continue
 
         # --- Bullet-list Inputs: / Outputs: sections ---
@@ -976,7 +985,7 @@ def _parse_groovydoc_comment(comment_body: str) -> tuple[str, dict[str, str]]:
                 current_param = name
                 params[name] = desc
             else:
-                current_param = f"_return_{name}"
+                current_param = f"{RETURN_KEY_PREFIX}{name}"
                 params[current_param] = desc
             continue
 

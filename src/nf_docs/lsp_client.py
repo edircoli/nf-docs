@@ -24,6 +24,7 @@ from urllib.request import urlretrieve
 import httpx
 
 from nf_docs.nextflow_env import get_isolated_env
+from nf_docs.nf_parser import RETURN_KEY_PREFIX, RETURN_KEY_UNNAMED
 from nf_docs.progress import (
     ExtractionPhase,
     ProgressCallbackType,
@@ -878,14 +879,14 @@ def parse_hover_content(hover: dict[str, Any] | None) -> tuple[str, str, dict[st
             return_match = re.match(r"@returns?\s+(\w+)\s+(.*)", line_stripped)
             if return_match:
                 current_section = "return"
-                current_param = f"_return_{return_match.group(1)}"
+                current_param = f"{RETURN_KEY_PREFIX}{return_match.group(1)}"
                 params[current_param] = return_match.group(2).strip()
                 continue
             return_unnamed = re.match(r"@returns?\s*(.*)", line_stripped)
             if return_unnamed:
                 current_section = "return"
-                current_param = "_return"
-                params["_return"] = return_unnamed.group(1).strip()
+                current_param = RETURN_KEY_UNNAMED
+                params[RETURN_KEY_UNNAMED] = return_unnamed.group(1).strip()
                 continue
 
             # Handle continuation lines

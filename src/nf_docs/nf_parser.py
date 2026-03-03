@@ -8,11 +8,23 @@ to extract inputs, outputs, and other metadata.
 import logging
 import re
 from dataclasses import dataclass, field
-from pathlib import Path
 
 # Traditional Nextflow input qualifiers that should not be treated as typed variable names.
 # Used to prevent false matches like "each: sample" being parsed as typed input "each" of type "sample".
 _TRADITIONAL_QUALIFIERS = frozenset({"val", "path", "file", "env", "stdin", "tuple", "each"})
+
+# Key prefix used in param_docs dicts to distinguish @return entries from @param entries.
+RETURN_KEY_PREFIX = "_return_"
+RETURN_KEY_UNNAMED = "_return"
+
+# Regexes for extracting input/output sections from a process body.
+# The terminators cover every Nextflow process section keyword.
+_INPUT_SECTION_RE = re.compile(
+    r"input:\s*(.*?)(?:output:|topic:|script:|shell:|exec:|\})", re.DOTALL
+)
+_OUTPUT_SECTION_RE = re.compile(
+    r"output:\s*(.*?)(?:topic:|script:|shell:|exec:|when:|\})", re.DOTALL
+)
 
 logger = logging.getLogger(__name__)
 
@@ -92,17 +104,13 @@ def parse_process_hover(hover_text: str) -> ParsedProcess | None:
     process = ParsedProcess(name=name_match.group(1))
 
     # Extract input section
-    input_match = re.search(
-        r"input:\s*(.*?)(?:output:|topic:|script:|shell:|exec:|\})", code, re.DOTALL
-    )
+    input_match = _INPUT_SECTION_RE.search(code)
     if input_match:
         input_block = input_match.group(1)
         process.inputs = _parse_input_declarations(input_block)
 
     # Extract output section
-    output_match = re.search(
-        r"output:\s*(.*?)(?:topic:|script:|shell:|exec:|when:|\})", code, re.DOTALL
-    )
+    output_match = _OUTPUT_SECTION_RE.search(code)
     if output_match:
         output_block = output_match.group(1)
         process.outputs = _parse_output_declarations(output_block)
@@ -458,15 +466,15 @@ def is_code_block(text: str) -> bool:
 
 def enrich_outputs_from_source(
     outputs: list[ParsedOutput],
-    source_path: Path,
+    source: str,
     process_name: str,
 ) -> list[ParsedOutput]:
-    """Enrich bare-name outputs with full declarations parsed from the ``.nf`` source.
+    """Enrich bare-name outputs with full declarations parsed from ``.nf`` source text.
 
     When the Nextflow LSP returns bare emit names for typed process outputs
     (e.g. ``txt``, ``bam`` instead of ``txt = tuple(meta, file("*.txt"))``),
-    this function reads the actual source file and parses the named-assignment
-    output declarations to provide full type and component information.
+    this function parses the source text to find the named-assignment
+    output declarations and provide full type and component information.
 
     If a bare output's emit name matches a named assignment in the source, the
     bare output is replaced with the richer parsed version.  Outputs that are
@@ -474,28 +482,21 @@ def enrich_outputs_from_source(
 
     Args:
         outputs: The outputs parsed from the LSP hover (may contain bare names).
-        source_path: Absolute path to the ``.nf`` source file.
+        source: The ``.nf`` source file contents.
         process_name: Name of the process to locate in the source.
 
     Returns:
         A new list of ``ParsedOutput`` objects, enriched where possible.
     """
     # Only enrich if there are bare outputs (type is empty)
-    bare_outputs = [o for o in outputs if not o.type]
-    if not bare_outputs:
-        return outputs
-
-    try:
-        source = source_path.read_text(encoding="utf-8")
-    except OSError as e:
-        logger.debug(f"Could not read source file {source_path} for output enrichment: {e}")
+    if not any(not o.type for o in outputs):
         return outputs
 
     # Find the process block in source
     proc_pattern = re.compile(rf"process\s+{re.escape(process_name)}\s*\{{", re.MULTILINE)
     proc_match = proc_pattern.search(source)
     if not proc_match:
-        logger.debug(f"Could not find process {process_name} in {source_path}")
+        logger.debug(f"Could not find process {process_name} in source")
         return outputs
 
     # Extract the process body (find matching closing brace)
@@ -515,11 +516,7 @@ def enrich_outputs_from_source(
         return outputs
 
     # Extract the output section from the source process body
-    output_match = re.search(
-        r"output:\s*(.*?)(?:topic:|script:|shell:|exec:|when:|\})",
-        proc_body,
-        re.DOTALL,
-    )
+    output_match = _OUTPUT_SECTION_RE.search(proc_body)
     if not output_match:
         return outputs
 

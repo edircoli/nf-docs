@@ -1,7 +1,5 @@
 """Tests for the Nextflow code parser."""
 
-from pathlib import Path
-
 from nf_docs.nf_parser import (
     ParsedInput,
     ParsedOutput,
@@ -585,16 +583,13 @@ process SV_PILEUP {
 }
 """
 
-    def test_bare_outputs_enriched(self, tmp_path: Path):
+    def test_bare_outputs_enriched(self):
         """Bare emit names are replaced with full declarations from source."""
-        source_file = tmp_path / "sv_pileup.nf"
-        source_file.write_text(self.SV_PILEUP_SOURCE)
-
         bare_outputs = [
             ParsedOutput(name="txt", type="", emit="txt"),
             ParsedOutput(name="bam", type="", emit="bam"),
         ]
-        result = enrich_outputs_from_source(bare_outputs, source_file, "SV_PILEUP")
+        result = enrich_outputs_from_source(bare_outputs, self.SV_PILEUP_SOURCE, "SV_PILEUP")
 
         assert len(result) == 2
         assert result[0].emit == "txt"
@@ -604,59 +599,45 @@ process SV_PILEUP {
         assert result[1].type == "tuple"
         assert "file(" in result[1].name
 
-    def test_already_qualified_outputs_not_changed(self, tmp_path: Path):
+    def test_already_qualified_outputs_not_changed(self):
         """Outputs that already have a type are left untouched."""
-        source_file = tmp_path / "sv_pileup.nf"
-        source_file.write_text(self.SV_PILEUP_SOURCE)
-
         qualified_outputs = [
             ParsedOutput(name="val(meta), path(*.html)", type="tuple", emit="html"),
         ]
-        result = enrich_outputs_from_source(qualified_outputs, source_file, "SV_PILEUP")
+        result = enrich_outputs_from_source(qualified_outputs, self.SV_PILEUP_SOURCE, "SV_PILEUP")
 
         assert len(result) == 1
         assert result[0] is qualified_outputs[0]  # same object, unchanged
 
-    def test_missing_source_file_returns_originals(self, tmp_path: Path):
-        """If the source file doesn't exist, return outputs unchanged."""
-        bare_outputs = [ParsedOutput(name="txt", type="", emit="txt")]
-        result = enrich_outputs_from_source(bare_outputs, tmp_path / "nonexistent.nf", "SV_PILEUP")
-        assert result is bare_outputs
-
-    def test_process_not_found_returns_originals(self, tmp_path: Path):
+    def test_process_not_found_returns_originals(self):
         """If the process name isn't in the source, return outputs unchanged."""
-        source_file = tmp_path / "other.nf"
-        source_file.write_text("process OTHER_PROC {\n  output:\n  x = val(1)\n}\n")
-
         bare_outputs = [ParsedOutput(name="txt", type="", emit="txt")]
-        result = enrich_outputs_from_source(bare_outputs, source_file, "SV_PILEUP")
+        result = enrich_outputs_from_source(
+            bare_outputs, "process OTHER_PROC {\n  output:\n  x = val(1)\n}\n", "SV_PILEUP"
+        )
         assert result is bare_outputs
 
-    def test_partial_match_enriches_only_matching(self, tmp_path: Path):
+    def test_partial_match_enriches_only_matching(self):
         """Only bare outputs whose emit matches a source declaration are enriched."""
-        source_file = tmp_path / "sv_pileup.nf"
-        source_file.write_text(self.SV_PILEUP_SOURCE)
-
         outputs = [
             ParsedOutput(name="txt", type="", emit="txt"),
             ParsedOutput(name="unknown", type="", emit="unknown"),
         ]
-        result = enrich_outputs_from_source(outputs, source_file, "SV_PILEUP")
+        result = enrich_outputs_from_source(outputs, self.SV_PILEUP_SOURCE, "SV_PILEUP")
 
         assert result[0].type == "tuple"  # enriched
         assert result[0].emit == "txt"
         assert result[1].type == ""  # not found in source, unchanged
         assert result[1].emit == "unknown"
 
-    def test_simple_named_output(self, tmp_path: Path):
+    def test_simple_named_output(self):
         """Named simple output: versions = path("versions.yml")."""
-        source_file = tmp_path / "proc.nf"
-        source_file.write_text(
+        source = (
             'process SIMPLE {\n  output:\n  versions = path("versions.yml")\n\n  script:\n  ""\n}\n'
         )
 
         bare_outputs = [ParsedOutput(name="versions", type="", emit="versions")]
-        result = enrich_outputs_from_source(bare_outputs, source_file, "SIMPLE")
+        result = enrich_outputs_from_source(bare_outputs, source, "SIMPLE")
 
         assert result[0].emit == "versions"
         assert result[0].type == "path"

@@ -204,7 +204,7 @@ class TestGroovydocParsing:
         assert params["bam"] == "Input BAM file"
         assert params["_return_txt"] == "SvPileup breakpoint output"
 
-    def test_parse_groovydoc_from_source_with_intervening_code(self, tmp_path: Path):
+    def test_parse_groovydoc_from_source_with_intervening_code(self):
         """Groovydoc with code between */ and process declaration."""
         from nf_docs.extractor import _parse_groovydoc_from_source
 
@@ -226,31 +226,19 @@ process SV_PILEUP {
     bam
 }
 """
-        nf_file = tmp_path / "sv_pileup.nf"
-        nf_file.write_text(source)
-
-        docstring, params = _parse_groovydoc_from_source(nf_file, "SV_PILEUP")
+        docstring, params = _parse_groovydoc_from_source(source, "SV_PILEUP")
         assert "Detect SVs from BAM" in docstring
         assert params["meta"] == "Sample metadata"
         assert params["bam"] == "Input BAM"
         assert params["_return_txt"] == "Output text file"
 
-    def test_parse_groovydoc_from_source_not_found(self, tmp_path: Path):
+    def test_parse_groovydoc_from_source_not_found(self):
         """Returns empty when process not found in source."""
         from nf_docs.extractor import _parse_groovydoc_from_source
 
-        nf_file = tmp_path / "other.nf"
-        nf_file.write_text("process OTHER { script: '' }\n")
-
-        docstring, params = _parse_groovydoc_from_source(nf_file, "MISSING")
-        assert docstring == ""
-        assert params == {}
-
-    def test_parse_groovydoc_from_source_no_file(self, tmp_path: Path):
-        """Returns empty when source file doesn't exist."""
-        from nf_docs.extractor import _parse_groovydoc_from_source
-
-        docstring, params = _parse_groovydoc_from_source(tmp_path / "nonexistent.nf", "PROC")
+        docstring, params = _parse_groovydoc_from_source(
+            "process OTHER { script: '' }\n", "MISSING"
+        )
         assert docstring == ""
         assert params == {}
 
