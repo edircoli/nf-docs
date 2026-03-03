@@ -35,7 +35,7 @@ Choose from 3 different output formats:
 ## What is nf-docs?
 
 <!-- prettier-ignore-start -->
-> [!INFO]
+> [!IMPORTANT]
 > This is not an official Nextflow project. It's a fun side-project by
 > [Phil Ewels](https://github.com/ewels). Please use at your own risk :)
 <!-- prettier-ignore-end -->
