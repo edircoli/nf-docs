@@ -11,7 +11,7 @@
 
 **[Full documentation →](https://ewels.github.io/nf-docs)**
 
-Choose from 3 different output formats:
+Choose from 4 different output formats:
 
 </div>
 
@@ -23,7 +23,7 @@ Choose from 3 different output formats:
 </td>
 <td width="33%">
 <h3 align="center">Markdown</h3>
-<ul><li>Multiple files by section</li><li>Perfect for static site generators</li></ul><hr>
+<ul><li>Multiple files or tables by section</li><li>Perfect for static site generators</li></ul><hr>
 </td>
 <td width="33%">
 <h3 align="center">JSON / YAML</h3>
