@@ -6,14 +6,14 @@
 nf-docs generate PIPELINE_PATH [OPTIONS]
 ```
 
-| Option              | Description                                                 |
-| ------------------- | ----------------------------------------------------------- |
+| Option              | Description                                                          |
+| ------------------- | -------------------------------------------------------------------- |
 | `--format`, `-f`    | Output format: `html` (default), `markdown`, `table`, `json`, `yaml` |
-| `--output`, `-o`    | Output file or directory (default: `docs/`)                 |
-| `--title`, `-t`     | Custom title                                                |
-| `--no-cache`        | Force fresh extraction                                      |
-| `--verbose`, `-v`   | Debug output                                                |
-| `--language-server` | Path to Language Server JAR                                 |
+| `--output`, `-o`    | Output file or directory (default: `docs/`)                          |
+| `--title`, `-t`     | Custom title                                                         |
+| `--no-cache`        | Force fresh extraction                                               |
+| `--verbose`, `-v`   | Debug output                                                         |
+| `--language-server` | Path to Language Server JAR                                          |
 
 ```bash
 # HTML — single shareable file
@@ -114,9 +114,11 @@ Control which sections appear by adding `{{ section }}` placeholders between the
 
 ```markdown
 <!-- BEGIN_NF_DOCS -->
+
 {{ inputs }}
 
 {{ config }}
+
 <!-- END_NF_DOCS -->
 ```
 
@@ -124,5 +126,3 @@ Available tags: `{{ header }}`, `{{ inputs }}`, `{{ config }}`, `{{ workflows }}
 `{{ processes }}`, `{{ functions }}`.
 
 If no tags are present, all sections are rendered (the default).
-
-

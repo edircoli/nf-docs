@@ -530,12 +530,7 @@ class TestTemplateRendering:
 
     def test_extract_template_with_tags(self):
         existing = (
-            f"# Intro\n"
-            f"{BEGIN_MARKER}\n"
-            f"{{{{ inputs }}}}\n"
-            f"{{{{ config }}}}\n"
-            f"{END_MARKER}\n"
-            f"Footer\n"
+            f"# Intro\n{BEGIN_MARKER}\n{{{{ inputs }}}}\n{{{{ config }}}}\n{END_MARKER}\nFooter\n"
         )
         result = extract_template(existing)
 
@@ -544,11 +539,7 @@ class TestTemplateRendering:
         assert "{{ config }}" in result
 
     def test_extract_template_no_tags_returns_none(self):
-        existing = (
-            f"{BEGIN_MARKER}\n"
-            f"just some plain text\n"
-            f"{END_MARKER}\n"
-        )
+        existing = f"{BEGIN_MARKER}\njust some plain text\n{END_MARKER}\n"
         result = extract_template(existing)
 
         assert result is None
@@ -565,7 +556,14 @@ class TestTemplateRendering:
         assert result is None
 
     def test_available_sections_complete(self):
-        assert AVAILABLE_SECTIONS == {"header", "inputs", "config", "workflows", "processes", "functions"}
+        assert AVAILABLE_SECTIONS == {
+            "header",
+            "inputs",
+            "config",
+            "workflows",
+            "processes",
+            "functions",
+        }
 
     def test_render_from_template_selective(self, sample_pipeline: Pipeline):
         renderer = TableRenderer()
@@ -619,16 +617,10 @@ class TestTemplateRendering:
 
         assert "## Inputs" in result
 
-    def test_render_to_directory_uses_template(
-        self, sample_pipeline: Pipeline, tmp_path: Path
-    ):
+    def test_render_to_directory_uses_template(self, sample_pipeline: Pipeline, tmp_path: Path):
         readme = tmp_path / "README.md"
         readme.write_text(
-            f"# My Pipeline\n"
-            f"{BEGIN_MARKER}\n"
-            f"{{{{ inputs }}}}\n"
-            f"{END_MARKER}\n"
-            f"Other content.\n"
+            f"# My Pipeline\n{BEGIN_MARKER}\n{{{{ inputs }}}}\n{END_MARKER}\nOther content.\n"
         )
 
         renderer = TableRenderer()
@@ -648,12 +640,7 @@ class TestTemplateRendering:
     ):
         """Empty markers (no template tags) should render everything."""
         readme = tmp_path / "README.md"
-        readme.write_text(
-            f"# My Pipeline\n"
-            f"{BEGIN_MARKER}\n"
-            f"{END_MARKER}\n"
-            f"Footer.\n"
-        )
+        readme.write_text(f"# My Pipeline\n{BEGIN_MARKER}\n{END_MARKER}\nFooter.\n")
 
         renderer = TableRenderer()
         renderer.render_to_directory(sample_pipeline, tmp_path)
