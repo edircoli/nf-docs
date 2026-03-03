@@ -18,9 +18,20 @@ from nf_docs.renderers.base import BaseRenderer
 BEGIN_MARKER = "<!-- BEGIN_NF_DOCS -->"
 END_MARKER = "<!-- END_NF_DOCS -->"
 
-AVAILABLE_SECTIONS = frozenset({"header", "inputs", "config", "workflows", "processes", "functions"})
+AVAILABLE_SECTIONS = frozenset(
+    {"header", "inputs", "config", "workflows", "processes", "functions"}
+)
 
 _TAG_PATTERN = re.compile(r"\{\{\s*(\w+)\s*\}\}")
+
+
+def _find_markers(text: str) -> tuple[int, int] | None:
+    """Return ``(begin_idx, end_idx)`` of the doc markers, or ``None``."""
+    begin_idx = text.find(BEGIN_MARKER)
+    end_idx = text.find(END_MARKER)
+    if begin_idx == -1 or end_idx == -1 or end_idx <= begin_idx:
+        return None
+    return begin_idx, end_idx
 
 
 def inject_into_content(existing: str, new_content: str) -> str | None:
@@ -35,10 +46,10 @@ def inject_into_content(existing: str, new_content: str) -> str | None:
         The updated text with *new_content* between the markers, or ``None``
         if the markers were not found.
     """
-    begin_idx = existing.find(BEGIN_MARKER)
-    end_idx = existing.find(END_MARKER)
-    if begin_idx == -1 or end_idx == -1 or end_idx <= begin_idx:
+    pos = _find_markers(existing)
+    if pos is None:
         return None
+    begin_idx, end_idx = pos
 
     before = existing[: begin_idx + len(BEGIN_MARKER)]
     after = existing[end_idx:]
@@ -56,10 +67,10 @@ def extract_template(existing: str) -> str | None:
         The template string if ``{{ section }}`` tags are found between markers,
         or ``None`` if no markers or no template tags.
     """
-    begin_idx = existing.find(BEGIN_MARKER)
-    end_idx = existing.find(END_MARKER)
-    if begin_idx == -1 or end_idx == -1 or end_idx <= begin_idx:
+    pos = _find_markers(existing)
+    if pos is None:
         return None
+    begin_idx, end_idx = pos
 
     template = existing[begin_idx + len(BEGIN_MARKER) : end_idx]
     if _TAG_PATTERN.search(template):
@@ -128,14 +139,29 @@ class TableRenderer(BaseRenderer):
         Returns:
             Markdown string with placeholders replaced by rendered sections.
         """
-        section_renderers: dict[str, str] = {
-            "header": self._render_header(pipeline),
-            "inputs": self._render_inputs(pipeline) if pipeline.inputs else "",
-            "config": self._render_config(pipeline) if pipeline.config_params else "",
-            "workflows": self._render_workflows(pipeline) if pipeline.workflows else "",
-            "processes": self._render_processes(pipeline) if pipeline.processes else "",
-            "functions": self._render_functions(pipeline) if pipeline.functions else "",
-        }
+        # Only render sections that are actually referenced in the template.
+        referenced = {m.lower() for m in _TAG_PATTERN.findall(template)}
+        section_renderers: dict[str, str] = {}
+        if "header" in referenced:
+            section_renderers["header"] = self._render_header(pipeline)
+        if "inputs" in referenced:
+            section_renderers["inputs"] = self._render_inputs(pipeline) if pipeline.inputs else ""
+        if "config" in referenced:
+            section_renderers["config"] = (
+                self._render_config(pipeline) if pipeline.config_params else ""
+            )
+        if "workflows" in referenced:
+            section_renderers["workflows"] = (
+                self._render_workflows(pipeline) if pipeline.workflows else ""
+            )
+        if "processes" in referenced:
+            section_renderers["processes"] = (
+                self._render_processes(pipeline) if pipeline.processes else ""
+            )
+        if "functions" in referenced:
+            section_renderers["functions"] = (
+                self._render_functions(pipeline) if pipeline.functions else ""
+            )
 
         def _replace_tag(match: re.Match[str]) -> str:
             tag = match.group(1).lower()
@@ -164,8 +190,11 @@ class TableRenderer(BaseRenderer):
         output_path = Path(output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
         out_file = output_path / "README.md"
-        if out_file.exists():
+        try:
             existing = out_file.read_text(encoding="utf-8")
+        except FileNotFoundError:
+            existing = None
+        if existing is not None:
             template = extract_template(existing)
             if template is not None:
                 content = self.render_from_template(pipeline, template)
@@ -408,8 +437,7 @@ class TableRenderer(BaseRenderer):
                 for out in proc.outputs:
                     emit = f"`{out.emit}`" if out.emit else "n/a"
                     rows.append(
-                        f"| `{out.name}` | `{out.type}` | {emit}"
-                        f" | {self._cell(out.description)} |"
+                        f"| `{out.name}` | `{out.type}` | {emit} | {self._cell(out.description)} |"
                     )
             sections.append("\n".join(rows))
 
