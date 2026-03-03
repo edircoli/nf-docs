@@ -872,18 +872,27 @@ def parse_hover_content(hover: dict[str, Any] | None) -> tuple[str, str, dict[st
                 params[current_param] = param_match.group(2).strip()
                 continue
 
-            # Check for @return tag
-            return_match = re.match(r"@returns?\s*(.*)", line_stripped)
+            # Check for @return tag (supports both named and unnamed forms)
+            # Named:   @return txt  Description of output
+            # Unnamed: @return Description of single return value
+            return_match = re.match(r"@returns?\s+(\w+)\s+(.*)", line_stripped)
             if return_match:
                 current_section = "return"
-                params["_return"] = return_match.group(1).strip()
+                current_param = f"_return_{return_match.group(1)}"
+                params[current_param] = return_match.group(2).strip()
+                continue
+            return_unnamed = re.match(r"@returns?\s*(.*)", line_stripped)
+            if return_unnamed:
+                current_section = "return"
+                current_param = "_return"
+                params["_return"] = return_unnamed.group(1).strip()
                 continue
 
             # Handle continuation lines
             if current_section == "description":
                 if line_stripped and not line_stripped.startswith("@"):
                     doc_lines.append(line_stripped)
-            elif current_section == "param" and current_param:
+            elif current_section in ("param", "return") and current_param:
                 if line_stripped and not line_stripped.startswith("@"):
                     params[current_param] += " " + line_stripped
 

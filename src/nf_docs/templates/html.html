@@ -459,6 +459,10 @@
         background-color: rgba(239, 68, 68, 0.2); /* red with opacity */
         color: rgb(252 165 165); /* red-300 */
       }
+      html.dark .bg-yellow-100 {
+        background-color: rgba(234, 179, 8, 0.2); /* yellow with opacity */
+        color: rgb(253 224 71); /* yellow-300 */
+      }
       html.dark .bg-green-100 {
         background-color: rgba(34, 197, 94, 0.2); /* green with opacity */
         color: rgb(134 239 172); /* green-300 */
@@ -1472,6 +1476,12 @@
               >
                 {{ inp.format }}
               </span>
+              {% endif %} {% if inp.pattern %}
+              <span
+                class="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"
+              >
+                Pattern: <code class="font-mono">{{ inp.pattern }}</code>
+              </span>
               {% endif %} {% if inp.required %}
               <span
                 class="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-600"
@@ -1505,13 +1515,6 @@
               {% for val in inp.enum %}
               <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm">{{ val }}</code>
               {% if not loop.last %}, {% endif %} {% endfor %}
-            </p>
-            {% endif %} {% if inp.pattern %}
-            <p class="mt-2">
-              <strong>Pattern:</strong>
-              <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
-                >{{ inp.pattern }}</code
-              >
             </p>
             {% endif %}
           </div>
@@ -1670,7 +1673,11 @@
                         >{{ inp.name|wbr }}</code
                       >
                     </td>
-                    <td class="p-3 border-b border-slate-200">{{ inp.description or '-' }}</td>
+                    <td class="p-3 border-b border-slate-200">
+                      {% if inp.description %}
+                      <div class="prose prose-sm">{{ inp.description|markdown }}</div>
+                      {% else %}-{% endif %}
+                    </td>
                   </tr>
                   {% endfor %} {% endif %}
                 </tbody>
@@ -1715,7 +1722,11 @@
                         >{{ out.name|wbr }}</code
                       >
                     </td>
-                    <td class="p-3 border-b border-slate-200">{{ out.description or '-' }}</td>
+                    <td class="p-3 border-b border-slate-200">
+                      {% if out.description %}
+                      <div class="prose prose-sm">{{ out.description|markdown }}</div>
+                      {% else %}-{% endif %}
+                    </td>
                   </tr>
                   {% endfor %} {% endif %}
                 </tbody>
@@ -1971,7 +1982,11 @@
                         >{{ inp.type|wbr }}</code
                       >
                     </td>
-                    <td class="p-3 border-b border-slate-200">{{ inp.description or '-' }}</td>
+                    <td class="p-3 border-b border-slate-200">
+                      {% if inp.description %}
+                      <div class="prose prose-sm">{{ inp.description|markdown }}</div>
+                      {% else %}-{% endif %}
+                    </td>
                   </tr>
                   {% endfor %} {% endif %}
                 </tbody>
@@ -2047,7 +2062,11 @@
                       >
                       {% else %}-{% endif %}
                     </td>
-                    <td class="p-3 border-b border-slate-200">{{ out.description or '-' }}</td>
+                    <td class="p-3 border-b border-slate-200">
+                      {% if out.description %}
+                      <div class="prose prose-sm">{{ out.description|markdown }}</div>
+                      {% else %}-{% endif %}
+                    </td>
                   </tr>
                   {% endfor %} {% endif %}
                 </tbody>
@@ -2189,7 +2208,11 @@
                         >{{ p.name|wbr }}</code
                       >
                     </td>
-                    <td class="p-3 border-b border-slate-200">{{ p.description or '-' }}</td>
+                    <td class="p-3 border-b border-slate-200">
+                      {% if p.description %}
+                      <div class="prose prose-sm">{{ p.description|markdown }}</div>
+                      {% else %}-{% endif %}
+                    </td>
                     <td class="p-3 border-b border-slate-200">
                       {% if p.default is not none %}
                       <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
