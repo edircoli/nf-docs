@@ -1506,6 +1506,13 @@
               <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm">{{ val }}</code>
               {% if not loop.last %}, {% endif %} {% endfor %}
             </p>
+            {% endif %} {% if inp.pattern %}
+            <p class="mt-2">
+              <strong>Pattern:</strong>
+              <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-sm"
+                >{{ inp.pattern }}</code
+              >
+            </p>
             {% endif %}
           </div>
           {% endfor %} {% endfor %}
