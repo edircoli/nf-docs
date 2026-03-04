@@ -75,6 +75,15 @@ pip install nf-docs
 nf-docs generate ./my_pipeline
 ```
 
+With [Bioconda](https://bioconda.github.io/) (requires
+[channel setup](https://bioconda.github.io/)):
+
+```bash
+pixi global install nf-docs
+# or
+conda install nf-docs
+```
+
 That's it! Open `docs/index.html` in your browser.
 
 ## Development

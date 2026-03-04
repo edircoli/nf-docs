@@ -63,6 +63,7 @@ Homepage = "https://ewels.github.io/nf-docs/"
 Documentation = "https://ewels.github.io/nf-docs/"
 Repository = "https://github.com/ewels/nf-docs"
 Issues = "https://github.com/ewels/nf-docs/issues"
+Bioconda = "https://bioconda.github.io/recipes/nf-docs/README.html"
 
 [tool.ruff]
 line-length = 100
