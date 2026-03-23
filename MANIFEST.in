@@ -1,1 +1,1 @@
-recursive-include src/nf_docs/templates *.html *.htm *.jinja *.txt
+recursive-include src/nf_docs/templates *.html *.css
